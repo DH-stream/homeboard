@@ -65,7 +65,7 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
           type="date"
           value={date}
         />
-        <p className="self-center px-1 text-xs font-bold text-white/55">{date ? t("futureSchedulingPreview") : t("clearDueDate")}</p>
+        <p className="min-w-0 truncate self-center px-1 text-xs font-bold text-white/55" title={date ? t("futureSchedulingPreview") : t("clearDueDate")}>{date ? t("futureSchedulingPreview") : t("clearDueDate")}</p>
         <input
           aria-label={t("time")}
           className="min-h-12 rounded-2xl border border-white/10 bg-white/10 px-3 py-3 font-bold text-white outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-300"

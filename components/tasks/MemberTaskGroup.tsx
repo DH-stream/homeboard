@@ -22,9 +22,9 @@ export function MemberTaskGroup({
 
   return (
     <section className="rounded-[2rem] bg-white/45 p-3 ring-1 ring-white/80">
-      <div className="mb-3 flex items-center justify-between px-1">
+      <div className="mb-3 flex min-w-0 items-center justify-between gap-2 px-1">
         <MemberBadge member={member} />
-        <span className="text-sm font-black text-stone-500">{tasks.filter((task) => !task.completedAt).length} {t("left")}</span>
+        <span className="shrink-0 text-sm font-black text-stone-500">{tasks.filter((task) => !task.completedAt).length} {t("left")}</span>
       </div>
       <div className="space-y-3">
         {tasks.map((task) => (

@@ -47,18 +47,18 @@ export default function WallPage() {
 
   return (
     <WallShell>
-      <header className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
-        <div>
+      <header className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="min-w-0">
           <p className="text-lg font-black uppercase tracking-[0.24em] text-amber-700">{household?.name ?? "HomeBoard"}</p>
           <h1 className="mt-2 text-6xl font-black tracking-tight text-stone-950 lg:text-8xl">{formatShortDate(now, locale)}</h1>
           <p className="mt-3 text-4xl font-black text-stone-600">
             {new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(now)}
           </p>
         </div>
-        <div className={`rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] ${recentlyCompletedId ? "shadow-emerald-500/20" : ""}`}>
-          <p className="text-sm font-bold uppercase tracking-[0.22em] text-amber-200">{recentlyCompletedId ? t("niceWork") : t("todaysProgress")}</p>
+        <div className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${recentlyCompletedId ? "shadow-emerald-500/20" : ""}`}>
+          <p className="min-h-5 truncate text-sm font-bold uppercase tracking-[0.18em] text-amber-200">{recentlyCompletedId ? t("niceWork") : t("todaysProgress")}</p>
           <p className="mt-2 text-5xl font-black">{stats.completed}/{stats.total}</p>
-          <p className="mt-1 font-semibold text-white/70">{t("progressComplete")} · {stats.remaining} {t("remaining")}</p>
+          <p className="mt-1 min-h-6 truncate font-semibold text-white/70">{t("progressComplete")} · {stats.remaining} {t("remaining")}</p>
         </div>
       </header>
 

@@ -69,7 +69,7 @@ export function TaskCard({
         </button>
         <div className="min-w-0 flex-1">
           {isEditing ? (
-            <div className="flex gap-2">
+            <div className="flex min-w-0 gap-2">
               <input
                 className="min-h-11 min-w-0 flex-1 rounded-2xl border border-stone-200 bg-white px-3 py-2 font-bold outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
                 onChange={(event) => setTitle(event.target.value)}
@@ -84,16 +84,18 @@ export function TaskCard({
               <h3 className={`truncate font-black tracking-tight transition-colors duration-200 ease-[var(--ease-out)] ${roomy ? "text-2xl" : "text-lg"} ${completed ? "line-through decoration-2 underline-offset-4" : ""}`}>
                 {task.titleSnapshot}
               </h3>
-              {celebrated ? <p className="mt-1 text-sm font-black text-emerald-700">{t("niceWork")}</p> : null}
+              <p className={`min-h-5 text-sm font-black text-emerald-700 transition-[opacity,transform] duration-180 ease-[var(--ease-out)] ${celebrated ? "translate-y-0 opacity-100" : "-translate-y-0.5 opacity-0"}`} aria-hidden={!celebrated} aria-live="polite">
+                {celebrated ? t("niceWork") : ""}
+              </p>
             </div>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-stone-500">
-            <span>{showDate ? `${formatTaskDate(task.dueDate, locale)} · ${formatTime(task.dueDate, locale)}` : formatTime(task.dueDate, locale)}</span>
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold text-stone-500">
+            <span className="min-w-0 truncate">{showDate ? `${formatTaskDate(task.dueDate, locale)} · ${formatTime(task.dueDate, locale)}` : formatTime(task.dueDate, locale)}</span>
             <MemberBadge compact member={member} />
           </div>
         </div>
         {onEdit && !isEditing ? (
-          <button className="pressable min-h-11 rounded-full px-3 py-2 text-sm font-bold text-stone-500 hover:bg-stone-100" onClick={() => setEditing(true)} type="button">
+          <button className="pressable min-h-11 shrink-0 rounded-full px-3 py-2 text-sm font-bold text-stone-500 hover:bg-stone-100" onClick={() => setEditing(true)} type="button">
             {t("edit")}
           </button>
         ) : null}
