@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
@@ -41,7 +41,12 @@ export default function MobileAppPage() {
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
   const [pendingFutureTask, setPendingFutureTask] = useState<TaskInstance | null>(null);
-  const [now] = useState(() => new Date());
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000 * 60);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const upcomingTasks = useMemo(() => tasks.filter((task) => !isRecurringTask(task) && isFutureLocalDay(task.dueDate)), [tasks]);
