@@ -44,7 +44,7 @@ export default function SettingsPage() {
                 <dd className="text-right font-black text-stone-900">Supabase/Postgres</dd>
               </div>
             </dl>
-            <p>API writes from future RUNAI or Home Assistant clients do not yet appear in the wall/mobile UI. This is expected for PR #1 and will be connected in the shared backend step.</p>
+            <p>API writes from future RUNAI or Home Assistant clients do not yet appear in the wall/mobile UI. This is expected during the local preview and will be connected in the shared backend step.</p>
           </div>
         </SettingsCard>
       </div>
