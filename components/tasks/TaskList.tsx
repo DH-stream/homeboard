@@ -3,6 +3,7 @@
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MemberTaskGroup } from "@/components/tasks/MemberTaskGroup";
 import { TaskCard } from "@/components/tasks/TaskCard";
+import { useLanguage } from "@/lib/i18n";
 import type { HouseholdMember, TaskInstance } from "@/types";
 
 export function TaskList({
@@ -12,6 +13,7 @@ export function TaskList({
   onEdit,
   grouped = false,
   roomy = false,
+  recentlyCompletedId,
 }: {
   tasks: TaskInstance[];
   members: HouseholdMember[];
@@ -19,9 +21,12 @@ export function TaskList({
   onEdit?: (task: TaskInstance, title: string) => Promise<unknown> | void;
   grouped?: boolean;
   roomy?: boolean;
+  recentlyCompletedId?: string | null;
 }) {
+  const { t } = useLanguage();
+
   if (!tasks.length) {
-    return <EmptyState title="No tasks for today.">Add a task from the mobile app view to start the household plan.</EmptyState>;
+    return <EmptyState title={t("noTasks")}>{t("noTasksBody")}</EmptyState>;
   }
 
   if (grouped) {
@@ -33,9 +38,9 @@ export function TaskList({
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {groups.map((group) => (
-          <MemberTaskGroup key={group.member.id} member={group.member} onToggle={onToggle} roomy={roomy} tasks={group.tasks} />
+          <MemberTaskGroup key={group.member.id} member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} roomy={roomy} tasks={group.tasks} />
         ))}
-        {unassigned.length ? <MemberTaskGroup onToggle={onToggle} roomy={roomy} tasks={unassigned} /> : null}
+        {unassigned.length ? <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} roomy={roomy} tasks={unassigned} /> : null}
       </div>
     );
   }
@@ -44,6 +49,7 @@ export function TaskList({
     <div className="space-y-3">
       {tasks.map((task) => (
         <TaskCard
+          celebrated={recentlyCompletedId === task.id}
           key={task.id}
           member={members.find((member) => member.id === task.assignedToMemberId)}
           onEdit={onEdit}
