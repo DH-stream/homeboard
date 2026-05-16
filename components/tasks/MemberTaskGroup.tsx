@@ -11,12 +11,14 @@ export function MemberTaskGroup({
   onToggle,
   roomy,
   recentlyCompletedId,
+  completionMessage,
 }: {
   member?: HouseholdMember;
   tasks: TaskInstance[];
   onToggle: (task: TaskInstance) => Promise<void> | void;
   roomy?: boolean;
   recentlyCompletedId?: string | null;
+  completionMessage?: string;
 }) {
   const { t } = useLanguage();
 
@@ -28,7 +30,7 @@ export function MemberTaskGroup({
       </div>
       <div className="space-y-3">
         {tasks.map((task) => (
-          <TaskCard celebrated={recentlyCompletedId === task.id} key={task.id} member={member} onToggle={onToggle} roomy={roomy} task={task} />
+          <TaskCard celebrated={recentlyCompletedId === task.id} completionMessage={recentlyCompletedId === task.id ? completionMessage : undefined} key={task.id} member={member} onToggle={onToggle} roomy={roomy} task={task} />
         ))}
       </div>
     </section>
