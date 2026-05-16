@@ -11,10 +11,12 @@ This repository currently ships a usable product preview:
 - `/` explains the project and links to the main preview routes.
 - `/wall` is a landscape/tablet-oriented family dashboard with date/time, member indicators, agenda, week preview, and touch-friendly task completion.
 - `/app` is a mobile-first task app with add, edit, complete/uncomplete, member filtering, status filtering, and an agenda preview.
-- `/settings` shows practical setup areas for household, members, calendar sources, Home Assistant, RUNAI/API tokens, display settings, and backend status.
-- `/api/tasks` provides basic GET, POST, and PATCH handlers for future API clients.
+- `/settings` shows practical setup areas for household, members, calendar sources, Home Assistant, RUNAI/API tokens, display settings, and backend status, including preview persistence limitations.
+- `/api/tasks` provides basic GET, POST, and PATCH handlers for future API clients with predictable JSON errors for invalid requests.
 
-No real provider sync, paid services, auth system, secrets, or external databases are required for this preview.
+No real provider sync, paid services, auth system, secrets, required environment variables, or external databases are required for this preview.
+
+> **Preview mode:** the wall/mobile UI uses browser localStorage and the API uses temporary server memory. They do not share a persistence store yet, so API writes do not appear in the wall/mobile UI until the future shared Supabase/Postgres backend is added.
 
 ## How to run locally
 
@@ -38,21 +40,30 @@ Then open:
 Useful checks:
 
 ```bash
+npm run lint
 npm run typecheck
 npm run build
 ```
 
 ## Deploy to Vercel
 
-HomeBoard is structured as a standard Next.js App Router project and is ready to deploy to Vercel.
+HomeBoard is structured as a standard Next.js App Router project and is ready to deploy as a Vercel preview.
 
-1. Use Node.js 20 or newer.
-2. Install dependencies with `npm install`.
-3. Run locally with `npm run dev`.
-4. Verify production output with `npm run build`.
-5. Import the repository into Vercel as a Next.js project.
+1. Import the GitHub repository into Vercel.
+2. Use the **Next.js** framework preset.
+3. Use Node.js 20 or newer. The project also declares `"node": ">=20.0.0"` in `package.json`.
+4. Install dependencies with `npm install`.
+5. Run locally with `npm run dev` when developing.
+6. Verify production output with `npm run build`.
 
 There are no required environment variables for the first preview version. `.env.example` only contains commented placeholders for future Supabase, Home Assistant, and RUNAI configuration.
+
+Preview persistence behavior on Vercel:
+
+- The wall/mobile UI stores task state in each browser's `localStorage`, so a reviewer can add and complete tasks and refresh the same browser without losing that preview state.
+- `/api/tasks` uses temporary in-memory server state to shape future RUNAI/Home Assistant API behavior. In Vercel/serverless environments this state is not durable and can reset between invocations or deployments.
+- The UI and API do **not** share the same persistence store in PR #1. API writes do not yet appear in the wall/mobile UI.
+- True multi-device sync is the next backend milestone and should be implemented by replacing the repositories with a shared Supabase/Postgres persistence layer.
 
 ## Architecture overview
 
@@ -72,9 +83,13 @@ Task recurrence is intentionally modeled with templates, schedules, and instance
 
 For the preview:
 
-- The main UI stores task instances in browser `localStorage` so added and completed tasks survive refreshes.
+- Storage mode is **local preview**.
+- Wall/mobile UI task state is stored in browser `localStorage` so added and completed tasks survive refreshes in the same browser.
+- API task state is stored in a temporary in-memory server repository. This is useful for shaping the API but is not durable and should not be treated as production storage.
+- The UI and API are intentionally not connected to the same store yet. API writes from future RUNAI/Home Assistant clients do **not** appear in the wall/mobile UI in PR #1.
 - Mock calendar events are read-only and loaded through the calendar repository/service.
-- The `/api/tasks` route uses a temporary in-memory server repository. This is useful for shaping the API but is not durable and should not be treated as production storage.
+- Multi-device sync is not connected yet.
+- The next backend target is Supabase/Postgres.
 
 Future backend replacement should keep the public service/hook contracts stable while swapping repository implementations for durable storage.
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { mockCalendarRepository } from "@/lib/repositories/calendarRepository";
 import { createCalendarService } from "@/lib/services/calendarService";
-import { toDateKey } from "@/lib/utils/date";
+import { toLocalDateKey } from "@/lib/utils/date";
 import type { CalendarEvent } from "@/types";
 
 const service = createCalendarService(mockCalendarRepository);
@@ -20,8 +20,8 @@ export function useCalendarEvents() {
   }, []);
 
   const todayEvents = useMemo(() => {
-    const today = toDateKey();
-    return events.filter((event) => event.startAt.slice(0, 10) === today);
+    const today = toLocalDateKey();
+    return events.filter((event) => toLocalDateKey(event.startAt) === today);
   }, [events]);
 
   return { events, todayEvents, isLoading };

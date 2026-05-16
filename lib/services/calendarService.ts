@@ -1,5 +1,5 @@
 import type { CalendarRepository } from "@/lib/repositories/calendarRepository";
-import { toDateKey } from "@/lib/utils/date";
+import { toLocalDateKey } from "@/lib/utils/date";
 
 export function createCalendarService(repository: CalendarRepository) {
   return {
@@ -7,9 +7,9 @@ export function createCalendarService(repository: CalendarRepository) {
       return repository.listEvents();
     },
     async listTodayEvents() {
-      const today = toDateKey();
+      const today = toLocalDateKey();
       const events = await repository.listEvents();
-      return events.filter((event) => event.startAt.slice(0, 10) === today);
+      return events.filter((event) => toLocalDateKey(event.startAt) === today);
     },
   };
 }

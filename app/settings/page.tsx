@@ -23,8 +23,29 @@ export default function SettingsPage() {
         <SettingsCard status="Preview" title="Display / device settings">
           <p>Device types are modeled for wall, mobile, and admin modes. Future settings can manage default route, sleep schedule, brightness, and kiosk behavior.</p>
         </SettingsCard>
-        <SettingsCard status="Local" title="Data / backend status">
-          <p>The current UI stores task instances in browser localStorage. API route data is an in-memory placeholder. Supabase/Postgres can replace repositories later.</p>
+        <SettingsCard status="Preview mode" title="Data / backend status">
+          <div className="space-y-3">
+            <p className="font-bold text-stone-800">Storage mode: Local preview — no cloud sync yet.</p>
+            <dl className="grid gap-2 rounded-2xl bg-stone-50 p-4 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="font-bold text-stone-500">UI task state</dt>
+                <dd className="text-right font-black text-stone-900">Browser localStorage</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="font-bold text-stone-500">API task state</dt>
+                <dd className="text-right font-black text-stone-900">Temporary in-memory</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="font-bold text-stone-500">Multi-device sync</dt>
+                <dd className="text-right font-black text-amber-700">Not connected yet</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="font-bold text-stone-500">Next backend target</dt>
+                <dd className="text-right font-black text-stone-900">Supabase/Postgres</dd>
+              </div>
+            </dl>
+            <p>API writes from future RUNAI or Home Assistant clients do not yet appear in the wall/mobile UI. This is expected for PR #1 and will be connected in the shared backend step.</p>
+          </div>
         </SettingsCard>
       </div>
     </AppShell>

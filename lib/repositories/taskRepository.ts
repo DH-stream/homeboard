@@ -1,4 +1,5 @@
 import { mockTaskInstances, mockTasks } from "@/data/mockTasks";
+import { NotFoundError } from "@/lib/errors";
 import type { CreateTaskInput, Task, TaskInstance, UpdateTaskInstanceInput } from "@/types";
 
 const TASK_STORAGE_KEY = "homeboard.taskInstances.v1";
@@ -105,7 +106,7 @@ export const localTaskRepository: TaskRepository = {
     const instances = readInstances();
     const existing = instances.find((task) => task.id === input.id);
     if (!existing) {
-      throw new Error(`Task instance ${input.id} was not found.`);
+      throw new NotFoundError(`Task instance ${input.id} was not found.`);
     }
 
     const updated: TaskInstance = {
@@ -167,7 +168,7 @@ export const serverTaskRepository: TaskRepository = {
   },
   async updateTaskInstance(input) {
     const existing = serverInstances.find((task) => task.id === input.id);
-    if (!existing) throw new Error(`Task instance ${input.id} was not found.`);
+    if (!existing) throw new NotFoundError(`Task instance ${input.id} was not found.`);
 
     const updated: TaskInstance = {
       ...existing,

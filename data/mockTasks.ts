@@ -1,8 +1,8 @@
 import type { Task, TaskInstance, TaskSchedule } from "@/types";
-import { atLocalTime, toDateKey } from "@/lib/utils/date";
+import { atLocalTime, toLocalDateKey } from "@/lib/utils/date";
 
 const now = "2026-01-01T08:00:00.000Z";
-const today = toDateKey();
+const today = toLocalDateKey();
 
 export const mockTasks: Task[] = [
   {

@@ -1,17 +1,17 @@
-import { getWeekDays } from "@/lib/utils/date";
+import { getWeekDays, toLocalDateKey } from "@/lib/utils/date";
 import type { CalendarEvent } from "@/types";
 
 export function WeekPreview({ events }: { events: CalendarEvent[] }) {
   const days = getWeekDays();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateKey();
 
   return (
     <section className="rounded-[2rem] bg-white/50 p-4 ring-1 ring-white/80">
       <h2 className="mb-3 text-xl font-black tracking-tight text-stone-950">Week preview</h2>
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => {
-          const key = day.toISOString().slice(0, 10);
-          const dayEvents = events.filter((event) => event.startAt.slice(0, 10) === key);
+          const key = toLocalDateKey(day);
+          const dayEvents = events.filter((event) => toLocalDateKey(event.startAt) === key);
           const isToday = key === today;
 
           return (

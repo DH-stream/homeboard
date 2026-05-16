@@ -1,6 +1,12 @@
-export function toDateKey(date = new Date()) {
-  return date.toISOString().slice(0, 10);
+export function toLocalDateKey(date: Date | string = new Date()) {
+  const value = typeof date === "string" ? new Date(date) : date;
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
+
+export const toDateKey = toLocalDateKey;
 
 export function atLocalTime(hours: number, minutes = 0, date = new Date()) {
   const next = new Date(date);
@@ -34,4 +40,8 @@ export function getWeekDays(date = new Date()) {
     next.setDate(start.getDate() + index);
     return next;
   });
+}
+
+export function isValidDateValue(value: string) {
+  return !Number.isNaN(new Date(value).getTime());
 }
