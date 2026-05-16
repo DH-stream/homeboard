@@ -102,7 +102,7 @@ function dateForTime(date: Date, time: string) {
   return atLocalTime(hours, minutes, date);
 }
 
-function createInstance(task: Task, dueDate: string, now: string): TaskInstance {
+function createInstance(task: Task, schedule: TaskSchedule, dueDate: string, now: string): TaskInstance {
   return {
     id: createId("instance"),
     taskId: task.id,
@@ -110,6 +110,8 @@ function createInstance(task: Task, dueDate: string, now: string): TaskInstance 
     titleSnapshot: task.title,
     assignedToMemberId: task.assignedToMemberId,
     dueDate,
+    scheduleId: schedule.id,
+    scheduleType: schedule.type,
     createdAt: now,
     updatedAt: now,
   };
@@ -133,7 +135,7 @@ function scheduleFromInput(input: CreateTaskInput, taskId: string, now: string):
 
 function generateInstances(task: Task, schedule: TaskSchedule, now: string) {
   if (schedule.type === "once") {
-    return [createInstance(task, schedule.dueDate ?? todayAtEndOfDay(), now)];
+    return [createInstance(task, schedule, schedule.dueDate ?? todayAtEndOfDay(), now)];
   }
 
   const startsOn = localDateFromKey(schedule.startsOn);
@@ -153,7 +155,7 @@ function generateInstances(task: Task, schedule: TaskSchedule, now: string) {
     if (daysOfWeek && !daysOfWeek.includes(date.getDay())) continue;
 
     for (const time of timesOfDay) {
-      instances.push(createInstance(task, dateForTime(date, time), now));
+      instances.push(createInstance(task, schedule, dateForTime(date, time), now));
     }
   }
 
