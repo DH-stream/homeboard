@@ -14,15 +14,15 @@ export function atLocalTime(hours: number, minutes = 0, date = new Date()) {
   return next.toISOString();
 }
 
-export function formatTime(value: string) {
-  return new Intl.DateTimeFormat(undefined, {
+export function formatTime(value: string, locale?: string) {
+  return new Intl.DateTimeFormat(locale, {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
 }
 
-export function formatShortDate(value: string | Date) {
-  return new Intl.DateTimeFormat(undefined, {
+export function formatShortDate(value: string | Date, locale?: string) {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -44,4 +44,21 @@ export function getWeekDays(date = new Date()) {
 
 export function isValidDateValue(value: string) {
   return !Number.isNaN(new Date(value).getTime());
+}
+
+
+export function formatTaskDate(value: string, locale?: string) {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+
+export function isSameLocalDay(a: Date | string, b: Date | string = new Date()) {
+  return toLocalDateKey(a) === toLocalDateKey(b);
+}
+
+export function isFutureLocalDay(value: Date | string, today: Date | string = new Date()) {
+  return toLocalDateKey(value) > toLocalDateKey(today);
 }

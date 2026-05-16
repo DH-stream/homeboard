@@ -85,6 +85,8 @@ button:disabled {
 .status-chip {
   display: inline-flex;
   min-height: 2rem;
+  max-width: 100%;
+  min-width: 0;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
@@ -93,6 +95,9 @@ button:disabled {
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
@@ -111,5 +116,113 @@ button:disabled {
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+.task-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.task-title {
+  display: -webkit-box;
+  min-height: 1.55em;
+  max-height: 3.1em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.15;
+}
+
+.task-card--celebrate {
+  animation: task-card-settle 240ms var(--ease-out), task-card-glow 900ms var(--ease-out);
+}
+
+.task-card--celebrate::after {
+  position: absolute;
+  inset: 0.7rem;
+  pointer-events: none;
+  content: "";
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(16, 185, 129, 0.28) 0 0.16rem, transparent 0.18rem),
+    radial-gradient(circle at 82% 28%, rgba(251, 191, 36, 0.32) 0 0.14rem, transparent 0.16rem),
+    radial-gradient(circle at 70% 76%, rgba(52, 211, 153, 0.26) 0 0.13rem, transparent 0.15rem);
+  opacity: 0;
+  animation: task-confetti-pop 700ms var(--ease-out);
+}
+
+.task-check-mark {
+  opacity: 0;
+  transform: scale(0.88) translateY(0.1rem);
+  transition:
+    opacity 150ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+.task-check--done .task-check-mark {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.task-card--celebrate .task-check--done .task-check-mark {
+  animation: task-check-pop 240ms var(--ease-out);
+}
+
+@keyframes task-card-settle {
+  from {
+    transform: translateY(0.18rem) scale(0.992);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes task-card-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+  }
+  28% {
+    box-shadow: 0 18px 55px rgba(16, 185, 129, 0.22);
+  }
+  100% {
+    box-shadow: inset 0 2px 8px rgba(16, 185, 129, 0.12);
+  }
+}
+
+@keyframes task-check-pop {
+  0% {
+    transform: scale(0.9) translateY(0.1rem);
+  }
+  62% {
+    transform: scale(1.16) translateY(-0.04rem);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes task-confetti-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(0.2rem);
+  }
+  24% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04) translateY(-0.45rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card--celebrate,
+  .task-card--celebrate::after,
+  .task-card--celebrate .task-check--done .task-check-mark {
+    animation: none !important;
   }
 }
