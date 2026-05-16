@@ -18,6 +18,20 @@ import type { TaskInstance } from "@/types";
 
 type Filter = "all" | "open" | "completed";
 
+const RECURRING_REVEAL_MINUTES = 90;
+
+function isRecurringTask(task: TaskInstance) {
+  return task.scheduleType === "daily" || task.scheduleType === "weekly";
+}
+
+function shouldShowTodayTask(task: TaskInstance, now: Date) {
+  if (!isSameLocalDay(task.dueDate, now)) return false;
+  if (task.completedAt || !isRecurringTask(task)) return true;
+
+  const revealAt = new Date(task.dueDate).getTime() - RECURRING_REVEAL_MINUTES * 60 * 1000;
+  return now.getTime() >= revealAt;
+}
+
 export default function MobileAppPage() {
   const { getCompletionEncouragement, t } = useLanguage();
   const { members } = useMembers();
@@ -27,9 +41,10 @@ export default function MobileAppPage() {
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
   const [pendingFutureTask, setPendingFutureTask] = useState<TaskInstance | null>(null);
+  const [now] = useState(() => new Date());
 
-  const todayTasks = useMemo(() => tasks.filter((task) => isSameLocalDay(task.dueDate)), [tasks]);
-  const upcomingTasks = useMemo(() => tasks.filter((task) => isFutureLocalDay(task.dueDate)), [tasks]);
+  const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
+  const upcomingTasks = useMemo(() => tasks.filter((task) => !isRecurringTask(task) && isFutureLocalDay(task.dueDate)), [tasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
