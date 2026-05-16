@@ -1,50 +1,79 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { SettingsCard } from "@/components/settings/SettingsCard";
+import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
+  const { language, languageName, setLanguage, t } = useLanguage();
+
   return (
-    <AppShell eyebrow="Setup" title="Settings">
+    <AppShell eyebrow={t("settingsEyebrow")} title={t("settings")}>
       <div className="grid gap-4 md:grid-cols-2">
-        <SettingsCard status="Mock" title="Household">
-          <p>Demo household metadata is loaded through the member repository. Future setup will support household invites, timezone, locale, and shared preferences.</p>
-        </SettingsCard>
-        <SettingsCard status="Mock" title="Members">
-          <p>Member names, colors, and roles are represented in shared types and mock repository data. Editing and invitations are planned after durable auth and storage.</p>
-        </SettingsCard>
-        <SettingsCard status="Planned" title="Calendar sources">
-          <p>Calendar cards already consume `CalendarEvent` data through a service. Google, Outlook, CalDAV, and ICS sync should be added as read-only source adapters.</p>
-        </SettingsCard>
-        <SettingsCard status="Planned" title="Home Assistant integration">
-          <p>Home Assistant will be an integration layer for display, status, REST/MQTT/webhook automation, and Lovelace embedding—not the primary HomeBoard database.</p>
-        </SettingsCard>
-        <SettingsCard status="Prepared" title="RUNAI / API tokens">
-          <p>Task source types and `/api/tasks` are prepared for API clients. Token-scoped auth, audit trails, and an OpenAPI contract are next-step work.</p>
-        </SettingsCard>
-        <SettingsCard status="Preview" title="Display / device settings">
-          <p>Device types are modeled for wall, mobile, and admin modes. Future settings can manage default route, sleep schedule, brightness, and kiosk behavior.</p>
-        </SettingsCard>
-        <SettingsCard status="Preview mode" title="Data / backend status">
+        <SettingsCard status={t("localPreview")} title={t("language")}>
           <div className="space-y-3">
-            <p className="font-bold text-stone-800">Storage mode: Local preview — no cloud sync yet.</p>
+            <p>{t("languageCopy")}</p>
+            <label className="block text-xs font-black uppercase tracking-[0.18em] text-stone-500" htmlFor="language-select">
+              {t("selectedLanguage")}
+            </label>
+            <select
+              className="min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 py-3 font-bold text-stone-900 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
+              id="language-select"
+              onChange={(event) => setLanguage(event.target.value as Language)}
+              value={language}
+            >
+              <option value="en">English</option>
+              <option value="sv">Svenska</option>
+            </select>
+            <p className="font-bold text-stone-800">{languageName}</p>
+          </div>
+        </SettingsCard>
+        <SettingsCard status={t("mock")} title={t("household")}>
+          <p>{t("householdCopy")}</p>
+        </SettingsCard>
+        <SettingsCard status={t("mock")} title={t("members")}>
+          <p>{t("membersCopy")}</p>
+        </SettingsCard>
+        <SettingsCard status={t("planned")} title={t("calendarSources")}>
+          <p>{t("calendarSourcesCopy")}</p>
+        </SettingsCard>
+        <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
+          <p>{t("homeAssistantIntegrationCopy")}</p>
+        </SettingsCard>
+        <SettingsCard status={t("localPreview")} title={t("dueDate")}>
+          <div className="space-y-2">
+            <p>{t("dueDatePreview")}</p>
+            <p>{t("futureSchedulingPreview")}</p>
+          </div>
+        </SettingsCard>
+        <SettingsCard status={t("planned")} title={t("runaiApiTokens")}>
+          <p>{t("runaiApiTokensCopy")}</p>
+        </SettingsCard>
+        <SettingsCard status={t("localPreview")} title={t("displayDeviceSettings")}>
+          <p>{t("displayDeviceSettingsCopy")}</p>
+        </SettingsCard>
+        <SettingsCard status={t("previewMode")} title={t("dataBackendStatus")}>
+          <div className="space-y-3">
+            <p className="font-bold text-stone-800">{t("noCloudSync")}</p>
             <dl className="grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
               <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">UI task state</dt>
-                <dd className="text-right font-black text-stone-900">Browser localStorage</dd>
+                <dt className="font-bold text-stone-500">{t("uiTaskState")}</dt>
+                <dd className="text-right font-black text-stone-900">{t("browserLocalStorage")}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">API task state</dt>
-                <dd className="text-right font-black text-stone-900">Temporary in-memory</dd>
+                <dt className="font-bold text-stone-500">{t("apiTaskState")}</dt>
+                <dd className="text-right font-black text-stone-900">{t("temporaryInMemory")}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">Multi-device sync</dt>
-                <dd className="text-right font-black text-amber-700">Not connected yet</dd>
+                <dt className="font-bold text-stone-500">{t("multiDeviceSync")}</dt>
+                <dd className="text-right font-black text-amber-700">{t("notConnectedYet")}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">Next backend target</dt>
+                <dt className="font-bold text-stone-500">{t("nextBackendTarget")}</dt>
                 <dd className="text-right font-black text-stone-900">Supabase/Postgres</dd>
               </div>
             </dl>
-            <p>API writes from future RUNAI or Home Assistant clients do not yet appear in the wall/mobile UI. This is expected during the local preview and will be connected in the shared backend step.</p>
+            <p>{t("storageClarification")}</p>
           </div>
         </SettingsCard>
       </div>
