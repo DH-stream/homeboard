@@ -195,6 +195,33 @@ const translations = {
   },
 } as const;
 
+const completionEncouragements: Record<Language, string[]> = {
+  en: [
+    "Nice work!",
+    "That’s one done!",
+    "Small win secured!",
+    "You’re on a roll!",
+    "Love that progress!",
+    "Done and dusted!",
+    "That helped the home!",
+    "One less thing!",
+    "Beautifully done!",
+    "Keep it moving!",
+  ],
+  sv: [
+    "Bra jobbat!",
+    "Snyggt fixat!",
+    "En sak mindre!",
+    "Det där satt!",
+    "Du är igång!",
+    "Fint avbockat!",
+    "Hemmet tackar!",
+    "Stabilt!",
+    "Riktigt snyggt!",
+    "Mer kontroll!",
+  ],
+};
+
 const languageNames: Record<Language, string> = {
   en: "English",
   sv: "Svenska",
@@ -209,9 +236,18 @@ type LanguageContextValue = {
   languageName: string;
   setLanguage: (language: Language) => void;
   t: (key: TranslationKey) => string;
+  getCompletionEncouragement: (previous?: string | null) => string;
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+function pickCompletionEncouragement(language: Language, previous?: string | null) {
+  const messages = completionEncouragements[language];
+  if (messages.length <= 1) return messages[0] ?? translations[language].niceWork;
+
+  const candidates = previous ? messages.filter((message) => message !== previous) : messages;
+  return candidates[Math.floor(Math.random() * candidates.length)] ?? messages[0];
+}
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
@@ -230,14 +266,20 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
   }, []);
 
+  const getCompletionEncouragement = useCallback(
+    (previous?: string | null) => pickCompletionEncouragement(language, previous),
+    [language],
+  );
+
   const value = useMemo<LanguageContextValue>(
     () => ({
       language,
       languageName: languageNames[language],
       setLanguage,
       t: (key) => translations[language][key],
+      getCompletionEncouragement,
     }),
-    [language, setLanguage],
+    [getCompletionEncouragement, language, setLanguage],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
