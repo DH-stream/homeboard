@@ -18,13 +18,13 @@ import type { TaskInstance } from "@/types";
 type Filter = "all" | "open" | "completed";
 
 export default function MobileAppPage() {
-  const { t } = useLanguage();
+  const { getCompletionEncouragement, t } = useLanguage();
   const { members } = useMembers();
   const { todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted, updateTask } = useTasks();
   const [filter, setFilter] = useState<Filter>("all");
   const [memberFilter, setMemberFilter] = useState("all");
-  const [recentlyCompletedId, setRecentlyCompletedId] = useState<string | null>(null);
+  const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => isSameLocalDay(task.dueDate)), [tasks]);
   const upcomingTasks = useMemo(() => tasks.filter((task) => isFutureLocalDay(task.dueDate)), [tasks]);
@@ -45,8 +45,9 @@ export default function MobileAppPage() {
     const willComplete = !task.completedAt;
     await setTaskCompleted(task.id, willComplete, task.assignedToMemberId);
     if (willComplete) {
-      setRecentlyCompletedId(task.id);
-      window.setTimeout(() => setRecentlyCompletedId((current) => (current === task.id ? null : current)), 1400);
+      const message = getCompletionEncouragement(completionFeedback?.message);
+      setCompletionFeedback({ taskId: task.id, message });
+      window.setTimeout(() => setCompletionFeedback((current) => (current?.taskId === task.id ? null : current)), 1400);
     }
   }
 
@@ -63,9 +64,9 @@ export default function MobileAppPage() {
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
           <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-stone-400 sm:text-xs sm:tracking-[0.16em]">{t("tasksLabel")}</p>
         </div>
-        <div className={`min-w-0 rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-3 text-center shadow-sm transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] sm:p-4 ${recentlyCompletedId ? "shadow-emerald-200/80" : ""}`}>
+        <div className={`min-w-0 rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-3 text-center shadow-sm transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] sm:p-4 ${completionFeedback ? "shadow-emerald-200/80" : ""}`}>
           <p className="text-3xl font-black text-emerald-700">{stats.completed}</p>
-          <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-emerald-500 sm:text-xs sm:tracking-[0.16em]">{recentlyCompletedId ? t("niceWork") : t("done")}</p>
+          <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-emerald-500 sm:text-xs sm:tracking-[0.16em]">{completionFeedback?.message ?? t("done")}</p>
         </div>
         <Link className="pressable min-w-0 rounded-[1.5rem] bg-stone-950 p-3 text-center text-white shadow-sm sm:p-4" href="/wall">
           <p className="text-3xl font-black">{t("wall")}</p>
@@ -101,7 +102,8 @@ export default function MobileAppPage() {
           members={members}
           onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })}
           onToggle={toggleTask}
-          recentlyCompletedId={recentlyCompletedId}
+          recentlyCompletedId={completionFeedback?.taskId ?? null}
+          completionMessage={completionFeedback?.message}
           tasks={filteredTasks}
         />
       </section>
@@ -112,7 +114,7 @@ export default function MobileAppPage() {
           <StatusChip tone="amber">{t("localPreview")}</StatusChip>
         </div>
         {upcomingTasks.length ? (
-          <TaskList members={members} onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })} onToggle={toggleTask} recentlyCompletedId={recentlyCompletedId} tasks={upcomingTasks} />
+          <TaskList members={members} onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} tasks={upcomingTasks} />
         ) : (
           <EmptyState title={t("upcoming")}>{t("upcomingEmpty")}</EmptyState>
         )}
