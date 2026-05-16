@@ -13,6 +13,7 @@ export function TaskCard({
   onEdit,
   roomy = false,
   celebrated = false,
+  completionMessage,
 }: {
   task: TaskInstance;
   member?: HouseholdMember;
@@ -20,6 +21,7 @@ export function TaskCard({
   onEdit?: (task: TaskInstance, title: string) => Promise<unknown> | void;
   roomy?: boolean;
   celebrated?: boolean;
+  completionMessage?: string;
 }) {
   const { language, t } = useLanguage();
   const locale = getLocale(language);
@@ -28,6 +30,7 @@ export function TaskCard({
   const [title, setTitle] = useState(task.titleSnapshot);
   const completed = Boolean(task.completedAt);
   const showDate = !isSameLocalDay(task.dueDate);
+  const feedbackText = completionMessage ?? t("niceWork");
 
   async function handleToggle() {
     setBusy(true);
@@ -84,8 +87,8 @@ export function TaskCard({
               <h3 className={`task-title font-black tracking-tight transition-colors duration-200 ease-[var(--ease-out)] ${roomy ? "text-2xl" : "text-lg"} ${completed ? "line-through decoration-2 underline-offset-4" : ""}`}>
                 {task.titleSnapshot}
               </h3>
-              <p className={`min-h-5 text-sm font-black text-emerald-700 transition-[opacity,transform] duration-180 ease-[var(--ease-out)] ${celebrated ? "translate-y-0 opacity-100" : "-translate-y-0.5 opacity-0"}`} aria-hidden={!celebrated} aria-live="polite">
-                {celebrated ? t("niceWork") : ""}
+              <p className={`min-h-5 truncate text-sm font-black text-emerald-700 transition-[opacity,transform] duration-180 ease-[var(--ease-out)] ${celebrated ? "translate-y-0 opacity-100" : "-translate-y-0.5 opacity-0"}`} aria-hidden={!celebrated} aria-live="polite">
+                {celebrated ? feedbackText : ""}
               </p>
             </div>
           )}

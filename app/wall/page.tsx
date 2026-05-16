@@ -16,14 +16,14 @@ import { formatShortDate, isSameLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
 
 export default function WallPage() {
-  const { language, t } = useLanguage();
+  const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
   const { household } = useHousehold();
   const { members } = useMembers();
   const { events, todayEvents } = useCalendarEvents();
   const { tasks, setTaskCompleted } = useTasks();
   const [now, setNow] = useState(new Date());
-  const [recentlyCompletedId, setRecentlyCompletedId] = useState<string | null>(null);
+  const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => isSameLocalDay(task.dueDate, now)), [now, tasks]);
   const stats = useMemo(() => {
@@ -40,8 +40,9 @@ export default function WallPage() {
     const willComplete = !task.completedAt;
     await setTaskCompleted(task.id, willComplete, task.assignedToMemberId);
     if (willComplete) {
-      setRecentlyCompletedId(task.id);
-      window.setTimeout(() => setRecentlyCompletedId((current) => (current === task.id ? null : current)), 1400);
+      const message = getCompletionEncouragement(completionFeedback?.message);
+      setCompletionFeedback({ taskId: task.id, message });
+      window.setTimeout(() => setCompletionFeedback((current) => (current?.taskId === task.id ? null : current)), 1400);
     }
   }
 
@@ -55,8 +56,8 @@ export default function WallPage() {
             {new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(now)}
           </p>
         </div>
-        <div className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${recentlyCompletedId ? "shadow-emerald-500/20" : ""}`}>
-          <p className="min-h-5 truncate text-sm font-bold uppercase tracking-[0.18em] text-amber-200">{recentlyCompletedId ? t("niceWork") : t("todaysProgress")}</p>
+        <div className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""}`}>
+          <p className="min-h-5 truncate text-sm font-bold uppercase tracking-[0.18em] text-amber-200">{completionFeedback?.message ?? t("todaysProgress")}</p>
           <p className="mt-2 text-5xl font-black">{stats.completed}/{stats.total}</p>
           <p className="mt-1 min-h-6 truncate font-semibold text-white/70">{t("progressComplete")} · {stats.remaining} {t("remaining")}</p>
         </div>
@@ -75,7 +76,7 @@ export default function WallPage() {
             eyebrow={t("touchToCheckOff")}
             title={t("todaysTasks")}
           />
-          <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={recentlyCompletedId} roomy tasks={todayTasks} />
+          <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
         </section>
         <aside className="grid content-start gap-5">
           <TodayAgenda events={todayEvents} />
