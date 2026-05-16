@@ -81,7 +81,7 @@ export function TaskCard({
             </div>
           ) : (
             <div className="min-w-0">
-              <h3 className={`truncate font-black tracking-tight transition-colors duration-200 ease-[var(--ease-out)] ${roomy ? "text-2xl" : "text-lg"} ${completed ? "line-through decoration-2 underline-offset-4" : ""}`}>
+              <h3 className={`task-title font-black tracking-tight transition-colors duration-200 ease-[var(--ease-out)] ${roomy ? "text-2xl" : "text-lg"} ${completed ? "line-through decoration-2 underline-offset-4" : ""}`}>
                 {task.titleSnapshot}
               </h3>
               <p className={`min-h-5 text-sm font-black text-emerald-700 transition-[opacity,transform] duration-180 ease-[var(--ease-out)] ${celebrated ? "translate-y-0 opacity-100" : "-translate-y-0.5 opacity-0"}`} aria-hidden={!celebrated} aria-live="polite">
