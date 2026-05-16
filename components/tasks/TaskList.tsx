@@ -39,27 +39,34 @@ export function TaskList({
 
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {groups.map((group) => (
-          <MemberTaskGroup key={group.member.id} member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={group.tasks} />
+        {groups.map((group, index) => (
+          <div className="task-waterfall-item" key={group.member.id} style={{ "--task-waterfall-delay": `${index * 55}ms` } as React.CSSProperties}>
+            <MemberTaskGroup member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={group.tasks} />
+          </div>
         ))}
-        {unassigned.length ? <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={unassigned} /> : null}
+        {unassigned.length ? (
+          <div className="task-waterfall-item" style={{ "--task-waterfall-delay": `${groups.length * 55}ms` } as React.CSSProperties}>
+            <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={unassigned} />
+          </div>
+        ) : null}
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {tasks.map((task) => (
-        <TaskCard
-          celebrated={recentlyCompletedId === task.id}
-          completionMessage={recentlyCompletedId === task.id ? completionMessage : undefined}
-          key={task.id}
-          member={members.find((member) => member.id === task.assignedToMemberId)}
-          onEdit={onEdit}
-          onToggle={onToggle}
-          roomy={roomy}
-          task={task}
-        />
+      {tasks.map((task, index) => (
+        <div className="task-waterfall-item" key={task.id} style={{ "--task-waterfall-delay": `${index * 45}ms` } as React.CSSProperties}>
+          <TaskCard
+            celebrated={recentlyCompletedId === task.id}
+            completionMessage={recentlyCompletedId === task.id ? completionMessage : undefined}
+            member={members.find((member) => member.id === task.assignedToMemberId)}
+            onEdit={onEdit}
+            onToggle={onToggle}
+            roomy={roomy}
+            task={task}
+          />
+        </div>
       ))}
     </div>
   );
