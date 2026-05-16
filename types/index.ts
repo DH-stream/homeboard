@@ -20,6 +20,7 @@ export type HouseholdMember = {
 
 export type TaskSource = "manual" | "runai" | "home_assistant" | "automation";
 export type TaskStatus = "active" | "archived";
+export type TaskScheduleType = "once" | "daily" | "weekly";
 
 export type Task = {
   id: string;
@@ -36,9 +37,12 @@ export type Task = {
 export type TaskSchedule = {
   id: string;
   taskId: string;
-  type: "once" | "daily" | "weekly" | "custom";
+  type: TaskScheduleType;
   dueDate?: string;
+  timesOfDay?: string[];
   daysOfWeek?: number[];
+  startsOn?: string;
+  endsOn?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -50,6 +54,8 @@ export type TaskInstance = {
   titleSnapshot: string;
   assignedToMemberId?: string;
   dueDate: string;
+  scheduleId?: string;
+  scheduleType?: TaskScheduleType;
   completedAt?: string;
   completedByMemberId?: string;
   createdAt: string;
@@ -82,11 +88,20 @@ export type Device = {
   defaultView?: string;
 };
 
+export type CreateTaskScheduleInput = {
+  type: TaskSchedule["type"];
+  timesOfDay?: string[];
+  daysOfWeek?: number[];
+  startsOn?: string;
+  endsOn?: string;
+};
+
 export type CreateTaskInput = {
   title: string;
   description?: string;
   assignedToMemberId?: string;
   dueDate?: string;
+  schedule?: CreateTaskScheduleInput;
   source?: TaskSource;
 };
 

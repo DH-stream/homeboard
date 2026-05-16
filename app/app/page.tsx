@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
@@ -18,6 +18,20 @@ import type { TaskInstance } from "@/types";
 
 type Filter = "all" | "open" | "completed";
 
+const DAILY_RECURRING_REVEAL_MINUTES = 90;
+
+function isRecurringTask(task: TaskInstance) {
+  return task.scheduleType === "daily" || task.scheduleType === "weekly";
+}
+
+function shouldShowTodayTask(task: TaskInstance, now: Date) {
+  if (!isSameLocalDay(task.dueDate, now)) return false;
+  if (task.completedAt || task.scheduleType !== "daily") return true;
+
+  const revealAt = new Date(task.dueDate).getTime() - DAILY_RECURRING_REVEAL_MINUTES * 60 * 1000;
+  return now.getTime() >= revealAt;
+}
+
 export default function MobileAppPage() {
   const { getCompletionEncouragement, t } = useLanguage();
   const { members } = useMembers();
@@ -26,9 +40,16 @@ export default function MobileAppPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
+  const [pendingFutureTask, setPendingFutureTask] = useState<TaskInstance | null>(null);
+  const [now, setNow] = useState(() => new Date());
 
-  const todayTasks = useMemo(() => tasks.filter((task) => isSameLocalDay(task.dueDate)), [tasks]);
-  const upcomingTasks = useMemo(() => tasks.filter((task) => isFutureLocalDay(task.dueDate)), [tasks]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000 * 60);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
+  const upcomingTasks = useMemo(() => tasks.filter((task) => !isRecurringTask(task) && isFutureLocalDay(task.dueDate)), [tasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
@@ -44,14 +65,33 @@ export default function MobileAppPage() {
 
   const todayTaskAnimationKey = `today-${memberFilter ?? "all-members"}-${filter}`;
 
-  async function toggleTask(task: TaskInstance) {
-    const willComplete = !task.completedAt;
-    await setTaskCompleted(task.id, willComplete, task.assignedToMemberId);
-    if (willComplete) {
+  async function completeTask(task: TaskInstance, completed: boolean) {
+    await setTaskCompleted(task.id, completed, task.assignedToMemberId);
+    if (completed) {
       const message = getCompletionEncouragement(completionFeedback?.message);
       setCompletionFeedback({ taskId: task.id, message });
       window.setTimeout(() => setCompletionFeedback((current) => (current?.taskId === task.id ? null : current)), 1400);
     }
+  }
+
+  async function toggleTask(task: TaskInstance) {
+    await completeTask(task, !task.completedAt);
+  }
+
+  async function toggleUpcomingTask(task: TaskInstance) {
+    if (!task.completedAt) {
+      setPendingFutureTask(task);
+      return;
+    }
+
+    await completeTask(task, false);
+  }
+
+  async function confirmFutureTaskCompletion() {
+    if (!pendingFutureTask) return;
+    const task = pendingFutureTask;
+    setPendingFutureTask(null);
+    await completeTask(task, true);
   }
 
   const filterLabels: Record<Filter, string> = {
@@ -109,7 +149,7 @@ export default function MobileAppPage() {
           <StatusChip tone="amber">{t("localPreview")}</StatusChip>
         </div>
         {upcomingTasks.length ? (
-          <TaskList animationKey="upcoming" members={members} onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} tasks={upcomingTasks} />
+          <TaskList animationKey="upcoming" members={members} onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })} onToggle={toggleUpcomingTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} tasks={upcomingTasks} />
         ) : (
           <EmptyState title={t("upcoming")}>{t("upcomingEmpty")}</EmptyState>
         )}
@@ -119,6 +159,26 @@ export default function MobileAppPage() {
       <div className="mt-5">
         <TodayAgenda compact events={todayEvents} />
       </div>
+
+      {pendingFutureTask ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 px-4 py-5 backdrop-blur-sm sm:items-center" role="presentation">
+          <section aria-labelledby="future-task-confirm-title" aria-modal="true" className="w-full max-w-md rounded-[2rem] border border-white/80 bg-stone-50 p-5 text-stone-950 shadow-[0_24px_80px_rgba(28,25,23,0.28)]" role="dialog">
+            <div className="mb-4 h-1.5 w-14 rounded-full bg-amber-300" />
+            <h2 className="text-2xl font-black tracking-tight" id="future-task-confirm-title">
+              {t("markFutureTaskCompleteTitle")}
+            </h2>
+            <p className="mt-2 text-base font-semibold leading-7 text-stone-600">{t("markFutureTaskCompleteBody")}</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button className="pressable min-h-12 rounded-2xl border border-stone-200 bg-white px-4 py-3 font-black text-stone-700 shadow-sm" onClick={() => setPendingFutureTask(null)} type="button">
+                {t("cancel")}
+              </button>
+              <button className="pressable min-h-12 rounded-2xl bg-emerald-500 px-4 py-3 font-black text-white shadow-lg shadow-emerald-500/20" onClick={confirmFutureTaskCompletion} type="button">
+                {t("markComplete")}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </AppShell>
   );
 }
