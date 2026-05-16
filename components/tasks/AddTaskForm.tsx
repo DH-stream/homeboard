@@ -7,6 +7,7 @@ import type { CreateTaskInput, HouseholdMember, TaskSchedule } from "@/types";
 type RepeatType = TaskSchedule["type"];
 
 const defaultWeekdays = [1, 2, 3, 4, 5];
+const weekDays = [1, 2, 3, 4, 5, 6, 0];
 
 export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[]; onCreate: (input: CreateTaskInput) => Promise<unknown> }) {
   const { language, t } = useLanguage();
@@ -23,7 +24,7 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
 
   const weekdayLabels = useMemo(
     () =>
-      Array.from({ length: 7 }, (_, day) => {
+      weekDays.map((day) => {
         const date = new Date(2026, 0, 4 + day);
         return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
       }),
@@ -172,11 +173,11 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
         <div className="mt-3 rounded-3xl border border-white/10 bg-white/[0.06] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-white/55">{t("weekdays")}</p>
           <div className="grid grid-cols-7 gap-1">
-            {weekdayLabels.map((label, day) => {
+            {weekDays.map((day, index) => {
               const selected = daysOfWeek.includes(day);
               return (
                 <button className={`pressable min-h-11 rounded-2xl px-1 text-xs font-black ${selected ? "bg-amber-300 text-stone-950" : "bg-white/10 text-white/70"}`} key={day} onClick={() => toggleWeekday(day)} type="button">
-                  {label}
+                  {weekdayLabels[index]}
                 </button>
               );
             })}
