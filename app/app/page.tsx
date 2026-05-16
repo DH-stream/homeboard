@@ -42,6 +42,8 @@ export default function MobileAppPage() {
     });
   }, [filter, memberFilter, todayTasks]);
 
+  const todayTaskAnimationKey = `today-${memberFilter ?? "all-members"}-${filter}`;
+
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
     await setTaskCompleted(task.id, willComplete, task.assignedToMemberId);
@@ -91,6 +93,7 @@ export default function MobileAppPage() {
           ))}
         </div>
         <TaskList
+          animationKey={todayTaskAnimationKey}
           members={members}
           onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })}
           onToggle={toggleTask}
@@ -106,7 +109,7 @@ export default function MobileAppPage() {
           <StatusChip tone="amber">{t("localPreview")}</StatusChip>
         </div>
         {upcomingTasks.length ? (
-          <TaskList members={members} onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} tasks={upcomingTasks} />
+          <TaskList animationKey="upcoming" members={members} onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} tasks={upcomingTasks} />
         ) : (
           <EmptyState title={t("upcoming")}>{t("upcomingEmpty")}</EmptyState>
         )}
