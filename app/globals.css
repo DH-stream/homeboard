@@ -102,7 +102,7 @@ button:disabled {
 }
 
 .task-waterfall-item {
-  animation: task-waterfall-in 260ms var(--ease-out) both;
+  animation: task-waterfall-in 420ms var(--ease-out) both;
   animation-delay: var(--task-waterfall-delay, 0ms);
   transform-origin: 50% 0%;
   will-change: opacity, transform;
@@ -182,7 +182,7 @@ button:disabled {
 @keyframes task-waterfall-in {
   from {
     opacity: 0;
-    transform: translateY(0.55rem) scale(0.985);
+    transform: translateY(0.75rem) scale(0.982);
   }
   to {
     opacity: 1;
