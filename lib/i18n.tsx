@@ -105,7 +105,7 @@ const translations = {
     addTask: "Lägg till uppgift",
     addToToday: "Lägg till i dag",
     adding: "Lägger till…",
-    all: "Alla",
+    all: "Allt",
     allPeople: "Alla",
     anyone: "Vem som helst",
     apiTaskState: "API-uppgifter",
