@@ -124,6 +124,19 @@ button:disabled {
   overflow: hidden;
 }
 
+.task-title {
+  display: -webkit-box;
+  min-height: 1.55em;
+  max-height: 3.1em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.15;
+}
+
 .task-card--celebrate {
   animation: task-card-settle 240ms var(--ease-out), task-card-glow 900ms var(--ease-out);
 }
