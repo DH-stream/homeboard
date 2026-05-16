@@ -101,6 +101,13 @@ button:disabled {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
+.task-waterfall-item {
+  animation: task-waterfall-in 260ms var(--ease-out) both;
+  animation-delay: var(--task-waterfall-delay, 0ms);
+  transform-origin: 50% 0%;
+  will-change: opacity, transform;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .hover-lift:hover {
     transform: translateY(-3px);
@@ -172,6 +179,17 @@ button:disabled {
   animation: task-check-pop 240ms var(--ease-out);
 }
 
+@keyframes task-waterfall-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.55rem) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes task-card-settle {
   from {
     transform: translateY(0.18rem) scale(0.992);
@@ -220,9 +238,11 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .task-waterfall-item,
   .task-card--celebrate,
   .task-card--celebrate::after,
   .task-card--celebrate .task-check--done .task-check-mark {
     animation: none !important;
+    will-change: auto;
   }
 }
