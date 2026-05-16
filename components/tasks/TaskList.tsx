@@ -1,10 +1,15 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MemberTaskGroup } from "@/components/tasks/MemberTaskGroup";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { useLanguage } from "@/lib/i18n";
 import type { HouseholdMember, TaskInstance } from "@/types";
+
+type TaskWaterfallStyle = CSSProperties & {
+  "--task-waterfall-delay": string;
+};
 
 export function TaskList({
   tasks,
@@ -40,12 +45,12 @@ export function TaskList({
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {groups.map((group, index) => (
-          <div className="task-waterfall-item" key={group.member.id} style={{ "--task-waterfall-delay": `${index * 55}ms` } as React.CSSProperties}>
+          <div className="task-waterfall-item" key={group.member.id} style={{ "--task-waterfall-delay": `${index * 55}ms` } as TaskWaterfallStyle}>
             <MemberTaskGroup member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={group.tasks} />
           </div>
         ))}
         {unassigned.length ? (
-          <div className="task-waterfall-item" style={{ "--task-waterfall-delay": `${groups.length * 55}ms` } as React.CSSProperties}>
+          <div className="task-waterfall-item" style={{ "--task-waterfall-delay": `${groups.length * 55}ms` } as TaskWaterfallStyle}>
             <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={unassigned} />
           </div>
         ) : null}
@@ -56,7 +61,7 @@ export function TaskList({
   return (
     <div className="space-y-3">
       {tasks.map((task, index) => (
-        <div className="task-waterfall-item" key={task.id} style={{ "--task-waterfall-delay": `${index * 45}ms` } as React.CSSProperties}>
+        <div className="task-waterfall-item" key={task.id} style={{ "--task-waterfall-delay": `${index * 45}ms` } as TaskWaterfallStyle}>
           <TaskCard
             celebrated={recentlyCompletedId === task.id}
             completionMessage={recentlyCompletedId === task.id ? completionMessage : undefined}
