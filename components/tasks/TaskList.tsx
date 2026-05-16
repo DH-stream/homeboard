@@ -14,6 +14,7 @@ export function TaskList({
   grouped = false,
   roomy = false,
   recentlyCompletedId,
+  completionMessage,
 }: {
   tasks: TaskInstance[];
   members: HouseholdMember[];
@@ -22,6 +23,7 @@ export function TaskList({
   grouped?: boolean;
   roomy?: boolean;
   recentlyCompletedId?: string | null;
+  completionMessage?: string;
 }) {
   const { t } = useLanguage();
 
@@ -38,9 +40,9 @@ export function TaskList({
     return (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {groups.map((group) => (
-          <MemberTaskGroup key={group.member.id} member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} roomy={roomy} tasks={group.tasks} />
+          <MemberTaskGroup key={group.member.id} member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={group.tasks} />
         ))}
-        {unassigned.length ? <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} roomy={roomy} tasks={unassigned} /> : null}
+        {unassigned.length ? <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={unassigned} /> : null}
       </div>
     );
   }
@@ -50,6 +52,7 @@ export function TaskList({
       {tasks.map((task) => (
         <TaskCard
           celebrated={recentlyCompletedId === task.id}
+          completionMessage={recentlyCompletedId === task.id ? completionMessage : undefined}
           key={task.id}
           member={members.find((member) => member.id === task.assignedToMemberId)}
           onEdit={onEdit}
