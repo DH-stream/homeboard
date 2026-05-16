@@ -18,7 +18,7 @@ import type { TaskInstance } from "@/types";
 
 type Filter = "all" | "open" | "completed";
 
-const RECURRING_REVEAL_MINUTES = 90;
+const DAILY_RECURRING_REVEAL_MINUTES = 90;
 
 function isRecurringTask(task: TaskInstance) {
   return task.scheduleType === "daily" || task.scheduleType === "weekly";
@@ -26,9 +26,9 @@ function isRecurringTask(task: TaskInstance) {
 
 function shouldShowTodayTask(task: TaskInstance, now: Date) {
   if (!isSameLocalDay(task.dueDate, now)) return false;
-  if (task.completedAt || !isRecurringTask(task)) return true;
+  if (task.completedAt || task.scheduleType !== "daily") return true;
 
-  const revealAt = new Date(task.dueDate).getTime() - RECURRING_REVEAL_MINUTES * 60 * 1000;
+  const revealAt = new Date(task.dueDate).getTime() - DAILY_RECURRING_REVEAL_MINUTES * 60 * 1000;
   return now.getTime() >= revealAt;
 }
 
