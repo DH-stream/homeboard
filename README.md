@@ -62,7 +62,7 @@ Preview persistence behavior on Vercel:
 
 - The wall/mobile UI stores task state in each browser's `localStorage`, so a reviewer can add and complete tasks and refresh the same browser without losing that preview state.
 - `/api/tasks` uses temporary in-memory server state to shape future RUNAI/Home Assistant API behavior. In Vercel/serverless environments this state is not durable and can reset between invocations or deployments.
-- The UI and API do **not** share the same persistence store in PR #1. API writes do not yet appear in the wall/mobile UI.
+- The UI and API do **not** share the same persistence store yet. API writes do not yet appear in the wall/mobile UI.
 - True multi-device sync is the next backend milestone and should be implemented by replacing the repositories with a shared Supabase/Postgres persistence layer.
 
 ## Architecture overview
@@ -88,7 +88,7 @@ For the preview:
 - Storage mode is **local preview**.
 - Wall/mobile UI task state is stored in browser `localStorage` so added and completed tasks survive refreshes in the same browser.
 - API task state is stored in a temporary in-memory server repository. This is useful for shaping the API but is not durable and should not be treated as production storage.
-- The UI and API are intentionally not connected to the same store yet. API writes from future RUNAI/Home Assistant clients do **not** appear in the wall/mobile UI in PR #1.
+- The UI and API are intentionally not connected to the same store yet. API writes from future RUNAI/Home Assistant clients do **not** appear in the wall/mobile UI yet.
 - Mock calendar events are read-only and loaded through the calendar repository/service.
 - Multi-device sync is not connected yet.
 - The next backend target is Supabase/Postgres.

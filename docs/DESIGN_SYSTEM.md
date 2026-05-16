@@ -2,6 +2,17 @@
 
 HomeBoard should feel calm, premium, and purpose-built for families. The interface is used in two very different contexts: a wall display seen from across a room and a phone used quickly while moving through the day. The design system favors clarity, warmth, restrained motion, and touch-friendly defaults.
 
+## Emil Kowalski design-engineering baseline
+
+HomeBoard follows Emil Kowalski design-engineering principles as the baseline for restrained product polish. Apply those principles naturally in these areas:
+
+- **Interaction polish:** controls should feel tactile and responsive through semantic elements, precise state styling, and subtle active feedback.
+- **Motion restraint:** motion should clarify feedback or state changes, stay lightweight, and prefer transform/opacity over layout-heavy animation.
+- **Touch-first UI:** wall and mobile controls should preserve generous hit areas, immediate press feedback, and hover effects only on hover-capable devices.
+- **Accessible focus/contrast:** keyboard focus must remain obvious, contrast should hold on warm surfaces, and completed/error states should not rely on color alone.
+- **Wall-screen readability:** typography, spacing, progress, and task states should remain legible from across the room.
+- **Mobile responsiveness:** the phone experience should stay comfortable one-handed with compact hierarchy, clear filters, and stable app-like interactions.
+
 ## Design principles
 
 - **Calm first:** the dashboard should reduce household friction, not add noise.
