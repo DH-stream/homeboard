@@ -36,9 +36,12 @@ export type Task = {
 export type TaskSchedule = {
   id: string;
   taskId: string;
-  type: "once" | "daily" | "weekly" | "custom";
+  type: "once" | "daily" | "weekly";
   dueDate?: string;
+  timesOfDay?: string[];
   daysOfWeek?: number[];
+  startsOn?: string;
+  endsOn?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -82,11 +85,20 @@ export type Device = {
   defaultView?: string;
 };
 
+export type CreateTaskScheduleInput = {
+  type: TaskSchedule["type"];
+  timesOfDay?: string[];
+  daysOfWeek?: number[];
+  startsOn?: string;
+  endsOn?: string;
+};
+
 export type CreateTaskInput = {
   title: string;
   description?: string;
   assignedToMemberId?: string;
   dueDate?: string;
+  schedule?: CreateTaskScheduleInput;
   source?: TaskSource;
 };
 

@@ -3,7 +3,7 @@ import { NotFoundError } from "@/lib/errors";
 import { serverTaskRepository } from "@/lib/repositories/taskRepository";
 import { createTaskService } from "@/lib/services/taskService";
 import { isValidDateValue } from "@/lib/utils/date";
-import type { CreateTaskInput, TaskSource, UpdateTaskInstanceInput } from "@/types";
+import type { CreateTaskInput, CreateTaskScheduleInput, TaskSource, UpdateTaskInstanceInput } from "@/types";
 
 const taskService = createTaskService(serverTaskRepository);
 const taskSources: TaskSource[] = ["manual", "runai", "home_assistant", "automation"];
@@ -33,6 +33,54 @@ function optionalString(body: JsonRecord, key: string) {
   return typeof value === "string" ? value : null;
 }
 
+
+function optionalStringArray(body: JsonRecord, key: string) {
+  const value = body[key];
+  if (value === undefined) return undefined;
+  return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : null;
+}
+
+function optionalNumberArray(body: JsonRecord, key: string) {
+  const value = body[key];
+  if (value === undefined) return undefined;
+  return Array.isArray(value) && value.every((item) => typeof item === "number") ? value : null;
+}
+
+function parseSchedule(value: unknown): { schedule?: CreateTaskScheduleInput; error?: NextResponse } {
+  if (value === undefined) return {};
+  if (!isRecord(value)) return { error: jsonError("schedule must be an object when provided.", 400) };
+
+  const type = value.type;
+  if (type !== "once" && type !== "daily" && type !== "weekly") {
+    return { error: jsonError("schedule.type must be once, daily, or weekly.", 400) };
+  }
+
+  const timesOfDay = optionalStringArray(value, "timesOfDay");
+  if (timesOfDay === null) return { error: jsonError("schedule.timesOfDay must be an array of time strings.", 400) };
+
+  const daysOfWeek = optionalNumberArray(value, "daysOfWeek");
+  if (daysOfWeek === null) return { error: jsonError("schedule.daysOfWeek must be an array of numbers.", 400) };
+  if (daysOfWeek?.some((day) => !Number.isInteger(day) || day < 0 || day > 6)) {
+    return { error: jsonError("schedule.daysOfWeek values must be integers from 0 to 6.", 400) };
+  }
+
+  const startsOn = optionalString(value, "startsOn");
+  if (startsOn === null) return { error: jsonError("schedule.startsOn must be a string when provided.", 400) };
+
+  const endsOn = optionalString(value, "endsOn");
+  if (endsOn === null) return { error: jsonError("schedule.endsOn must be a string when provided.", 400) };
+
+  return {
+    schedule: {
+      type,
+      timesOfDay,
+      daysOfWeek,
+      startsOn: startsOn?.trim() || undefined,
+      endsOn: endsOn?.trim() || undefined,
+    },
+  };
+}
+
 function parseCreateTaskInput(body: unknown): { input?: CreateTaskInput; error?: NextResponse } {
   if (!isRecord(body)) return { error: jsonError("Request body must be a JSON object.", 400) };
 
@@ -55,12 +103,16 @@ function parseCreateTaskInput(body: unknown): { input?: CreateTaskInput; error?:
   if (source === null) return { error: jsonError("source must be a string when provided.", 400) };
   if (source && !taskSources.includes(source as TaskSource)) return { error: jsonError("source is not supported.", 400) };
 
+  const parsedSchedule = parseSchedule(body.schedule);
+  if (parsedSchedule.error) return { error: parsedSchedule.error };
+
   return {
     input: {
       title: title.trim(),
       description: description?.trim() || undefined,
       assignedToMemberId: assignedToMemberId?.trim() || undefined,
       dueDate,
+      schedule: parsedSchedule.schedule,
       source: (source as TaskSource | undefined) ?? "manual",
     },
   };
@@ -125,8 +177,8 @@ export async function POST(request: Request) {
   if (parsed.error) return parsed.error;
 
   try {
-    const task = await taskService.createTask(parsed.input!);
-    return NextResponse.json({ task }, { status: 201 });
+    const tasks = await taskService.createTask(parsed.input!);
+    return NextResponse.json({ task: tasks[0], tasks }, { status: 201 });
   } catch (routeError) {
     return handleRouteError(routeError);
   }
