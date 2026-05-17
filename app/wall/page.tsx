@@ -49,7 +49,7 @@ export default function WallPage() {
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
     try {
-      await setTaskCompleted(task.id, willComplete, task.assignedToMemberId);
+      await setTaskCompleted(task, willComplete, task.assignedToMemberId);
     } catch {
       return;
     }

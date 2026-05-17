@@ -194,7 +194,7 @@ export async function PATCH(request: Request) {
   try {
     const task =
       typeof parsed.completed === "boolean"
-        ? await taskService.setTaskCompleted(parsed.input!.id, parsed.completed, parsed.input!.completedByMemberId)
+        ? await taskService.setTaskCompleted(parsed.input!, parsed.completed, parsed.input!.completedByMemberId)
         : await taskService.updateTask(parsed.input!);
 
     return NextResponse.json({ task });

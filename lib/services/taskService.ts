@@ -1,5 +1,5 @@
 import type { TaskRepository } from "@/lib/repositories/taskRepository";
-import type { CreateTaskInput, UpdateTaskInstanceInput } from "@/types";
+import type { CreateTaskInput, TaskInstance, UpdateTaskInstanceInput } from "@/types";
 
 export function createTaskService(repository: TaskRepository) {
   return {
@@ -19,9 +19,17 @@ export function createTaskService(repository: TaskRepository) {
     async updateTask(input: UpdateTaskInstanceInput) {
       return repository.updateTaskInstance(input);
     },
-    async setTaskCompleted(id: string, completed: boolean, completedByMemberId?: string) {
+    async setTaskCompleted(task: TaskInstance | UpdateTaskInstanceInput, completed: boolean, completedByMemberId?: string) {
       return repository.updateTaskInstance({
-        id,
+        id: task.id,
+        taskId: task.taskId,
+        householdId: task.householdId,
+        occurrenceKey: task.occurrenceKey,
+        titleSnapshot: "titleSnapshot" in task ? task.titleSnapshot : undefined,
+        assignedToMemberId: task.assignedToMemberId,
+        dueDate: task.dueDate,
+        scheduleId: task.scheduleId,
+        scheduleType: task.scheduleType,
         completedAt: completed ? new Date().toISOString() : null,
         completedByMemberId,
       });
