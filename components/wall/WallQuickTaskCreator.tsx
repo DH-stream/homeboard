@@ -38,6 +38,8 @@ export function WallQuickTaskCreator({
       setTitle("");
       setAssignedToMemberId(undefined);
       if (variant === "popover") onCancel?.();
+    } catch {
+      // useTasks surfaces/logs repository errors for the page-level calm error state.
     } finally {
       setSaving(false);
     }
@@ -45,7 +47,7 @@ export function WallQuickTaskCreator({
 
   return (
     <form
-      className={`rounded-[1.75rem] border border-white/75 bg-white/78 p-3 shadow-[0_20px_70px_rgba(84,59,34,0.16)] backdrop-blur-xl ${variant === "panel" ? "lg:p-4" : "w-[min(calc(100vw-2rem),26rem)]"}`}
+      className="w-full min-w-0 rounded-[1.75rem] border border-white/75 bg-white/78 p-3 shadow-[0_20px_70px_rgba(84,59,34,0.16)] backdrop-blur-xl lg:p-4"
       onSubmit={handleSubmit}
     >
       <div className="flex items-start justify-between gap-3">

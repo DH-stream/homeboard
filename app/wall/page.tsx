@@ -151,7 +151,7 @@ export default function WallPage() {
             title={t("todaysTasks")}
           />
           {wallTaskCreatorMode === "docked" && isQuickCreatorMounted ? (
-            <div className={`wall-quick-add-panel max-w-xl ${isQuickCreatorOpen ? "wall-quick-add-panel--open" : "wall-quick-add-panel--closing"}`}>
+            <div className={`wall-quick-add-panel w-full min-w-0 ${isQuickCreatorOpen ? "wall-quick-add-panel--open" : "wall-quick-add-panel--closing"}`}>
               <WallQuickTaskCreator members={members} onCancel={closeQuickCreator} onCreateTask={createTask} variant="popover" />
             </div>
           ) : null}
