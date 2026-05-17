@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { WeekPreview } from "@/components/calendar/WeekPreview";
 import { WallShell } from "@/components/layout/WallShell";
@@ -19,6 +19,8 @@ import { formatShortDate, isSameLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
 
 const DAILY_RECURRING_REVEAL_MINUTES = 90;
+const QUICK_CREATOR_CLOSE_MS = 240;
+const QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS = 20;
 
 function shouldShowTodayTask(task: TaskInstance, now: Date) {
   if (!isSameLocalDay(task.dueDate, now)) return false;
@@ -39,6 +41,8 @@ export default function WallPage() {
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
   const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
+  const [isQuickCreatorMounted, setQuickCreatorMounted] = useState(false);
+  const quickCreatorTimerRef = useRef<number | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const stats = useMemo(() => {
@@ -50,6 +54,33 @@ export default function WallPage() {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
     return () => window.clearInterval(timer);
   }, []);
+  const closeQuickCreator = useCallback(() => {
+    if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+
+    setQuickCreatorOpen(false);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    quickCreatorTimerRef.current = window.setTimeout(() => {
+      setQuickCreatorMounted(false);
+      quickCreatorTimerRef.current = null;
+    }, prefersReducedMotion ? QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS : QUICK_CREATOR_CLOSE_MS);
+  }, []);
+
+  const openQuickCreator = useCallback(() => {
+    if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+
+    setQuickCreatorMounted(true);
+    window.requestAnimationFrame(() => setQuickCreatorOpen(true));
+  }, []);
+
+  const toggleQuickCreator = useCallback(() => {
+    if (isQuickCreatorOpen) {
+      closeQuickCreator();
+      return;
+    }
+
+    openQuickCreator();
+  }, [closeQuickCreator, isQuickCreatorOpen, openQuickCreator]);
+
 
   useEffect(() => {
     setWallTaskCreatorMode(readWallTaskCreatorMode());
@@ -60,8 +91,14 @@ export default function WallPage() {
   }, []);
 
   useEffect(() => {
-    if (wallTaskCreatorMode !== "docked") setQuickCreatorOpen(false);
-  }, [wallTaskCreatorMode]);
+    if (wallTaskCreatorMode !== "docked" && isQuickCreatorMounted) closeQuickCreator();
+  }, [closeQuickCreator, isQuickCreatorMounted, wallTaskCreatorMode]);
+
+  useEffect(() => {
+    return () => {
+      if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+    };
+  }, []);
 
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
@@ -107,15 +144,15 @@ export default function WallPage() {
             action={(
               <div className="flex flex-wrap justify-end gap-2">
                 <StatusChip>{t("allPeople")}</StatusChip>
-                {wallTaskCreatorMode === "docked" ? <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={() => setQuickCreatorOpen((current) => !current)} /> : null}
+                {wallTaskCreatorMode === "docked" ? <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={toggleQuickCreator} /> : null}
               </div>
             )}
             eyebrow={t("touchToCheckOff")}
             title={t("todaysTasks")}
           />
-          {wallTaskCreatorMode === "docked" && isQuickCreatorOpen ? (
-            <div className="mb-4 max-w-xl">
-              <WallQuickTaskCreator members={members} onCancel={() => setQuickCreatorOpen(false)} onCreateTask={createTask} variant="popover" />
+          {wallTaskCreatorMode === "docked" && isQuickCreatorMounted ? (
+            <div className={`wall-quick-add-panel max-w-xl ${isQuickCreatorOpen ? "wall-quick-add-panel--open" : "wall-quick-add-panel--closing"}`}>
+              <WallQuickTaskCreator members={members} onCancel={closeQuickCreator} onCreateTask={createTask} variant="popover" />
             </div>
           ) : null}
           {wallTaskCreatorMode === "panel" ? (
