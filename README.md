@@ -8,15 +8,17 @@ The first preview is a Vercel-ready Next.js app with a polished wall dashboard, 
 
 This repository currently ships a usable product preview:
 
-- `/` explains the project and links to the main preview routes.
+- `/` reads this browser's per-device start view from `localStorage`, redirects to `/wall`, `/app`, or `/settings` when configured, and otherwise asks how this device should be used.
 - `/wall` is a landscape/tablet-oriented family dashboard with date/time, member indicators, agenda, week preview, and touch-friendly task completion.
 - `/app` is a mobile-first task app with add, edit, complete/uncomplete, member filtering, status filtering, and an agenda preview.
-- `/settings` shows practical setup areas for household, members, calendar sources, Home Assistant, RUNAI/API tokens, display settings, and backend status, including preview persistence limitations.
+- `/settings` shows practical setup areas for this device, household, members, calendar sources, Home Assistant, RUNAI/API tokens, and backend status, including preview persistence limitations.
 - `/api/tasks` provides basic GET, POST, and PATCH handlers for future API clients with predictable JSON errors for invalid requests.
 
 No real provider sync, paid services, auth system, secrets, or external databases are required to build and run the preview. Calendar source selection is Supabase-ready but remains disabled until Supabase env vars are configured and migrations are run.
 
 > **Persistence mode:** when Supabase is not configured, the wall/mobile UI works local-only from browser `localStorage` on that device. When Supabase is configured, `localStorage` is also used as an offline cache and pending write queue so cached tasks can still be shown while the network is unavailable. The API route still uses temporary server memory and does not share the wall/mobile store yet.
+
+> **Per-device start view:** HomeBoard also stores `homeboard.deviceMode.v1` and `homeboard.defaultRoute.v1` in browser `localStorage`. This lets a wall/iPad device open `/wall` like an appliance, while mobile and admin devices can choose `/app` or `/settings`. First-run setup is intentionally a special one-time HomeBoard moment with original in-project SVG clouds drifting over a warm sky. Future QR-paired devices may store a local device id and sync `devices.defaultView` through Supabase; the current preview is local-only.
 
 ## How to run locally
 
