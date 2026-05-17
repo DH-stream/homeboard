@@ -177,7 +177,7 @@ export async function POST(request: Request) {
   if (parsed.error) return parsed.error;
 
   try {
-    const tasks = await taskService.createTask(parsed.input!);
+    const tasks = await taskService.createTask(null, parsed.input!);
     return NextResponse.json({ task: tasks[0], tasks }, { status: 201 });
   } catch (routeError) {
     return handleRouteError(routeError);

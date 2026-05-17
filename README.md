@@ -56,15 +56,16 @@ HomeBoard is structured as a standard Next.js App Router project and is ready to
 5. Run locally with `npm run dev` when developing.
 6. Verify production output with `npm run build`.
 
-There are no required environment variables to build the first preview. To enable the calendar source foundation, create a Supabase project, copy `.env.example`, set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID`, then run the SQL migrations in `supabase/migrations`.
+There are no required environment variables to build the preview. To enable Supabase-backed household data, create a Supabase project, copy `.env.example`, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`, then either select a household in the app or set the optional `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID` development override.
 
 Preview persistence behavior on Vercel:
 
-- The wall/mobile UI stores task state in each browser's `localStorage`, so a reviewer can add and complete tasks and refresh the same browser without losing that preview state.
-- `/api/tasks` uses temporary in-memory server state to shape future RUNAI/Home Assistant API behavior. In Vercel/serverless environments this state is not durable and can reset between invocations or deployments.
+- When Supabase is not configured or no household id is resolved, the wall/mobile UI keeps using browser `localStorage` preview task state so a reviewer can add and complete tasks and refresh the same browser without losing that preview state.
+- When Supabase is configured and a household id is resolved, the wall/mobile UI reads and writes task instances through the Supabase task repository.
+- `/api/tasks` still uses temporary in-memory server state to shape future RUNAI/Home Assistant API behavior. In Vercel/serverless environments this state is not durable and can reset between invocations or deployments.
 - The UI and API do **not** share the same persistence store yet. API writes do not yet appear in the wall/mobile UI.
 - Calendar source selection is backed by the Supabase-ready repository and schema, but provider login is not implemented yet, so the Settings UI will be empty until calendar connections/sources are created by future integration work.
-- True multi-device task sync is still a future backend milestone.
+- Supabase Auth and RLS are not implemented yet. They must be added before public multi-household production use.
 
 ## Architecture overview
 
@@ -72,14 +73,14 @@ The app intentionally separates UI, hooks, services, repositories, shared types,
 
 - `types/` contains shared domain models for households, members, task templates, task schedules, task instances, calendar connections, calendar sources, calendar events, and devices.
 - `data/` contains non-private mock household, member, and task data for the preview. Calendar connections/sources/events are not mocked as connected provider data.
-- `lib/repositories/` owns temporary task persistence and Supabase-ready calendar persistence adapters.
+- `lib/repositories/` owns the local preview task repository, the Supabase task repository adapter, temporary API task persistence, and Supabase-ready calendar persistence adapters.
 - `lib/services/` owns task, member, and calendar service functions consumed by hooks and API routes.
 - `lib/hooks/` exposes client hooks such as `useTasks`, `useCalendarEvents`, `useHousehold`, and `useMembers`.
 - `components/` contains reusable layout, task, calendar, member, and settings UI components.
 - `supabase/migrations/` contains the durable SQL schema foundation for households, members, calendar connections, calendar sources, and calendar events.
 - `lib/integrations/home-assistant/` and `lib/integrations/runai/` document planned integration boundaries.
 
-Task recurrence is intentionally modeled with templates, schedules, and instances. The UI operates on `TaskInstance` records for today's checklist instead of a single completed boolean on a recurring task template.
+Task recurrence is intentionally modeled with templates, schedules, and instances. The UI operates on `TaskInstance` records for today's checklist instead of a single completed boolean on a recurring task template, and the Supabase path preserves that template / schedule / instance separation.
 
 Design rules for the preview live in `docs/DESIGN_SYSTEM.md`, including motion, accessibility, wall-screen, and mobile interaction guidance.
 
@@ -87,15 +88,17 @@ Design rules for the preview live in `docs/DESIGN_SYSTEM.md`, including motion, 
 
 For the preview:
 
-- Storage mode is **local preview**.
-- Wall/mobile UI task state is stored in browser `localStorage` so added and completed tasks survive refreshes in the same browser.
+- Storage mode is **local preview** unless Supabase is configured and a household id is resolved.
+- Wall/mobile UI task state is stored in browser `localStorage` when local preview mode is active.
+- With Supabase env vars and a selected household, wall/mobile task reads, creates, edits, completes, and uncompletes go through the Supabase `tasks`, `task_schedules`, and `task_instances` schema.
 - API task state is stored in a temporary in-memory server repository. This is useful for shaping the API but is not durable and should not be treated as production storage.
 - The UI and API are intentionally not connected to the same store yet. API writes from future RUNAI/Home Assistant clients do **not** appear in the wall/mobile UI yet.
 - Calendar connections, sources, and events are modeled through a Supabase-ready schema and repository. Without Supabase env vars or a configured household, calendar views safely return no events and Settings explains the setup steps.
 - Calendar provider login is not implemented yet. Calendar source UI will remain empty until Google, Microsoft, iCloud, or ICS integration work creates connection/source rows.
+- Supabase Auth and RLS are not implemented yet and are required before public multi-household production use.
 - Provider credentials and OAuth tokens must never be stored in browser `localStorage`; future credential storage must be server-side only and encrypted/secured.
-- Multi-device sync is not connected yet.
-- The next backend target is Supabase/Postgres.
+- A full task generation scheduler/cron is not implemented yet; task creation generates the same preview window of instances as local mode.
+- The next backend target remains hardening the Supabase/Postgres path.
 
 Future backend replacement should keep the public service/hook contracts stable while swapping repository implementations for durable storage.
 

@@ -37,7 +37,7 @@ export default function MobileAppPage() {
   const { getCompletionEncouragement, t } = useLanguage();
   const { members } = useMembers();
   const { todayEvents } = useCalendarEvents();
-  const { tasks, createTask, setTaskCompleted, updateTask } = useTasks();
+  const { tasks, createTask, setTaskCompleted, updateTask, error: taskError, mode: taskMode } = useTasks();
   const [filter, setFilter] = useState<Filter>("all");
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
@@ -65,9 +65,16 @@ export default function MobileAppPage() {
   }, [filter, memberFilter, todayTasks]);
 
   const todayTaskAnimationKey = `today-${memberFilter ?? "all-members"}-${filter}`;
+  const taskStorageLabel = taskMode === "supabase" ? t("supabaseHouseholdSync") : t("previewStorage");
+  const taskStorageNote = taskMode === "supabase" ? t("supabaseTaskDueDatePreview") : t("dueDatePreview");
 
   async function completeTask(task: TaskInstance, completed: boolean) {
-    await setTaskCompleted(task.id, completed, task.assignedToMemberId);
+    try {
+      await setTaskCompleted(task.id, completed, task.assignedToMemberId);
+    } catch {
+      return;
+    }
+
     if (completed) {
       const message = getCompletionEncouragement(completionFeedback?.message);
       setCompletionFeedback({ taskId: task.id, message });
@@ -121,9 +128,11 @@ export default function MobileAppPage() {
 
       <AddTaskForm members={members} onCreate={createTask} />
 
+      {taskError ? <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{t("tasksSyncError")}</p> : null}
+
       <section className="surface-card mt-5 rounded-[2rem] p-4">
         <div className="mb-3 min-w-0">
-          <StatusChip tone="amber">{t("previewStorage")}</StatusChip>
+          <StatusChip tone={taskMode === "supabase" ? "emerald" : "amber"}>{taskStorageLabel}</StatusChip>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-stone-950">{t("todaysTasks")}</h2>
         </div>
         <MemberFilterPills members={members} onSelectMember={setMemberFilter} selectedMemberId={memberFilter} />
@@ -148,14 +157,14 @@ export default function MobileAppPage() {
       <section className="surface-card mt-5 rounded-[2rem] p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-black tracking-tight text-stone-950">{t("upcoming")}</h2>
-          <StatusChip tone="amber">{t("localPreview")}</StatusChip>
+          <StatusChip tone={taskMode === "supabase" ? "emerald" : "amber"}>{taskStorageLabel}</StatusChip>
         </div>
         {upcomingTasks.length ? (
           <TaskList animationKey="upcoming" members={members} onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })} onToggle={toggleUpcomingTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} tasks={upcomingTasks} />
         ) : (
           <EmptyState title={t("upcoming")}>{t("upcomingEmpty")}</EmptyState>
         )}
-        <p className="mt-3 text-xs font-bold leading-5 text-stone-500">{t("dueDatePreview")}</p>
+        <p className="mt-3 text-xs font-bold leading-5 text-stone-500">{taskStorageNote}</p>
       </section>
 
       <div className="mt-5">
