@@ -1,19 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { mockCalendarRepository } from "@/lib/repositories/calendarRepository";
+import { calendarRepository } from "@/lib/repositories/calendarRepository";
 import { createCalendarService } from "@/lib/services/calendarService";
+import { getConfiguredHouseholdId } from "@/lib/supabase/client";
 import { toLocalDateKey } from "@/lib/utils/date";
 import type { CalendarEvent } from "@/types";
 
-const service = createCalendarService(mockCalendarRepository);
+const service = createCalendarService(calendarRepository);
 
 export function useCalendarEvents() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    setEvents(await service.listEvents());
+    const householdId = getConfiguredHouseholdId();
+    setEvents(await service.listEvents(householdId));
     setLoading(false);
   }, []);
 

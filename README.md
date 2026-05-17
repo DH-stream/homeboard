@@ -14,7 +14,7 @@ This repository currently ships a usable product preview:
 - `/settings` shows practical setup areas for household, members, calendar sources, Home Assistant, RUNAI/API tokens, display settings, and backend status, including preview persistence limitations.
 - `/api/tasks` provides basic GET, POST, and PATCH handlers for future API clients with predictable JSON errors for invalid requests.
 
-No real provider sync, paid services, auth system, secrets, required environment variables, or external databases are required for this preview.
+No real provider sync, paid services, auth system, secrets, or external databases are required to build and run the preview. Calendar source selection is Supabase-ready but remains disabled until Supabase env vars are configured and migrations are run.
 
 > **Preview mode:** the wall/mobile UI uses browser localStorage and the API uses temporary server memory. They do not share a persistence store yet, so API writes do not appear in the wall/mobile UI until the future shared Supabase/Postgres backend is added.
 
@@ -56,25 +56,27 @@ HomeBoard is structured as a standard Next.js App Router project and is ready to
 5. Run locally with `npm run dev` when developing.
 6. Verify production output with `npm run build`.
 
-There are no required environment variables for the first preview version. `.env.example` only contains commented placeholders for future Supabase, Home Assistant, and RUNAI configuration.
+There are no required environment variables to build the first preview. To enable the calendar source foundation, create a Supabase project, copy `.env.example`, set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID`, then run the SQL migrations in `supabase/migrations`.
 
 Preview persistence behavior on Vercel:
 
 - The wall/mobile UI stores task state in each browser's `localStorage`, so a reviewer can add and complete tasks and refresh the same browser without losing that preview state.
 - `/api/tasks` uses temporary in-memory server state to shape future RUNAI/Home Assistant API behavior. In Vercel/serverless environments this state is not durable and can reset between invocations or deployments.
 - The UI and API do **not** share the same persistence store yet. API writes do not yet appear in the wall/mobile UI.
-- True multi-device sync is the next backend milestone and should be implemented by replacing the repositories with a shared Supabase/Postgres persistence layer.
+- Calendar source selection is backed by the Supabase-ready repository and schema, but provider login is not implemented yet, so the Settings UI will be empty until calendar connections/sources are created by future integration work.
+- True multi-device task sync is still a future backend milestone.
 
 ## Architecture overview
 
-The app intentionally separates UI, hooks, services, repositories, shared types, and mock data:
+The app intentionally separates UI, hooks, services, repositories, shared types, Supabase schema, and mock preview data:
 
-- `types/` contains shared domain models for households, members, task templates, task schedules, task instances, calendar events, and devices.
-- `data/` contains non-private mock household, member, task, calendar connection, calendar source, and calendar event data.
-- `lib/repositories/` owns temporary persistence implementations.
+- `types/` contains shared domain models for households, members, task templates, task schedules, task instances, calendar connections, calendar sources, calendar events, and devices.
+- `data/` contains non-private mock household, member, and task data for the preview. Calendar connections/sources/events are not mocked as connected provider data.
+- `lib/repositories/` owns temporary task persistence and Supabase-ready calendar persistence adapters.
 - `lib/services/` owns task, member, and calendar service functions consumed by hooks and API routes.
 - `lib/hooks/` exposes client hooks such as `useTasks`, `useCalendarEvents`, `useHousehold`, and `useMembers`.
 - `components/` contains reusable layout, task, calendar, member, and settings UI components.
+- `supabase/migrations/` contains the durable SQL schema foundation for households, members, calendar connections, calendar sources, and calendar events.
 - `lib/integrations/home-assistant/` and `lib/integrations/runai/` document planned integration boundaries.
 
 Task recurrence is intentionally modeled with templates, schedules, and instances. The UI operates on `TaskInstance` records for today's checklist instead of a single completed boolean on a recurring task template.
@@ -89,7 +91,9 @@ For the preview:
 - Wall/mobile UI task state is stored in browser `localStorage` so added and completed tasks survive refreshes in the same browser.
 - API task state is stored in a temporary in-memory server repository. This is useful for shaping the API but is not durable and should not be treated as production storage.
 - The UI and API are intentionally not connected to the same store yet. API writes from future RUNAI/Home Assistant clients do **not** appear in the wall/mobile UI yet.
-- Mock calendar connections, sources, and events are read-only provider previews loaded through the calendar repository/service. Calendar source enablement is stored only in browser `localStorage` and does not store credentials or tokens.
+- Calendar connections, sources, and events are modeled through a Supabase-ready schema and repository. Without Supabase env vars or a configured household, calendar views safely return no events and Settings explains the setup steps.
+- Calendar provider login is not implemented yet. Calendar source UI will remain empty until Google, Microsoft, iCloud, or ICS integration work creates connection/source rows.
+- Provider credentials and OAuth tokens must never be stored in browser `localStorage`; future credential storage must be server-side only and encrypted/secured.
 - Multi-device sync is not connected yet.
 - The next backend target is Supabase/Postgres.
 
@@ -97,7 +101,7 @@ Future backend replacement should keep the public service/hook contracts stable 
 
 ## Future Supabase/Postgres plan
 
-A production backend can replace the temporary repositories with Supabase or direct Postgres access:
+The first durable schema lives in `supabase/migrations/0001_homeboard_calendar_foundation.sql` and can be applied to a Supabase project. A production backend can continue expanding these tables:
 
 - `households`
 - `household_members`

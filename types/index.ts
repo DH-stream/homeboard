@@ -63,7 +63,7 @@ export type TaskInstance = {
 };
 
 export type CalendarProvider = "google" | "microsoft" | "icloud_caldav" | "ics" | "manual";
-export type CalendarConnectionStatus = "connected" | "needs_reauth" | "error" | "mock";
+export type CalendarConnectionStatus = "needs_setup" | "connected" | "needs_reauth" | "error";
 
 export type CalendarConnection = {
   id: string;
@@ -105,7 +105,7 @@ export type CalendarEvent = {
   endAt: string;
   allDay: boolean;
   color?: string;
-  sourceType: CalendarSourceType;
+  sourceType?: CalendarSourceType;
   externalId?: string;
 };
 
