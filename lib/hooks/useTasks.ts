@@ -4,9 +4,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createTaskService } from "@/lib/services/taskService";
 import { getTaskRepository } from "@/lib/repositories/taskRepository";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
+import { useLanguage, type Language } from "@/lib/i18n";
 import type { CreateTaskInput, TaskInstance, UpdateTaskInstanceInput } from "@/types";
 
+const taskErrorCopy: Record<Language, { load: string; save: string }> = {
+  en: {
+    load: "Unable to load tasks.",
+    save: "Unable to save task.",
+  },
+  sv: {
+    load: "Kunde inte ladda uppgifterna.",
+    save: "Kunde inte spara uppgiften.",
+  },
+};
+
 export function useTasks() {
+  const { language } = useLanguage();
+  const copy = taskErrorCopy[language];
   const { householdId } = useResolvedHouseholdId();
   const { mode, repository } = useMemo(() => getTaskRepository(householdId), [householdId]);
   const service = useMemo(() => createTaskService(repository), [repository]);
@@ -21,11 +35,11 @@ export function useTasks() {
       setError(null);
     } catch (unknownError) {
       console.error(unknownError);
-      setError(unknownError instanceof Error ? unknownError.message : "Unable to load tasks.");
+      setError(unknownError instanceof Error ? unknownError.message : copy.load);
     } finally {
       setLoading(false);
     }
-  }, [householdId, service]);
+  }, [copy.load, householdId, service]);
 
   useEffect(() => {
     refresh();
@@ -39,11 +53,11 @@ export function useTasks() {
         return created;
       } catch (unknownError) {
         console.error(unknownError);
-        setError(unknownError instanceof Error ? unknownError.message : "Unable to save task.");
+        setError(unknownError instanceof Error ? unknownError.message : copy.save);
         throw unknownError;
       }
     },
-    [householdId, refresh, service],
+    [copy.save, householdId, refresh, service],
   );
 
   const updateTask = useCallback(
@@ -54,11 +68,11 @@ export function useTasks() {
         return updated;
       } catch (unknownError) {
         console.error(unknownError);
-        setError(unknownError instanceof Error ? unknownError.message : "Unable to save task.");
+        setError(unknownError instanceof Error ? unknownError.message : copy.save);
         throw unknownError;
       }
     },
-    [refresh, service],
+    [copy.save, refresh, service],
   );
 
   const setTaskCompleted = useCallback(
@@ -69,11 +83,11 @@ export function useTasks() {
         return updated;
       } catch (unknownError) {
         console.error(unknownError);
-        setError(unknownError instanceof Error ? unknownError.message : "Unable to save task.");
+        setError(unknownError instanceof Error ? unknownError.message : copy.save);
         throw unknownError;
       }
     },
-    [refresh, service],
+    [copy.save, refresh, service],
   );
 
   const stats = useMemo(() => {
