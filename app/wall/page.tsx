@@ -38,6 +38,7 @@ export default function WallPage() {
   const [now, setNow] = useState(new Date());
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
   const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
+  const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const stats = useMemo(() => {
@@ -57,6 +58,10 @@ export default function WallPage() {
     window.addEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
     return () => window.removeEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
   }, []);
+
+  useEffect(() => {
+    if (wallTaskCreatorMode !== "docked") setQuickCreatorOpen(false);
+  }, [wallTaskCreatorMode]);
 
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
@@ -99,10 +104,20 @@ export default function WallPage() {
       <div className="mt-6 grid flex-1 gap-5 xl:grid-cols-[1fr_0.9fr]">
         <section className="surface-card rounded-[2.25rem] p-4">
           <SectionHeader
-            action={<StatusChip>{t("allPeople")}</StatusChip>}
+            action={(
+              <div className="flex flex-wrap justify-end gap-2">
+                <StatusChip>{t("allPeople")}</StatusChip>
+                {wallTaskCreatorMode === "docked" ? <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={() => setQuickCreatorOpen((current) => !current)} /> : null}
+              </div>
+            )}
             eyebrow={t("touchToCheckOff")}
             title={t("todaysTasks")}
           />
+          {wallTaskCreatorMode === "docked" && isQuickCreatorOpen ? (
+            <div className="mb-4 max-w-xl">
+              <WallQuickTaskCreator members={members} onCancel={() => setQuickCreatorOpen(false)} onCreateTask={createTask} variant="popover" />
+            </div>
+          ) : null}
           {wallTaskCreatorMode === "panel" ? (
             <div className="mb-4">
               <WallQuickTaskCreator members={members} onCreateTask={createTask} />
@@ -115,8 +130,6 @@ export default function WallPage() {
           <WeekPreview events={events} />
         </aside>
       </div>
-
-      {wallTaskCreatorMode === "docked" ? <WallQuickTaskButton members={members} onCreateTask={createTask} /> : null}
     </WallShell>
   );
 }
