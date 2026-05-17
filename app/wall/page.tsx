@@ -6,11 +6,14 @@ import { WeekPreview } from "@/components/calendar/WeekPreview";
 import { WallShell } from "@/components/layout/WallShell";
 import { MemberBadge } from "@/components/members/MemberBadge";
 import { TaskList } from "@/components/tasks/TaskList";
+import { WallQuickTaskButton } from "@/components/wall/WallQuickTaskButton";
+import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
 import { useTasks } from "@/lib/hooks/useTasks";
+import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type WallTaskCreatorMode } from "@/lib/wallPreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate, isSameLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
@@ -31,9 +34,10 @@ export default function WallPage() {
   const { household } = useHousehold();
   const { members } = useMembers();
   const { events, todayEvents } = useCalendarEvents();
-  const { tasks, setTaskCompleted } = useTasks();
+  const { tasks, createTask, setTaskCompleted } = useTasks();
   const [now, setNow] = useState(new Date());
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
+  const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const stats = useMemo(() => {
@@ -44,6 +48,14 @@ export default function WallPage() {
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    setWallTaskCreatorMode(readWallTaskCreatorMode());
+
+    const handleChange = () => setWallTaskCreatorMode(readWallTaskCreatorMode());
+    window.addEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
+    return () => window.removeEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
   }, []);
 
   async function toggleTask(task: TaskInstance) {
@@ -91,6 +103,11 @@ export default function WallPage() {
             eyebrow={t("touchToCheckOff")}
             title={t("todaysTasks")}
           />
+          {wallTaskCreatorMode === "panel" ? (
+            <div className="mb-4">
+              <WallQuickTaskCreator members={members} onCreateTask={createTask} />
+            </div>
+          ) : null}
           <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
         </section>
         <aside className="grid content-start gap-5">
@@ -98,6 +115,8 @@ export default function WallPage() {
           <WeekPreview events={events} />
         </aside>
       </div>
+
+      {wallTaskCreatorMode === "docked" ? <WallQuickTaskButton members={members} onCreateTask={createTask} /> : null}
     </WallShell>
   );
 }
