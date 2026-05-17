@@ -16,7 +16,7 @@ This repository currently ships a usable product preview:
 
 No real provider sync, paid services, auth system, secrets, or external databases are required to build and run the preview. Calendar source selection is Supabase-ready but remains disabled until Supabase env vars are configured and migrations are run.
 
-> **Preview mode:** the wall/mobile UI uses browser localStorage and the API uses temporary server memory. They do not share a persistence store yet, so API writes do not appear in the wall/mobile UI until the future shared Supabase/Postgres backend is added.
+> **Persistence mode:** when Supabase is not configured, the wall/mobile UI works local-only from browser `localStorage` on that device. When Supabase is configured, `localStorage` is also used as an offline cache and pending write queue so cached tasks can still be shown while the network is unavailable. The API route still uses temporary server memory and does not share the wall/mobile store yet.
 
 ## How to run locally
 
@@ -60,8 +60,9 @@ There are no required environment variables to build the preview. To enable Supa
 
 Preview persistence behavior on Vercel:
 
-- When Supabase is not configured or no household id is resolved, the wall/mobile UI keeps using browser `localStorage` preview task state so a reviewer can add and complete tasks and refresh the same browser without losing that preview state.
-- When Supabase is configured and a household id is resolved, the wall/mobile UI reads and writes task instances through the Supabase task repository.
+- When Supabase is not configured or no household id is resolved, the wall/mobile UI keeps using browser `localStorage` as local-only task storage. It works on this device, but there is no cross-device sync.
+- When Supabase is configured and a household id is resolved, the wall/mobile UI reads source task data from Supabase, writes to Supabase, mirrors successful reads into `homeboard.taskCache.v1`, and retries queued writes from `homeboard.taskSyncQueue.v1` after refresh or the browser `online` event.
+- If Supabase is temporarily unavailable, HomeBoard falls back to the latest local task cache where available and queues create/update writes for later replay. Queue v1 is intentionally simple: completion toggles use last local action wins and no conflict-resolution UI is implemented yet.
 - `/api/tasks` still uses temporary in-memory server state to shape future RUNAI/Home Assistant API behavior. In Vercel/serverless environments this state is not durable and can reset between invocations or deployments.
 - The UI and API do **not** share the same persistence store yet. API writes do not yet appear in the wall/mobile UI.
 - Calendar source selection is backed by the Supabase-ready repository and schema, but provider login is not implemented yet, so the Settings UI will be empty until calendar connections/sources are created by future integration work.
@@ -80,7 +81,7 @@ The app intentionally separates UI, hooks, services, repositories, shared types,
 - `supabase/migrations/` contains the durable SQL schema foundation for households, members, calendar connections, calendar sources, and calendar events.
 - `lib/integrations/home-assistant/` and `lib/integrations/runai/` document planned integration boundaries.
 
-Task recurrence is intentionally modeled with templates, schedules, and instances. The UI operates on `TaskInstance` records for today's checklist instead of a single completed boolean on a recurring task template, and the Supabase path preserves that template / schedule / instance separation.
+Task recurrence is intentionally modeled with templates, schedules, and instances. `tasks` describe what the task is, `task_schedules` describe when it should appear, and `task_instances` store saved state for a specific occurrence only, such as completion or an instance-specific title edit. The read layer derives visible occurrences from tasks + schedules and merges any saved instance state by stable `occurrenceKey` (`taskId::YYYY-MM-DD::HH:mm`), so Supabase does not need a pre-generated backlog of future instances just to render today.
 
 Design rules for the preview live in `docs/DESIGN_SYSTEM.md`, including motion, accessibility, wall-screen, and mobile interaction guidance.
 
@@ -88,17 +89,18 @@ Design rules for the preview live in `docs/DESIGN_SYSTEM.md`, including motion, 
 
 For the preview:
 
-- Storage mode is **local preview** unless Supabase is configured and a household id is resolved.
-- Wall/mobile UI task state is stored in browser `localStorage` when local preview mode is active.
-- With Supabase env vars and a selected household, wall/mobile task reads, creates, edits, completes, and uncompletes go through the Supabase `tasks`, `task_schedules`, and `task_instances` schema.
+- Storage mode is **local-only** unless Supabase is configured and a household id is resolved.
+- Wall/mobile UI task state is stored in browser `localStorage` in local-only mode, so refreshes on the same device keep working without cross-device sync.
+- With Supabase env vars and a selected household, wall/mobile task reads load `tasks`, `task_schedules`, and saved `task_instances` from Supabase, cache the latest source data locally, and derive visible occurrences in the read layer. Writes go to Supabase when reachable and are queued in localStorage when temporarily offline.
 - API task state is stored in a temporary in-memory server repository. This is useful for shaping the API but is not durable and should not be treated as production storage.
 - The UI and API are intentionally not connected to the same store yet. API writes from future RUNAI/Home Assistant clients do **not** appear in the wall/mobile UI yet.
 - Calendar connections, sources, and events are modeled through a Supabase-ready schema and repository. Without Supabase env vars or a configured household, calendar views safely return no events and Settings explains the setup steps.
 - Calendar provider login is not implemented yet. Calendar source UI will remain empty until Google, Microsoft, iCloud, or ICS integration work creates connection/source rows.
 - Supabase Auth and RLS are not implemented yet and are required before public multi-household production use.
 - Provider credentials and OAuth tokens must never be stored in browser `localStorage`; future credential storage must be server-side only and encrypted/secured.
-- A full task generation scheduler/cron is not implemented yet; task creation generates the same preview window of instances as local mode.
-- The next backend target remains hardening the Supabase/Postgres path.
+- A full task generation scheduler/cron is intentionally not needed for the current read model; recurring occurrences are derived on read and `task_instances` are created only when per-occurrence state is saved.
+- Full recurring edit semantics are future work. Editing a visible title remains instance-specific for now.
+- The next backend target remains hardening the Supabase/Postgres path with Auth/RLS before public multi-household production use.
 
 Future backend replacement should keep the public service/hook contracts stable while swapping repository implementations for durable storage.
 

@@ -4,12 +4,15 @@ import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabas
 import { atLocalTime, toLocalDateKey } from "@/lib/utils/date";
 import type { CreateTaskInput, Task, TaskInstance, TaskSchedule, TaskScheduleType, UpdateTaskInstanceInput } from "@/types";
 
-const TASK_STORAGE_KEY = "homeboard.taskInstances.v1";
-const TEMPLATE_STORAGE_KEY = "homeboard.taskTemplates.v1";
-const SCHEDULE_STORAGE_KEY = "homeboard.taskSchedules.v1";
+const LEGACY_TASK_STORAGE_KEY = "homeboard.taskInstances.v1";
+const LEGACY_TEMPLATE_STORAGE_KEY = "homeboard.taskTemplates.v1";
+const LEGACY_SCHEDULE_STORAGE_KEY = "homeboard.taskSchedules.v1";
+const TASK_CACHE_KEY = "homeboard.taskCache.v1";
+const TASK_SYNC_QUEUE_KEY = "homeboard.taskSyncQueue.v1";
 const DEFAULT_HOUSEHOLD_ID = "household-demo";
 const DAILY_PREVIEW_DAYS = 7;
 const WEEKLY_PREVIEW_DAYS = 14;
+const OCCURRENCE_KEY_DELIMITER = "::";
 
 export type TaskRepositoryMode = "local" | "supabase";
 
@@ -18,7 +21,20 @@ export interface TaskRepository {
   listTaskInstances(householdId?: string | null): Promise<TaskInstance[]>;
   createTask(householdId: string | null, input: CreateTaskInput): Promise<TaskInstance[]>;
   updateTaskInstance(input: UpdateTaskInstanceInput): Promise<TaskInstance>;
+  flushPendingWrites?(householdId?: string | null): Promise<void>;
 }
+
+type TaskCache = {
+  version: 1;
+  updatedAt: string;
+  tasks: Task[];
+  schedules: TaskSchedule[];
+  instances: TaskInstance[];
+};
+
+type TaskSyncQueueItem =
+  | { id: string; type: "createTask"; householdId: string | null; input: CreateTaskInput; task?: Task; schedule?: TaskSchedule; createdAt: string }
+  | { id: string; type: "updateTaskInstance"; input: UpdateTaskInstanceInput; createdAt: string };
 
 type TaskRow = {
   id: string;
@@ -49,6 +65,7 @@ type TaskInstanceRow = {
   id: string;
   task_id: string;
   household_id: string;
+  occurrence_key: string | null;
   title_snapshot: string;
   assigned_to_member_id: string | null;
   due_date: string;
@@ -94,6 +111,7 @@ function mapInstance(row: TaskInstanceRow): TaskInstance {
     id: row.id,
     taskId: row.task_id,
     householdId: row.household_id,
+    occurrenceKey: row.occurrence_key ?? buildOccurrenceKey(row.task_id, row.due_date),
     titleSnapshot: row.title_snapshot,
     assignedToMemberId: row.assigned_to_member_id ?? undefined,
     dueDate: row.due_date,
@@ -128,10 +146,14 @@ function writeJson<T>(key: string, value: T) {
 
 function createId(prefix: string) {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefix}-${crypto.randomUUID()}`;
+    return crypto.randomUUID();
   }
 
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function createQueueId() {
+  return createId("task-sync");
 }
 
 function todayAtEndOfDay() {
@@ -140,28 +162,62 @@ function todayAtEndOfDay() {
   return due.toISOString();
 }
 
-function readTemplates() {
-  return readJson<Task[]>(TEMPLATE_STORAGE_KEY, mockTasks);
+function defaultCache(): TaskCache {
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    tasks: mockTasks,
+    schedules: mockTaskSchedules,
+    instances: mockTaskInstances.map(normaliseInstanceIdentity),
+  };
 }
 
-function readSchedules() {
-  return readJson<TaskSchedule[]>(SCHEDULE_STORAGE_KEY, mockTaskSchedules);
+function normaliseInstanceIdentity(instance: TaskInstance): TaskInstance {
+  return {
+    ...instance,
+    occurrenceKey: instance.occurrenceKey ?? buildOccurrenceKey(instance.taskId, instance.dueDate),
+  };
 }
 
-function readInstances() {
-  return readJson<TaskInstance[]>(TASK_STORAGE_KEY, mockTaskInstances);
+function readTaskCache(fallbackToMock = true): TaskCache {
+  const fallback = fallbackToMock ? defaultCache() : { version: 1 as const, updatedAt: new Date().toISOString(), tasks: [], schedules: [], instances: [] };
+  const cached = readJson<TaskCache | null>(TASK_CACHE_KEY, null);
+  if (cached?.version === 1) {
+    return { ...cached, instances: cached.instances.map(normaliseInstanceIdentity) };
+  }
+
+  const legacyTasks = readJson<Task[] | null>(LEGACY_TEMPLATE_STORAGE_KEY, null);
+  const legacySchedules = readJson<TaskSchedule[] | null>(LEGACY_SCHEDULE_STORAGE_KEY, null);
+  const legacyInstances = readJson<TaskInstance[] | null>(LEGACY_TASK_STORAGE_KEY, null);
+  if (legacyTasks || legacySchedules || legacyInstances) {
+    const migrated = {
+      version: 1 as const,
+      updatedAt: new Date().toISOString(),
+      tasks: legacyTasks ?? mockTasks,
+      schedules: legacySchedules ?? mockTaskSchedules,
+      instances: (legacyInstances ?? mockTaskInstances).map(normaliseInstanceIdentity),
+    };
+    writeTaskCache(migrated);
+    return migrated;
+  }
+
+  return fallback;
 }
 
-function saveTemplates(tasks: Task[]) {
-  writeJson(TEMPLATE_STORAGE_KEY, tasks);
+function writeTaskCache(cache: TaskCache) {
+  writeJson(TASK_CACHE_KEY, { ...cache, instances: cache.instances.map(normaliseInstanceIdentity) });
 }
 
-function saveSchedules(schedules: TaskSchedule[]) {
-  writeJson(SCHEDULE_STORAGE_KEY, schedules);
+function readQueue() {
+  return readJson<TaskSyncQueueItem[]>(TASK_SYNC_QUEUE_KEY, []);
 }
 
-function saveInstances(tasks: TaskInstance[]) {
-  writeJson(TASK_STORAGE_KEY, tasks);
+function writeQueue(queue: TaskSyncQueueItem[]) {
+  writeJson(TASK_SYNC_QUEUE_KEY, queue);
+}
+
+function enqueue(item: { type: "createTask"; householdId: string | null; input: CreateTaskInput; task?: Task; schedule?: TaskSchedule } | { type: "updateTaskInstance"; input: UpdateTaskInstanceInput }) {
+  writeQueue([...readQueue(), { ...item, id: createQueueId(), createdAt: new Date().toISOString() } as TaskSyncQueueItem]);
 }
 
 function parseTime(value: string) {
@@ -191,11 +247,22 @@ function dateForTime(date: Date, time: string) {
   return atLocalTime(hours, minutes, date);
 }
 
-function createInstance(task: Task, schedule: TaskSchedule, dueDate: string, now: string): TaskInstance {
+function localTimeKey(value: Date | string) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+export function buildOccurrenceKey(taskId: string, dueDate: string) {
+  return [taskId, toLocalDateKey(dueDate), localTimeKey(dueDate)].join(OCCURRENCE_KEY_DELIMITER);
+}
+
+function createInstance(task: Task, schedule: TaskSchedule, dueDate: string, now: string, persisted = false): TaskInstance {
+  const occurrenceKey = buildOccurrenceKey(task.id, dueDate);
   return {
-    id: createId("instance"),
+    id: persisted ? createId("instance") : `virtual${OCCURRENCE_KEY_DELIMITER}${occurrenceKey}`,
     taskId: task.id,
     householdId: task.householdId,
+    occurrenceKey,
     titleSnapshot: task.title,
     assignedToMemberId: task.assignedToMemberId,
     dueDate,
@@ -223,6 +290,8 @@ function scheduleFromInput(input: CreateTaskInput, taskId: string, now: string):
 }
 
 function generateInstances(task: Task, schedule: TaskSchedule, now: string) {
+  if (task.status !== "active") return [];
+
   if (schedule.type === "once") {
     return [createInstance(task, schedule, schedule.dueDate ?? todayAtEndOfDay(), now)];
   }
@@ -251,6 +320,40 @@ function generateInstances(task: Task, schedule: TaskSchedule, now: string) {
   return instances;
 }
 
+function mergeGeneratedAndSavedInstances(tasks: Task[], schedules: TaskSchedule[], savedInstances: TaskInstance[]) {
+  const now = new Date().toISOString();
+  const savedByOccurrence = new Map<string, TaskInstance>();
+  const savedByTaskAndDueDate = new Map<string, TaskInstance>();
+
+  for (const saved of savedInstances.map(normaliseInstanceIdentity)) {
+    if (saved.occurrenceKey) savedByOccurrence.set(saved.occurrenceKey, saved);
+    savedByTaskAndDueDate.set(`${saved.taskId}${OCCURRENCE_KEY_DELIMITER}${saved.dueDate}`, saved);
+  }
+
+  return schedules
+    .flatMap((schedule) => {
+      const task = tasks.find((candidate) => candidate.id === schedule.taskId);
+      if (!task) return [];
+      return generateInstances(task, schedule, now).map((generated) => {
+        const saved = savedByOccurrence.get(generated.occurrenceKey ?? "") ?? savedByTaskAndDueDate.get(`${generated.taskId}${OCCURRENCE_KEY_DELIMITER}${generated.dueDate}`);
+        if (!saved) return generated;
+
+        return {
+          ...generated,
+          ...saved,
+          id: saved.id,
+          occurrenceKey: saved.occurrenceKey ?? generated.occurrenceKey,
+          taskId: generated.taskId,
+          householdId: generated.householdId,
+          dueDate: saved.dueDate ?? generated.dueDate,
+          scheduleId: generated.scheduleId,
+          scheduleType: generated.scheduleType,
+        };
+      });
+    })
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+}
+
 function createTaskRecords(input: CreateTaskInput, householdId: string | null = DEFAULT_HOUSEHOLD_ID) {
   const now = new Date().toISOString();
   const task: Task = {
@@ -271,54 +374,108 @@ function createTaskRecords(input: CreateTaskInput, householdId: string | null = 
 }
 
 function updateInstance(existing: TaskInstance, input: UpdateTaskInstanceInput): TaskInstance {
+  const dueDate = input.dueDate ?? existing.dueDate;
   return {
     ...existing,
+    occurrenceKey: input.occurrenceKey ?? existing.occurrenceKey ?? buildOccurrenceKey(input.taskId ?? existing.taskId, dueDate),
     titleSnapshot: input.titleSnapshot ?? existing.titleSnapshot,
     assignedToMemberId: input.assignedToMemberId ?? existing.assignedToMemberId,
-    dueDate: input.dueDate ?? existing.dueDate,
+    dueDate,
     completedAt: input.completedAt === null ? undefined : input.completedAt ?? existing.completedAt,
     completedByMemberId: input.completedAt === null ? undefined : input.completedByMemberId ?? existing.completedByMemberId,
     updatedAt: new Date().toISOString(),
   };
 }
 
+function applyInstanceUpdateToCache(input: UpdateTaskInstanceInput, fallbackHouseholdId = DEFAULT_HOUSEHOLD_ID) {
+  const cache = readTaskCache(false);
+  const occurrenceKey = input.occurrenceKey ?? (input.taskId && input.dueDate ? buildOccurrenceKey(input.taskId, input.dueDate) : undefined);
+  const existing = cache.instances.find((instance) => instance.id === input.id || (occurrenceKey && instance.occurrenceKey === occurrenceKey));
+
+  if (existing) {
+    const updated = updateInstance(existing, input);
+    writeTaskCache({ ...cache, updatedAt: new Date().toISOString(), instances: cache.instances.map((instance) => (instance.id === existing.id ? updated : instance)) });
+    return updated;
+  }
+
+  if (!input.taskId || !input.dueDate) {
+    const generated = mergeGeneratedAndSavedInstances(cache.tasks, cache.schedules, cache.instances).find((instance) => instance.id === input.id);
+    if (!generated) throw new NotFoundError(`Task instance ${input.id} was not found.`);
+
+    return applyInstanceUpdateToCache({
+      taskId: generated.taskId,
+      householdId: generated.householdId,
+      occurrenceKey: generated.occurrenceKey,
+      titleSnapshot: generated.titleSnapshot,
+      assignedToMemberId: generated.assignedToMemberId,
+      dueDate: generated.dueDate,
+      scheduleId: generated.scheduleId,
+      scheduleType: generated.scheduleType,
+      ...input,
+    }, fallbackHouseholdId);
+  }
+
+  const task = cache.tasks.find((candidate) => candidate.id === input.taskId);
+  const schedule = cache.schedules.find((candidate) => candidate.id === input.scheduleId || candidate.taskId === input.taskId);
+  const now = new Date().toISOString();
+  const created: TaskInstance = updateInstance(
+    {
+      id: createId("instance"),
+      taskId: input.taskId,
+      householdId: input.householdId ?? task?.householdId ?? fallbackHouseholdId,
+      occurrenceKey: occurrenceKey ?? buildOccurrenceKey(input.taskId, input.dueDate),
+      titleSnapshot: input.titleSnapshot ?? task?.title ?? "",
+      assignedToMemberId: input.assignedToMemberId ?? task?.assignedToMemberId,
+      dueDate: input.dueDate,
+      scheduleId: input.scheduleId ?? schedule?.id,
+      scheduleType: input.scheduleType ?? schedule?.type,
+      createdAt: now,
+      updatedAt: now,
+    },
+    input,
+  );
+
+  writeTaskCache({ ...cache, updatedAt: now, instances: [...cache.instances, created] });
+  return created;
+}
+
 /**
- * Temporary localStorage-backed task repository for the product preview.
- * Supabase-backed sync is selected only when Supabase and a household id are both available.
+ * localStorage-backed task repository. It is local-only when Supabase is not configured
+ * and doubles as the offline cache backing Supabase sync mode.
  */
 export class LocalTaskRepository implements TaskRepository {
   async listTaskTemplates() {
-    return readTemplates();
+    return readTaskCache().tasks;
   }
 
   async listTaskInstances() {
-    return readInstances().sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    const cache = readTaskCache();
+    return mergeGeneratedAndSavedInstances(cache.tasks, cache.schedules, cache.instances);
   }
 
   async createTask(householdId: string | null, input: CreateTaskInput) {
     const { task, schedule, instances } = createTaskRecords(input, householdId);
+    const cache = readTaskCache();
 
-    saveTemplates([...readTemplates(), task]);
-    saveSchedules([...readSchedules(), schedule]);
-    saveInstances([...readInstances(), ...instances]);
+    writeTaskCache({
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      tasks: [...cache.tasks, task],
+      schedules: [...cache.schedules, schedule],
+      instances: cache.instances,
+    });
     return instances;
   }
 
-  async updateTaskInstance(input: UpdateTaskInstanceInput) {
-    const instances = readInstances();
-    const existing = instances.find((task) => task.id === input.id);
-    if (!existing) {
-      throw new NotFoundError(`Task instance ${input.id} was not found.`);
-    }
-
-    const updated = updateInstance(existing, input);
-    saveInstances(instances.map((task) => (task.id === input.id ? updated : task)));
-    return updated;
+  async updateTaskInstance(input: UpdateTaskInstanceInput): Promise<TaskInstance> {
+    return applyInstanceUpdateToCache(input);
   }
 }
 
 export class SupabaseTaskRepository implements TaskRepository {
   private readonly client = createBrowserSupabaseClient();
+
+  private instanceSelect = "id, task_id, household_id, occurrence_key, title_snapshot, assigned_to_member_id, due_date, schedule_id, schedule_type, completed_at, completed_by_member_id, created_at, updated_at";
 
   async listTaskTemplates(householdId?: string | null) {
     if (!this.client || !householdId) return [];
@@ -333,84 +490,92 @@ export class SupabaseTaskRepository implements TaskRepository {
     return ((data ?? []) as TaskRow[]).map(mapTask);
   }
 
-  async listTaskInstances(householdId?: string | null) {
-    if (!this.client || !householdId) return [];
+  private async listTaskSchedules(taskIds: string[]) {
+    if (!this.client || !taskIds.length) return [];
+
+    const { data, error } = await this.client
+      .from("task_schedules")
+      .select("id, task_id, type, due_date, times_of_day, days_of_week, starts_on, ends_on, created_at, updated_at")
+      .in("task_id", taskIds)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return ((data ?? []) as TaskScheduleRow[]).map(mapSchedule);
+  }
+
+  private async listSavedInstances(householdId: string) {
+    if (!this.client) return [];
 
     const { data, error } = await this.client
       .from("task_instances")
-      .select("id, task_id, household_id, title_snapshot, assigned_to_member_id, due_date, schedule_id, schedule_type, completed_at, completed_by_member_id, created_at, updated_at")
+      .select(this.instanceSelect)
       .eq("household_id", householdId)
       .order("due_date", { ascending: true });
 
     if (error) throw error;
-    return ((data ?? []) as TaskInstanceRow[]).map(mapInstance);
+    return ((data ?? []) as unknown as TaskInstanceRow[]).map(mapInstance);
+  }
+
+  async listTaskInstances(householdId?: string | null) {
+    if (!this.client || !householdId) return [];
+
+    const tasks = await this.listTaskTemplates(householdId);
+    const schedules = await this.listTaskSchedules(tasks.map((task) => task.id));
+    const instances = await this.listSavedInstances(householdId);
+    writeTaskCache({ version: 1, updatedAt: new Date().toISOString(), tasks, schedules, instances });
+    return mergeGeneratedAndSavedInstances(tasks, schedules, instances);
   }
 
   async createTask(householdId: string | null, input: CreateTaskInput) {
+    const { task, schedule } = createTaskRecords(input, householdId);
+    return this.createTaskFromRecords(householdId, input, task, schedule);
+  }
+
+  async createTaskFromRecords(householdId: string | null, input: CreateTaskInput, task: Task, schedule: TaskSchedule) {
     if (!this.client || !householdId) throw new Error("Supabase is not configured for task sync.");
 
-    const now = new Date().toISOString();
     const { data: taskData, error: taskError } = await this.client
       .from("tasks")
       .insert({
+        id: task.id,
         household_id: householdId,
-        title: input.title,
-        description: input.description ?? null,
-        assigned_to_member_id: input.assignedToMemberId || null,
-        status: "active",
-        source: input.source ?? "manual",
+        title: task.title,
+        description: input.description ?? task.description ?? null,
+        assigned_to_member_id: task.assignedToMemberId || null,
+        status: task.status,
+        source: task.source,
       })
       .select("id, household_id, title, description, assigned_to_member_id, status, source, created_at, updated_at")
       .single();
 
     if (taskError) throw taskError;
-    const task = mapTask(taskData as TaskRow);
-    const scheduleDraft = scheduleFromInput(input, task.id, now);
+    const savedTask = mapTask(taskData as TaskRow);
 
     const { data: scheduleData, error: scheduleError } = await this.client
       .from("task_schedules")
       .insert({
-        task_id: task.id,
-        type: scheduleDraft.type,
-        due_date: scheduleDraft.dueDate ?? null,
-        times_of_day: scheduleDraft.timesOfDay ?? null,
-        days_of_week: scheduleDraft.daysOfWeek ?? null,
-        starts_on: scheduleDraft.startsOn ?? null,
-        ends_on: scheduleDraft.endsOn ?? null,
+        id: schedule.id,
+        task_id: savedTask.id,
+        type: schedule.type,
+        due_date: schedule.dueDate ?? null,
+        times_of_day: schedule.timesOfDay ?? null,
+        days_of_week: schedule.daysOfWeek ?? null,
+        starts_on: schedule.startsOn ?? null,
+        ends_on: schedule.endsOn ?? null,
       })
       .select("id, task_id, type, due_date, times_of_day, days_of_week, starts_on, ends_on, created_at, updated_at")
       .single();
 
     if (scheduleError) throw scheduleError;
-    const schedule = mapSchedule(scheduleData as TaskScheduleRow);
-    const generatedInstances = generateInstances(task, schedule, now);
-    if (!generatedInstances.length) return [];
-
-    const { data: instanceData, error: instanceError } = await this.client
-      .from("task_instances")
-      .insert(
-        generatedInstances.map((instance) => ({
-          task_id: instance.taskId,
-          household_id: householdId,
-          title_snapshot: instance.titleSnapshot,
-          assigned_to_member_id: instance.assignedToMemberId ?? null,
-          due_date: instance.dueDate,
-          schedule_id: instance.scheduleId ?? null,
-          schedule_type: instance.scheduleType ?? null,
-          completed_at: null,
-          completed_by_member_id: null,
-        })),
-      )
-      .select("id, task_id, household_id, title_snapshot, assigned_to_member_id, due_date, schedule_id, schedule_type, completed_at, completed_by_member_id, created_at, updated_at")
-      .order("due_date", { ascending: true });
-
-    if (instanceError) throw instanceError;
-    return ((instanceData ?? []) as TaskInstanceRow[]).map(mapInstance);
+    const savedSchedule = mapSchedule(scheduleData as TaskScheduleRow);
+    return generateInstances(savedTask, savedSchedule, new Date().toISOString());
   }
 
-  async updateTaskInstance(input: UpdateTaskInstanceInput) {
+  async updateTaskInstance(input: UpdateTaskInstanceInput): Promise<TaskInstance> {
     if (!this.client) throw new Error("Supabase is not configured for task sync.");
 
+    const occurrenceKey = input.occurrenceKey ?? (input.taskId && input.dueDate ? buildOccurrenceKey(input.taskId, input.dueDate) : undefined);
+    const now = new Date().toISOString();
     const values: Partial<{
       title_snapshot: string;
       assigned_to_member_id: string | null;
@@ -418,7 +583,7 @@ export class SupabaseTaskRepository implements TaskRepository {
       completed_at: string | null;
       completed_by_member_id: string | null;
       updated_at: string;
-    }> = { updated_at: new Date().toISOString() };
+    }> = { updated_at: now };
 
     if (input.titleSnapshot !== undefined) values.title_snapshot = input.titleSnapshot;
     if (input.assignedToMemberId !== undefined) values.assigned_to_member_id = input.assignedToMemberId || null;
@@ -430,29 +595,146 @@ export class SupabaseTaskRepository implements TaskRepository {
       values.completed_by_member_id = input.completedByMemberId || null;
     }
 
+    const existing = occurrenceKey ? await this.findInstanceByOccurrence(input.taskId, occurrenceKey) : null;
+    if (existing || !input.id.startsWith("virtual")) {
+      const targetId = existing?.id ?? input.id;
+      const { data, error } = await this.client.from("task_instances").update(values).eq("id", targetId).select(this.instanceSelect).single();
+      if (error) throw error;
+      return mapInstance(data as unknown as TaskInstanceRow);
+    }
+
+    if (!input.taskId || !input.householdId || !input.dueDate) {
+      throw new NotFoundError(`Task instance ${input.id} was not found.`);
+    }
+
     const { data, error } = await this.client
       .from("task_instances")
-      .update(values)
-      .eq("id", input.id)
-      .select("id, task_id, household_id, title_snapshot, assigned_to_member_id, due_date, schedule_id, schedule_type, completed_at, completed_by_member_id, created_at, updated_at")
+      .insert({
+        task_id: input.taskId,
+        household_id: input.householdId,
+        occurrence_key: occurrenceKey ?? buildOccurrenceKey(input.taskId, input.dueDate),
+        title_snapshot: input.titleSnapshot ?? "",
+        assigned_to_member_id: input.assignedToMemberId ?? null,
+        due_date: input.dueDate,
+        schedule_id: input.scheduleId ?? null,
+        schedule_type: input.scheduleType ?? null,
+        completed_at: input.completedAt ?? null,
+        completed_by_member_id: input.completedAt === null ? null : input.completedByMemberId ?? null,
+      })
+      .select(this.instanceSelect)
       .single();
 
     if (error) throw error;
-    return mapInstance(data as TaskInstanceRow);
+    return mapInstance(data as unknown as TaskInstanceRow);
+  }
+
+  private async findInstanceByOccurrence(taskId?: string, occurrenceKey?: string) {
+    if (!this.client || !taskId || !occurrenceKey) return null;
+
+    const { data, error } = await this.client.from("task_instances").select(this.instanceSelect).eq("task_id", taskId).eq("occurrence_key", occurrenceKey).maybeSingle();
+    if (error) throw error;
+    return data ? mapInstance(data as unknown as TaskInstanceRow) : null;
+  }
+}
+
+export class CachedTaskRepository implements TaskRepository {
+  constructor(private readonly remote: SupabaseTaskRepository, private readonly local: LocalTaskRepository) {}
+
+  async listTaskTemplates(householdId?: string | null) {
+    try {
+      return await this.remote.listTaskTemplates(householdId);
+    } catch (error) {
+      console.warn("HomeBoard task sync is offline; using cached task templates.", error);
+      return readTaskCache(false).tasks;
+    }
+  }
+
+  async listTaskInstances(householdId?: string | null) {
+    await this.flushPendingWrites(householdId);
+    try {
+      return await this.remote.listTaskInstances(householdId);
+    } catch (error) {
+      console.warn("HomeBoard task sync is offline; using cached task occurrences.", error);
+      const cache = readTaskCache(false);
+      return mergeGeneratedAndSavedInstances(cache.tasks, cache.schedules, cache.instances);
+    }
+  }
+
+  async createTask(householdId: string | null, input: CreateTaskInput) {
+    try {
+      const created = await this.remote.createTask(householdId, input);
+      await this.remote.listTaskInstances(householdId);
+      return created;
+    } catch (error) {
+      console.warn("HomeBoard task sync create is queued until Supabase is reachable.", error);
+      const { task, schedule, instances } = createTaskRecords(input, householdId);
+      const cache = readTaskCache(false);
+      writeTaskCache({
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        tasks: [...cache.tasks, task],
+        schedules: [...cache.schedules, schedule],
+        instances: cache.instances,
+      });
+      enqueue({ type: "createTask", householdId, input, task, schedule });
+      return instances;
+    }
+  }
+
+  async updateTaskInstance(input: UpdateTaskInstanceInput): Promise<TaskInstance> {
+    try {
+      const updated = await this.remote.updateTaskInstance(input);
+      applyInstanceUpdateToCache({ ...input, id: updated.id, occurrenceKey: updated.occurrenceKey, completedAt: updated.completedAt ?? null, completedByMemberId: updated.completedByMemberId });
+      return updated;
+    } catch (error) {
+      console.warn("HomeBoard task sync update is queued until Supabase is reachable.", error);
+      enqueue({ type: "updateTaskInstance", input });
+      return applyInstanceUpdateToCache(input);
+    }
+  }
+
+  async flushPendingWrites(householdId?: string | null) {
+    const queue = readQueue();
+    if (!queue.length) return;
+
+    const remaining: TaskSyncQueueItem[] = [];
+    for (const item of queue) {
+      try {
+        if (item.type === "createTask") {
+          if (item.task && item.schedule) {
+            await this.remote.createTaskFromRecords(item.householdId ?? householdId ?? null, item.input, item.task, item.schedule);
+          } else {
+            await this.remote.createTask(item.householdId ?? householdId ?? null, item.input);
+          }
+        } else {
+          await this.remote.updateTaskInstance(item.input);
+        }
+      } catch (error) {
+        console.warn("HomeBoard task sync queue will retry later.", error);
+        remaining.push(item);
+      }
+    }
+
+    writeQueue(remaining);
   }
 }
 
 export const localTaskRepository = new LocalTaskRepository();
 export const supabaseTaskRepository = new SupabaseTaskRepository();
+export const cachedTaskRepository = new CachedTaskRepository(supabaseTaskRepository, localTaskRepository);
 
 export function getTaskRepository(householdId?: string | null): { mode: TaskRepositoryMode; repository: TaskRepository } {
-  if (isSupabaseConfigured() && householdId) return { mode: "supabase", repository: supabaseTaskRepository };
+  if (isSupabaseConfigured() && householdId) return { mode: "supabase", repository: cachedTaskRepository };
   return { mode: "local", repository: localTaskRepository };
 }
 
-let serverInstances = [...mockTaskInstances];
-let serverTemplates = [...mockTasks];
-let serverSchedules = [...mockTaskSchedules];
+let serverCache: TaskCache = {
+  version: 1,
+  updatedAt: new Date().toISOString(),
+  tasks: [...mockTasks],
+  schedules: [...mockTaskSchedules],
+  instances: mockTaskInstances.map(normaliseInstanceIdentity),
+};
 
 /**
  * In-memory server repository for API route previews on Vercel/serverless.
@@ -460,27 +742,63 @@ let serverSchedules = [...mockTaskSchedules];
  */
 export class ServerTaskRepository implements TaskRepository {
   async listTaskTemplates() {
-    return serverTemplates;
+    return serverCache.tasks;
   }
 
   async listTaskInstances() {
-    return serverInstances.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    return mergeGeneratedAndSavedInstances(serverCache.tasks, serverCache.schedules, serverCache.instances);
   }
 
   async createTask(householdId: string | null, input: CreateTaskInput) {
     const { task, schedule, instances } = createTaskRecords(input, householdId);
-    serverTemplates = [...serverTemplates, task];
-    serverSchedules = [...serverSchedules, schedule];
-    serverInstances = [...serverInstances, ...instances];
+    serverCache = { ...serverCache, updatedAt: new Date().toISOString(), tasks: [...serverCache.tasks, task], schedules: [...serverCache.schedules, schedule] };
     return instances;
   }
 
-  async updateTaskInstance(input: UpdateTaskInstanceInput) {
-    const existing = serverInstances.find((task) => task.id === input.id);
-    if (!existing) throw new NotFoundError(`Task instance ${input.id} was not found.`);
+  async updateTaskInstance(input: UpdateTaskInstanceInput): Promise<TaskInstance> {
+    const occurrenceKey = input.occurrenceKey ?? (input.taskId && input.dueDate ? buildOccurrenceKey(input.taskId, input.dueDate) : undefined);
+    const existing = serverCache.instances.find((task) => task.id === input.id || (occurrenceKey && task.occurrenceKey === occurrenceKey));
+    if (!existing && (!input.taskId || !input.dueDate)) {
+      const generated = mergeGeneratedAndSavedInstances(serverCache.tasks, serverCache.schedules, serverCache.instances).find((instance) => instance.id === input.id);
+      if (!generated) throw new NotFoundError(`Task instance ${input.id} was not found.`);
 
-    const updated = updateInstance(existing, input);
-    serverInstances = serverInstances.map((task) => (task.id === input.id ? updated : task));
+      return this.updateTaskInstance({
+        taskId: generated.taskId,
+        householdId: generated.householdId,
+        occurrenceKey: generated.occurrenceKey,
+        titleSnapshot: generated.titleSnapshot,
+        assignedToMemberId: generated.assignedToMemberId,
+        dueDate: generated.dueDate,
+        scheduleId: generated.scheduleId,
+        scheduleType: generated.scheduleType,
+        ...input,
+      });
+    }
+
+    const updated = existing
+      ? updateInstance(existing, input)
+      : updateInstance(
+          {
+            id: createId("instance"),
+            taskId: input.taskId!,
+            householdId: input.householdId ?? DEFAULT_HOUSEHOLD_ID,
+            occurrenceKey: occurrenceKey ?? buildOccurrenceKey(input.taskId!, input.dueDate!),
+            titleSnapshot: input.titleSnapshot ?? "",
+            assignedToMemberId: input.assignedToMemberId,
+            dueDate: input.dueDate!,
+            scheduleId: input.scheduleId,
+            scheduleType: input.scheduleType,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+          input,
+        );
+
+    serverCache = {
+      ...serverCache,
+      updatedAt: new Date().toISOString(),
+      instances: existing ? serverCache.instances.map((task) => (task.id === existing.id ? updated : task)) : [...serverCache.instances, updated],
+    };
     return updated;
   }
 }

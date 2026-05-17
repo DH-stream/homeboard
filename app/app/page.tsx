@@ -70,7 +70,7 @@ export default function MobileAppPage() {
 
   async function completeTask(task: TaskInstance, completed: boolean) {
     try {
-      await setTaskCompleted(task.id, completed, task.assignedToMemberId);
+      await setTaskCompleted(task, completed, task.assignedToMemberId);
     } catch {
       return;
     }

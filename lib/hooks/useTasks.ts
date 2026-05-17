@@ -45,6 +45,18 @@ export function useTasks() {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (!repository.flushPendingWrites) return;
+
+    const flush = () => {
+      repository.flushPendingWrites?.(householdId).catch((unknownError) => console.warn(unknownError));
+    };
+
+    flush();
+    window.addEventListener("online", flush);
+    return () => window.removeEventListener("online", flush);
+  }, [householdId, repository]);
+
   const createTask = useCallback(
     async (input: CreateTaskInput) => {
       try {
@@ -63,7 +75,17 @@ export function useTasks() {
   const updateTask = useCallback(
     async (input: UpdateTaskInstanceInput) => {
       try {
-        const updated = await service.updateTask(input);
+        const current = tasks.find((task) => task.id === input.id);
+        const updated = await service.updateTask({
+          taskId: current?.taskId,
+          householdId: current?.householdId,
+          occurrenceKey: current?.occurrenceKey,
+          assignedToMemberId: current?.assignedToMemberId,
+          dueDate: current?.dueDate,
+          scheduleId: current?.scheduleId,
+          scheduleType: current?.scheduleType,
+          ...input,
+        });
         await refresh();
         return updated;
       } catch (unknownError) {
@@ -72,13 +94,13 @@ export function useTasks() {
         throw unknownError;
       }
     },
-    [copy.save, refresh, service],
+    [copy.save, refresh, service, tasks],
   );
 
   const setTaskCompleted = useCallback(
-    async (id: string, completed: boolean, completedByMemberId?: string) => {
+    async (task: TaskInstance, completed: boolean, completedByMemberId?: string) => {
       try {
-        const updated = await service.setTaskCompleted(id, completed, completedByMemberId);
+        const updated = await service.setTaskCompleted(task, completed, completedByMemberId);
         await refresh();
         return updated;
       } catch (unknownError) {

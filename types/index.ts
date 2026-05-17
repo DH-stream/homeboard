@@ -54,6 +54,7 @@ export type TaskInstance = {
   titleSnapshot: string;
   assignedToMemberId?: string;
   dueDate: string;
+  occurrenceKey?: string;
   scheduleId?: string;
   scheduleType?: TaskScheduleType;
   completedAt?: string;
@@ -137,9 +138,14 @@ export type CreateTaskInput = {
 
 export type UpdateTaskInstanceInput = {
   id: string;
+  taskId?: string;
+  householdId?: string;
+  occurrenceKey?: string;
   titleSnapshot?: string;
   assignedToMemberId?: string;
   dueDate?: string;
+  scheduleId?: string;
+  scheduleType?: TaskScheduleType;
   completedAt?: string | null;
   completedByMemberId?: string;
 };
