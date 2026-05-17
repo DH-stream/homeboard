@@ -12,6 +12,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
+import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type WallTaskCreatorMode } from "@/lib/wallPreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
@@ -39,6 +40,7 @@ export default function WallPage() {
   const { tasks, createTask, setTaskCompleted } = useTasks();
   const [now, setNow] = useState(new Date());
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
+  const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("wall"));
   const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
   const [isQuickCreatorMounted, setQuickCreatorMounted] = useState(false);
@@ -53,6 +55,10 @@ export default function WallPage() {
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    consumePendingFirstRunReveal("wall");
   }, []);
   const closeQuickCreator = useCallback(() => {
     if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
@@ -116,8 +122,8 @@ export default function WallPage() {
   }
 
   return (
-    <WallShell>
-      <header className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+    <WallShell revealActive={isFirstRunRevealActive}>
+      <header className={`grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${isFirstRunRevealActive ? "reveal-item reveal-item--header reveal-stagger-3" : ""}`}>
         <div className="min-w-0">
           <p className="text-lg font-black uppercase tracking-[0.24em] text-amber-700">{household?.name ?? "HomeBoard"}</p>
           <h1 className="mt-2 text-6xl font-black tracking-tight text-stone-950 lg:text-8xl">{formatShortDate(now, locale)}</h1>
@@ -125,21 +131,21 @@ export default function WallPage() {
             {new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(now)}
           </p>
         </div>
-        <div className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""}`}>
+        <div className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""} ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-4" : ""}`}>
           <p className="min-h-5 truncate text-sm font-bold uppercase tracking-[0.18em] text-amber-200">{completionFeedback?.message ?? t("todaysProgress")}</p>
           <p className="mt-2 text-5xl font-black">{stats.completed}/{stats.total}</p>
           <p className="mt-1 min-h-6 truncate font-semibold text-white/70">{t("progressComplete")} · {stats.remaining} {t("remaining")}</p>
         </div>
       </header>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className={`mt-5 flex flex-wrap gap-2 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-5" : ""}`}>
         {members.map((member) => (
           <MemberBadge key={member.id} member={member} />
         ))}
       </div>
 
       <div className="mt-6 grid flex-1 gap-5 xl:grid-cols-[1fr_0.9fr]">
-        <section className="surface-card rounded-[2.25rem] p-4">
+        <section className={`surface-card rounded-[2.25rem] p-4 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-6" : ""}`}>
           <SectionHeader
             action={(
               <div className="flex flex-wrap justify-end gap-2">
@@ -162,7 +168,7 @@ export default function WallPage() {
           ) : null}
           <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
         </section>
-        <aside className="grid content-start gap-5">
+        <aside className={`grid content-start gap-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
           <TodayAgenda events={todayEvents} />
           <WeekPreview events={events} />
         </aside>
