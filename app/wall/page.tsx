@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { WeekPreview } from "@/components/calendar/WeekPreview";
 import { WallShell } from "@/components/layout/WallShell";
 import { MemberBadge } from "@/components/members/MemberBadge";
 import { TaskList } from "@/components/tasks/TaskList";
+import { WallQuickTaskButton } from "@/components/wall/WallQuickTaskButton";
+import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
 import { useTasks } from "@/lib/hooks/useTasks";
+import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type WallTaskCreatorMode } from "@/lib/wallPreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate, isSameLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
 
 const DAILY_RECURRING_REVEAL_MINUTES = 90;
+const QUICK_CREATOR_CLOSE_MS = 240;
+const QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS = 20;
 
 function shouldShowTodayTask(task: TaskInstance, now: Date) {
   if (!isSameLocalDay(task.dueDate, now)) return false;
@@ -31,9 +36,13 @@ export default function WallPage() {
   const { household } = useHousehold();
   const { members } = useMembers();
   const { events, todayEvents } = useCalendarEvents();
-  const { tasks, setTaskCompleted } = useTasks();
+  const { tasks, createTask, setTaskCompleted } = useTasks();
   const [now, setNow] = useState(new Date());
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
+  const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
+  const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
+  const [isQuickCreatorMounted, setQuickCreatorMounted] = useState(false);
+  const quickCreatorTimerRef = useRef<number | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const stats = useMemo(() => {
@@ -44,6 +53,51 @@ export default function WallPage() {
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
     return () => window.clearInterval(timer);
+  }, []);
+  const closeQuickCreator = useCallback(() => {
+    if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+
+    setQuickCreatorOpen(false);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    quickCreatorTimerRef.current = window.setTimeout(() => {
+      setQuickCreatorMounted(false);
+      quickCreatorTimerRef.current = null;
+    }, prefersReducedMotion ? QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS : QUICK_CREATOR_CLOSE_MS);
+  }, []);
+
+  const openQuickCreator = useCallback(() => {
+    if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+
+    setQuickCreatorMounted(true);
+    window.requestAnimationFrame(() => setQuickCreatorOpen(true));
+  }, []);
+
+  const toggleQuickCreator = useCallback(() => {
+    if (isQuickCreatorOpen) {
+      closeQuickCreator();
+      return;
+    }
+
+    openQuickCreator();
+  }, [closeQuickCreator, isQuickCreatorOpen, openQuickCreator]);
+
+
+  useEffect(() => {
+    setWallTaskCreatorMode(readWallTaskCreatorMode());
+
+    const handleChange = () => setWallTaskCreatorMode(readWallTaskCreatorMode());
+    window.addEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
+    return () => window.removeEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (wallTaskCreatorMode !== "docked" && isQuickCreatorMounted) closeQuickCreator();
+  }, [closeQuickCreator, isQuickCreatorMounted, wallTaskCreatorMode]);
+
+  useEffect(() => {
+    return () => {
+      if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+    };
   }, []);
 
   async function toggleTask(task: TaskInstance) {
@@ -87,10 +141,25 @@ export default function WallPage() {
       <div className="mt-6 grid flex-1 gap-5 xl:grid-cols-[1fr_0.9fr]">
         <section className="surface-card rounded-[2.25rem] p-4">
           <SectionHeader
-            action={<StatusChip>{t("allPeople")}</StatusChip>}
+            action={(
+              <div className="flex flex-wrap justify-end gap-2">
+                <StatusChip>{t("allPeople")}</StatusChip>
+                {wallTaskCreatorMode === "docked" ? <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={toggleQuickCreator} /> : null}
+              </div>
+            )}
             eyebrow={t("touchToCheckOff")}
             title={t("todaysTasks")}
           />
+          {wallTaskCreatorMode === "docked" && isQuickCreatorMounted ? (
+            <div className={`wall-quick-add-panel w-full min-w-0 ${isQuickCreatorOpen ? "wall-quick-add-panel--open" : "wall-quick-add-panel--closing"}`}>
+              <WallQuickTaskCreator members={members} onCancel={closeQuickCreator} onCreateTask={createTask} variant="popover" />
+            </div>
+          ) : null}
+          {wallTaskCreatorMode === "panel" ? (
+            <div className="mb-4">
+              <WallQuickTaskCreator members={members} onCreateTask={createTask} />
+            </div>
+          ) : null}
           <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
         </section>
         <aside className="grid content-start gap-5">

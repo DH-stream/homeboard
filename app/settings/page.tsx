@@ -5,6 +5,7 @@ import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSe
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
+import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
@@ -32,6 +33,7 @@ export default function SettingsPage() {
           </div>
         </SettingsCard>
         <DeviceStartViewSettings />
+        <WallTaskCreatorSettings />
         <HouseholdSettings />
         <SettingsCard status={t("mock")} title={t("members")}>
           <p>{t("membersCopy")}</p>
