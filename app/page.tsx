@@ -50,6 +50,8 @@ function SetupSky() {
   return (
     <div className="setup-sky" aria-hidden="true">
       <div className="setup-sun" />
+      <Cloud className="setup-cloud setup-cloud-anchor setup-cloud-anchor-left" />
+      <Cloud className="setup-cloud setup-cloud-anchor setup-cloud-anchor-right" />
       <div className="setup-cloud-track setup-cloud-track-far">
         <Cloud className="setup-cloud setup-cloud-small" />
         <Cloud className="setup-cloud setup-cloud-small setup-cloud-copy" />
@@ -109,56 +111,56 @@ export default function HomePage() {
   }
 
   return (
-    <main className={`setup-stage ${selectedStartView ? "setup-stage--leaving" : ""} relative isolate min-h-screen overflow-hidden px-4 py-6 sm:px-6 sm:py-10`}>
+    <main className={`setup-stage ${selectedStartView ? "setup-stage--leaving" : ""} relative isolate min-h-screen overflow-hidden px-3 py-4 sm:px-6 sm:py-10`}>
       <SetupSky />
 
-      <section className="setup-hero relative z-10 mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col justify-center py-8 sm:min-h-[calc(100vh-5rem)]">
-        <div className="surface-card setup-hero-card relative overflow-hidden rounded-[2.5rem] px-5 py-7 backdrop-blur-xl sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12">
+      <section className="setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8">
+        <div className="surface-card setup-hero-card relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] px-3 py-4 backdrop-blur-xl sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12">
           <div className="setup-card-shine" aria-hidden="true" />
           <div className="setup-card-wake" aria-hidden="true" />
           <div className="setup-hero-copy mx-auto max-w-3xl text-center">
-            <div className="setup-spark mx-auto flex size-16 items-center justify-center rounded-[1.4rem] bg-white/86 text-4xl shadow-[0_18px_45px_rgba(120,72,22,0.16)] ring-1 ring-white/80 sm:size-20 sm:rounded-[1.8rem] sm:text-5xl">
+            <div className="setup-spark mx-auto flex size-11 items-center justify-center rounded-[1.1rem] bg-white/86 text-2xl shadow-[0_18px_45px_rgba(120,72,22,0.16)] ring-1 ring-white/80 sm:size-20 sm:rounded-[1.8rem] sm:text-5xl">
               ✨
             </div>
-            <p className="mt-5 text-sm font-black uppercase tracking-[0.32em] text-amber-700">HomeBoard</p>
-            <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] text-stone-950 sm:text-6xl lg:text-7xl">{t("deviceStartViewSetupTitle")}</h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg font-semibold leading-8 text-stone-600 sm:text-xl">{t("deviceStartViewSetupCopy")}</p>
+            <p className="mt-2 text-xs font-black uppercase tracking-[0.32em] text-amber-700 sm:mt-5 sm:text-sm">HomeBoard</p>
+            <h1 className="mt-2 text-[2.15rem] font-black leading-[0.96] tracking-[-0.055em] text-stone-950 sm:mt-3 sm:text-6xl lg:text-7xl">{t("deviceStartViewSetupTitle")}</h1>
+            <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold leading-6 text-stone-600 sm:mt-4 sm:text-xl sm:leading-8">{t("deviceStartViewSetupCopy")}</p>
           </div>
+        </div>
 
-          <div className="setup-options mt-8 grid gap-4 lg:mt-10 lg:grid-cols-3">
-            {DEVICE_START_VIEW_OPTIONS.map((option, index) => {
-              const copy = getDeviceModeCopy(option.mode, t);
-              const isSelected = selectedStartView?.mode === option.mode;
-              const isSoftened = selectedStartView !== null && !isSelected;
+        <div className="setup-options mt-4 grid gap-3 sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3">
+          {DEVICE_START_VIEW_OPTIONS.map((option, index) => {
+            const copy = getDeviceModeCopy(option.mode, t);
+            const isSelected = selectedStartView?.mode === option.mode;
+            const isSoftened = selectedStartView !== null && !isSelected;
 
-              return (
-                <button
-                  aria-pressed={isSelected}
-                  className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} pressable hover-lift group flex min-h-52 flex-col rounded-[2.25rem] p-5 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:p-6`}
-                  aria-disabled={selectedStartView !== null}
-                  key={option.mode}
-                  onClick={() => chooseStartView(option)}
-                  type="button"
-                >
-                  <span className="flex items-start justify-between gap-4">
-                    <span className="setup-option-icon flex size-16 items-center justify-center rounded-[1.6rem] bg-white/86 text-4xl shadow-sm ring-1 ring-black/5 sm:size-20 sm:text-5xl">
-                      {optionIcons[option.mode]}
-                    </span>
-                    <span className="setup-option-check mt-1 flex size-9 items-center justify-center rounded-full bg-white/78 text-lg font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95">
-                      ✓
-                    </span>
+            return (
+              <button
+                aria-pressed={isSelected}
+                className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
+                aria-disabled={selectedStartView !== null}
+                key={option.mode}
+                onClick={() => chooseStartView(option)}
+                type="button"
+              >
+                <span className="flex items-start justify-between gap-4">
+                  <span className="setup-option-icon flex size-14 items-center justify-center rounded-[1.35rem] bg-white/86 text-3xl shadow-sm ring-1 ring-black/5 sm:size-20 sm:rounded-[1.6rem] sm:text-5xl">
+                    {optionIcons[option.mode]}
                   </span>
-                  <span className="mt-6 text-3xl font-black tracking-[-0.035em] text-stone-950 sm:text-4xl">{copy.title}</span>
-                  <span className="mt-3 max-w-sm text-lg font-semibold leading-8 text-stone-600">{copy.description}</span>
-                </button>
-              );
-            })}
-          </div>
+                  <span className="setup-option-check mt-1 flex size-8 items-center justify-center rounded-full bg-white/78 text-base font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95 sm:size-9 sm:text-lg">
+                    ✓
+                  </span>
+                </span>
+                <span className="mt-4 text-2xl font-black tracking-[-0.035em] text-stone-950 sm:mt-6 sm:text-4xl">{copy.title}</span>
+                <span className="mt-2 max-w-sm text-sm font-semibold leading-6 text-stone-600 sm:mt-3 sm:text-lg sm:leading-8">{copy.description}</span>
+              </button>
+            );
+          })}
+        </div>
 
-          <p className="setup-footer-note mx-auto mt-7 max-w-xl text-center text-sm font-bold leading-6 text-stone-500 sm:text-base">{t("deviceStartViewFooter")}</p>
-          <div className="setup-confirmation" aria-live="polite">
-            {selectedStartView ? <p>{selectedStartView.mode === "wall" ? t("deviceStartViewWallConfirmation") : t("deviceStartViewConfirmation")}</p> : null}
-          </div>
+        <p className="setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 sm:mt-7 sm:text-base sm:leading-6">{t("deviceStartViewFooter")}</p>
+        <div className="setup-confirmation" aria-live="polite">
+          {selectedStartView ? <p>{selectedStartView.mode === "wall" ? t("deviceStartViewWallConfirmation") : t("deviceStartViewConfirmation")}</p> : null}
         </div>
       </section>
     </main>
