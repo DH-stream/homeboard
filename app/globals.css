@@ -248,81 +248,129 @@ button:disabled {
 }
 .setup-stage {
   background:
-    radial-gradient(circle at 15% 10%, rgba(251, 191, 36, 0.24), transparent 25rem),
-    radial-gradient(circle at 88% 14%, rgba(16, 185, 129, 0.16), transparent 27rem),
-    linear-gradient(135deg, #fff7ed 0%, #fbf7ef 44%, #f7f1e7 100%);
+    radial-gradient(circle at 16% 14%, rgba(253, 186, 116, 0.34), transparent 24rem),
+    radial-gradient(circle at 84% 8%, rgba(20, 184, 166, 0.18), transparent 26rem),
+    linear-gradient(180deg, #fdecc8 0%, #fef3d7 34%, #fbf7ef 72%, #f7efe3 100%);
 }
 
-.setup-hero-card {
-  box-shadow: 0 34px 120px rgba(84, 59, 34, 0.18);
-  animation: setup-hero-in 620ms var(--ease-out) both;
+.setup-stage--leaving .setup-sky {
+  transform: scale(1.03);
+  opacity: 0.98;
 }
 
-.setup-card-shine {
+.setup-stage--leaving .setup-hero-copy,
+.setup-stage--leaving .setup-footer-note {
+  opacity: 0.28;
+  transform: translateY(-0.45rem) scale(0.99);
+}
+
+.setup-sky {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.54), transparent 26%, transparent 72%, rgba(255, 255, 255, 0.3)),
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.76), transparent 22rem);
+  transition:
+    transform 1000ms var(--ease-out),
+    opacity 700ms var(--ease-out);
 }
 
-.setup-glow,
-.setup-orb {
+.setup-sun {
   position: absolute;
-  pointer-events: none;
-  transform: translateZ(0);
-  will-change: transform, opacity;
-}
-
-.setup-glow {
+  right: clamp(1rem, 12vw, 10rem);
+  top: clamp(2rem, 9vw, 6rem);
+  width: clamp(8rem, 18vw, 16rem);
+  height: clamp(8rem, 18vw, 16rem);
   border-radius: 999px;
-  filter: blur(1px);
-  opacity: 0.72;
-  animation: setup-glow-drift 14s var(--ease-in-out) infinite alternate;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 24%, rgba(253, 224, 71, 0.34) 25% 54%, rgba(251, 191, 36, 0) 72%);
+  filter: blur(0.2px);
+  opacity: 0.85;
+  animation: setup-sun-breathe 8s var(--ease-in-out) infinite alternate;
 }
 
-.setup-glow-amber {
-  left: -7rem;
-  top: 18%;
-  width: min(34rem, 72vw);
-  height: min(34rem, 72vw);
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.28), rgba(251, 191, 36, 0));
+.setup-cloud-track {
+  position: absolute;
+  left: -42rem;
+  width: calc(100% + 84rem);
+  transform: translateZ(0);
+  will-change: transform;
+  animation: setup-cloud-drift 46s linear infinite;
 }
 
-.setup-glow-emerald {
-  right: -8rem;
+.setup-cloud-track-far {
+  top: 9%;
+  opacity: 0.68;
+  animation-duration: 64s;
+}
+
+.setup-cloud-track-mid {
+  top: 26%;
+  opacity: 0.86;
+  animation-duration: 52s;
+  animation-delay: -18s;
+}
+
+.setup-cloud-track-near {
   bottom: 8%;
-  width: min(30rem, 68vw);
-  height: min(30rem, 68vw);
-  background: radial-gradient(circle, rgba(20, 184, 166, 0.18), rgba(20, 184, 166, 0));
-  animation-delay: -5s;
+  opacity: 0.9;
+  animation-duration: 42s;
+  animation-delay: -9s;
 }
 
-.setup-orb {
+.setup-cloud {
+  position: absolute;
+  display: block;
+  height: auto;
+  filter: drop-shadow(0 22px 32px rgba(120, 72, 22, 0.08));
+}
+
+.setup-cloud-small {
+  left: 3%;
+  width: clamp(13rem, 24vw, 22rem);
+}
+
+.setup-cloud-medium {
+  left: 30%;
+  width: clamp(16rem, 31vw, 30rem);
+}
+
+.setup-cloud-large {
+  left: 6%;
+  width: clamp(21rem, 40vw, 38rem);
+}
+
+.setup-cloud-copy.setup-cloud-small {
+  left: 67%;
+  top: 1.6rem;
+}
+
+.setup-cloud-copy.setup-cloud-medium {
+  left: 76%;
+  top: -1rem;
+}
+
+.setup-cloud-copy.setup-cloud-large {
+  left: 58%;
+  top: 2rem;
+}
+
+.setup-sky-accent {
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.54);
   box-shadow: 0 18px 55px rgba(84, 59, 34, 0.1);
   color: rgba(120, 72, 22, 0.72);
   font-weight: 900;
-  animation: setup-orb-float 11s var(--ease-in-out) infinite alternate;
+  will-change: transform, opacity;
+  animation: setup-accent-float 12s var(--ease-in-out) infinite alternate;
 }
 
-.setup-orb-home {
-  left: clamp(1rem, 7vw, 5rem);
-  top: 12%;
-  width: 4.5rem;
-  height: 4.5rem;
-  font-size: 2rem;
-}
-
-.setup-orb-star {
+.setup-sky-star {
   right: clamp(1.5rem, 11vw, 7rem);
-  top: 15%;
+  top: 17%;
   width: 3.25rem;
   height: 3.25rem;
   color: rgba(217, 119, 6, 0.72);
@@ -330,27 +378,132 @@ button:disabled {
   animation-delay: -3s;
 }
 
-.setup-orb-check {
+.setup-sky-check {
   left: clamp(1rem, 12vw, 9rem);
-  bottom: 13%;
+  bottom: 15%;
   width: 3rem;
   height: 3rem;
   color: rgba(4, 120, 87, 0.7);
   font-size: 1.25rem;
-  animation-delay: -6s;
+  animation-delay: -7s;
 }
 
-.setup-orb-dot {
-  right: clamp(2rem, 16vw, 12rem);
-  bottom: 20%;
-  width: 1.15rem;
-  height: 1.15rem;
-  background: rgba(251, 191, 36, 0.58);
-  animation-delay: -8s;
+.setup-hero-card {
+  box-shadow: 0 34px 120px rgba(84, 59, 34, 0.18);
+  animation: setup-hero-in 620ms var(--ease-out) both;
+}
+
+.setup-hero-copy,
+.setup-footer-note {
+  transition:
+    opacity 420ms var(--ease-out),
+    transform 520ms var(--ease-out);
+}
+
+.setup-card-shine,
+.setup-card-wake {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.setup-card-shine {
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.56), transparent 26%, transparent 72%, rgba(255, 255, 255, 0.28)),
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.78), transparent 22rem);
+}
+
+.setup-card-wake {
+  opacity: 0;
+  transform: scale(0.82);
+  background: radial-gradient(circle at 50% 74%, rgba(251, 191, 36, 0.26), rgba(255, 255, 255, 0) 44%);
+  transition:
+    opacity 700ms var(--ease-out),
+    transform 900ms var(--ease-out);
+}
+
+.setup-stage--leaving .setup-card-wake {
+  opacity: 1;
+  transform: scale(1.22);
+}
+
+.setup-spark {
+  animation: setup-spark-in 680ms var(--ease-out) 120ms both;
+}
+
+.setup-options {
+  transition: transform 700ms var(--ease-out);
+}
+
+.setup-stage--leaving .setup-options {
+  transform: translateY(-0.25rem);
 }
 
 .setup-option-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.84);
   animation: setup-card-in 560ms var(--ease-out) both;
+  transition:
+    opacity 520ms var(--ease-out),
+    transform 700ms var(--ease-out),
+    filter 520ms var(--ease-out),
+    box-shadow 700ms var(--ease-out),
+    border-color 520ms var(--ease-out),
+    background-color 520ms var(--ease-out);
+}
+
+.setup-option-card::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.82;
+  transition: opacity 520ms var(--ease-out);
+}
+
+.setup-option-card--wall::before {
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.96), rgba(255, 251, 235, 0.7) 46%, rgba(255, 255, 255, 0.86));
+}
+
+.setup-option-card--mobile::before {
+  background: linear-gradient(135deg, rgba(209, 250, 229, 0.94), rgba(240, 253, 250, 0.72) 48%, rgba(255, 255, 255, 0.88));
+}
+
+.setup-option-card--admin::before {
+  background: linear-gradient(135deg, rgba(245, 245, 244, 0.96), rgba(255, 251, 235, 0.68) 50%, rgba(255, 255, 255, 0.88));
+}
+
+.setup-option-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.setup-option-card--selected {
+  border-color: rgba(245, 158, 11, 0.58);
+  box-shadow: 0 34px 90px rgba(180, 83, 9, 0.22), 0 0 0 10px rgba(255, 255, 255, 0.34);
+  transform: translateY(-0.75rem) scale(1.035);
+}
+
+.setup-option-card--selected::before {
+  opacity: 1;
+}
+
+.setup-option-card--softened {
+  opacity: 0.42;
+  filter: saturate(0.78) blur(0.2px);
+  transform: scale(0.975);
+}
+
+.setup-option-card--selected .setup-option-icon {
+  animation: setup-selected-icon 760ms var(--ease-out) both;
+}
+
+.setup-option-card--selected .setup-option-check {
+  background: rgba(251, 191, 36, 0.18);
+  color: rgb(146, 64, 14);
+  opacity: 1;
+  transform: scale(1.12);
 }
 
 .setup-stagger-1 {
@@ -367,6 +520,27 @@ button:disabled {
 
 .setup-footer-note {
   animation: setup-card-in 560ms var(--ease-out) 390ms both;
+}
+
+.setup-confirmation {
+  position: absolute;
+  inset: auto 1.5rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.setup-confirmation p {
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 50px rgba(84, 59, 34, 0.14);
+  padding: 0.75rem 1.1rem;
+  color: rgb(120, 53, 15);
+  font-size: 0.95rem;
+  font-weight: 950;
+  animation: setup-confirmation-in 520ms var(--ease-out) both;
 }
 
 @keyframes setup-hero-in {
@@ -391,7 +565,45 @@ button:disabled {
   }
 }
 
-@keyframes setup-orb-float {
+@keyframes setup-spark-in {
+  0% {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.94) rotate(-3deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes setup-selected-icon {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  55% {
+    transform: scale(1.12) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1.04) rotate(0deg);
+  }
+}
+
+@keyframes setup-confirmation-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes setup-accent-float {
   from {
     opacity: 0.54;
     transform: translate3d(0, 0, 0) rotate(-4deg);
@@ -402,29 +614,70 @@ button:disabled {
   }
 }
 
-@keyframes setup-glow-drift {
+@keyframes setup-sun-breathe {
   from {
-    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.68;
+    transform: scale(0.98);
   }
   to {
-    transform: translate3d(1rem, -1.5rem, 0) scale(1.04);
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes setup-cloud-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(42rem, 0, 0);
   }
 }
 
 @media (max-width: 640px) {
-  .setup-orb-home,
-  .setup-orb-check {
+  .setup-sky-check,
+  .setup-cloud-track-far {
     display: none;
+  }
+
+  .setup-cloud-track-mid {
+    top: 18%;
+  }
+
+  .setup-cloud-track-near {
+    bottom: 3%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .setup-hero-card,
+  .setup-stage,
+  .setup-stage--leaving .setup-sky,
+  .setup-stage--leaving .setup-hero-copy,
+  .setup-stage--leaving .setup-footer-note,
+  .setup-stage--leaving .setup-options,
   .setup-option-card,
+  .setup-option-card--selected,
+  .setup-option-card--softened,
+  .setup-option-card--selected .setup-option-icon,
+  .setup-confirmation p,
   .setup-footer-note,
-  .setup-glow,
-  .setup-orb {
+  .setup-spark,
+  .setup-hero-card,
+  .setup-sky-accent,
+  .setup-sun,
+  .setup-cloud-track {
     animation: none !important;
+    transition-duration: 1ms !important;
+    transform: none !important;
     will-change: auto;
+  }
+
+  .setup-cloud-track {
+    left: 0;
+    width: 100%;
+  }
+
+  .setup-cloud-copy {
+    display: none;
   }
 }

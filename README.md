@@ -18,7 +18,7 @@ No real provider sync, paid services, auth system, secrets, or external database
 
 > **Persistence mode:** when Supabase is not configured, the wall/mobile UI works local-only from browser `localStorage` on that device. When Supabase is configured, `localStorage` is also used as an offline cache and pending write queue so cached tasks can still be shown while the network is unavailable. The API route still uses temporary server memory and does not share the wall/mobile store yet.
 
-> **Per-device start view:** HomeBoard also stores `homeboard.deviceMode.v1` and `homeboard.defaultRoute.v1` in browser `localStorage`. This lets a wall/iPad device open `/wall` like an appliance, while mobile and admin devices can choose `/app` or `/settings`. Future QR-paired devices may store a local device id and sync `devices.defaultView` through Supabase; the current preview is local-only.
+> **Per-device start view:** HomeBoard also stores `homeboard.deviceMode.v1` and `homeboard.defaultRoute.v1` in browser `localStorage`. This lets a wall/iPad device open `/wall` like an appliance, while mobile and admin devices can choose `/app` or `/settings`. First-run setup is intentionally a special one-time HomeBoard moment with original in-project SVG clouds drifting over a warm sky. Future QR-paired devices may store a local device id and sync `devices.defaultView` through Supabase; the current preview is local-only.
 
 ## How to run locally
 

@@ -46,7 +46,7 @@ Security-sensitive pairing work should be implemented through scoped API routes 
 
 HomeBoard should remember how each physical screen is used. A wall-mounted iPad or tablet should behave like an appliance and open `/wall` directly, while a family phone can open `/app` and an admin laptop can open `/settings`. This start view is a per-device preference, not a household-global setting.
 
-The current implementation stores `homeboard.deviceMode.v1` and `homeboard.defaultRoute.v1` in browser `localStorage`. Until QR/device pairing exists, that local preference controls the root route. Later, paired wall devices may keep a local device id and resolve a durable `devices.defaultView` value from Supabase.
+The current implementation stores `homeboard.deviceMode.v1` and `homeboard.defaultRoute.v1` in browser `localStorage`. Until QR/device pairing exists, that local preference controls the root route. First-run setup is intentionally a special one-time HomeBoard experience, including original in-project SVG clouds inspired by a soft rounded cloud style. Later, paired wall devices may keep a local device id and resolve a durable `devices.defaultView` value from Supabase.
 
 ## Task persistence and offline sync direction
 
