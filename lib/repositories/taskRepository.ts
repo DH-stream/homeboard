@@ -61,6 +61,27 @@ type TaskScheduleRow = {
   updated_at: string;
 };
 
+type TaskWithScheduleRpcRow = {
+  task_id: string;
+  household_id: string;
+  title: string;
+  description: string | null;
+  assigned_to_member_id: string | null;
+  status: Task["status"];
+  source: Task["source"];
+  task_created_at: string;
+  task_updated_at: string;
+  schedule_id: string;
+  schedule_type: TaskScheduleType;
+  schedule_due_date: string | null;
+  schedule_times_of_day: string[] | null;
+  schedule_days_of_week: number[] | null;
+  schedule_starts_on: string | null;
+  schedule_ends_on: string | null;
+  schedule_created_at: string;
+  schedule_updated_at: string;
+};
+
 type TaskInstanceRow = {
   id: string;
   task_id: string;
@@ -103,6 +124,34 @@ function mapSchedule(row: TaskScheduleRow): TaskSchedule {
     endsOn: row.ends_on ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapTaskWithSchedule(row: TaskWithScheduleRpcRow) {
+  return {
+    task: mapTask({
+      id: row.task_id,
+      household_id: row.household_id,
+      title: row.title,
+      description: row.description,
+      assigned_to_member_id: row.assigned_to_member_id,
+      status: row.status,
+      source: row.source,
+      created_at: row.task_created_at,
+      updated_at: row.task_updated_at,
+    }),
+    schedule: mapSchedule({
+      id: row.schedule_id,
+      task_id: row.task_id,
+      type: row.schedule_type,
+      due_date: row.schedule_due_date,
+      times_of_day: row.schedule_times_of_day,
+      days_of_week: row.schedule_days_of_week,
+      starts_on: row.schedule_starts_on,
+      ends_on: row.schedule_ends_on,
+      created_at: row.schedule_created_at,
+      updated_at: row.schedule_updated_at,
+    }),
   };
 }
 
@@ -534,40 +583,26 @@ export class SupabaseTaskRepository implements TaskRepository {
   async createTaskFromRecords(householdId: string | null, input: CreateTaskInput, task: Task, schedule: TaskSchedule) {
     if (!this.client || !householdId) throw new Error("Supabase is not configured for task sync.");
 
-    const { data: taskData, error: taskError } = await this.client
-      .from("tasks")
-      .insert({
-        id: task.id,
-        household_id: householdId,
-        title: task.title,
-        description: input.description ?? task.description ?? null,
-        assigned_to_member_id: task.assignedToMemberId || null,
-        status: task.status,
-        source: task.source,
+    const { data, error } = await this.client
+      .rpc("create_task_with_schedule", {
+        p_household_id: householdId,
+        p_title: task.title,
+        p_description: input.description ?? task.description ?? null,
+        p_assigned_to_member_id: task.assignedToMemberId || null,
+        p_source: task.source,
+        p_schedule_type: schedule.type,
+        p_due_date: schedule.dueDate ?? null,
+        p_times_of_day: schedule.timesOfDay ?? null,
+        p_days_of_week: schedule.daysOfWeek ?? null,
+        p_starts_on: schedule.startsOn ?? null,
+        p_ends_on: schedule.endsOn ?? null,
+        p_task_id: task.id,
+        p_schedule_id: schedule.id,
       })
-      .select("id, household_id, title, description, assigned_to_member_id, status, source, created_at, updated_at")
       .single();
 
-    if (taskError) throw taskError;
-    const savedTask = mapTask(taskData as TaskRow);
-
-    const { data: scheduleData, error: scheduleError } = await this.client
-      .from("task_schedules")
-      .insert({
-        id: schedule.id,
-        task_id: savedTask.id,
-        type: schedule.type,
-        due_date: schedule.dueDate ?? null,
-        times_of_day: schedule.timesOfDay ?? null,
-        days_of_week: schedule.daysOfWeek ?? null,
-        starts_on: schedule.startsOn ?? null,
-        ends_on: schedule.endsOn ?? null,
-      })
-      .select("id, task_id, type, due_date, times_of_day, days_of_week, starts_on, ends_on, created_at, updated_at")
-      .single();
-
-    if (scheduleError) throw scheduleError;
-    const savedSchedule = mapSchedule(scheduleData as TaskScheduleRow);
+    if (error) throw error;
+    const { task: savedTask, schedule: savedSchedule } = mapTaskWithSchedule(data as unknown as TaskWithScheduleRpcRow);
     return generateInstances(savedTask, savedSchedule, new Date().toISOString());
   }
 
