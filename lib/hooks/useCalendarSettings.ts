@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { calendarRepository } from "@/lib/repositories/calendarRepository";
 import { createCalendarService } from "@/lib/services/calendarService";
-import { getConfiguredHouseholdId, isSupabaseConfigured } from "@/lib/supabase/client";
+import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import type { CalendarConnection, CalendarSource } from "@/types";
 
 const service = createCalendarService(calendarRepository);
@@ -14,7 +15,7 @@ export function useCalendarSettings() {
   const [connections, setConnections] = useState<CalendarConnection[]>([]);
   const [sources, setSources] = useState<CalendarSource[]>([]);
   const [isLoading, setLoading] = useState(true);
-  const householdId = getConfiguredHouseholdId();
+  const { householdId } = useResolvedHouseholdId();
 
   const setupState = useMemo<CalendarSetupState>(() => {
     if (!isSupabaseConfigured()) return "missing_supabase_env";
@@ -23,6 +24,7 @@ export function useCalendarSettings() {
   }, [householdId]);
 
   const refresh = useCallback(async () => {
+    setLoading(true);
     if (setupState !== "ready") {
       setConnections([]);
       setSources([]);
@@ -49,5 +51,5 @@ export function useCalendarSettings() {
     [refresh],
   );
 
-  return { connections, sources, isLoading, setupState, updateSourceEnabled, refresh };
+  return { connections, sources, householdId, isLoading, setupState, updateSourceEnabled, refresh };
 }

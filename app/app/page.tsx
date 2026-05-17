@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
+import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
 import { AddTaskForm } from "@/components/tasks/AddTaskForm";
@@ -102,6 +103,7 @@ export default function MobileAppPage() {
 
   return (
     <AppShell eyebrow={t("appEyebrow")} title={t("appTitle")}>
+      <HouseholdSetupGate>
       <section className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
@@ -179,6 +181,7 @@ export default function MobileAppPage() {
           </section>
         </div>
       ) : null}
+      </HouseholdSetupGate>
     </AppShell>
   );
 }

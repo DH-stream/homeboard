@@ -7,10 +7,6 @@ export function isSupabaseConfigured() {
   return Boolean(supabaseUrl && supabaseAnonKey);
 }
 
-export function getConfiguredHouseholdId() {
-  return process.env.NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID ?? null;
-}
-
 export function createBrowserSupabaseClient(): SupabaseClient | null {
   if (!supabaseUrl || !supabaseAnonKey) return null;
   return createClient(supabaseUrl, supabaseAnonKey);
