@@ -2,6 +2,7 @@
 
 import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
+import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { useLanguage, type Language } from "@/lib/i18n";
 
@@ -29,9 +30,7 @@ export default function SettingsPage() {
             <p className="font-bold text-stone-800">{languageName}</p>
           </div>
         </SettingsCard>
-        <SettingsCard status={t("mock")} title={t("household")}>
-          <p>{t("householdCopy")}</p>
-        </SettingsCard>
+        <HouseholdSettings />
         <SettingsCard status={t("mock")} title={t("members")}>
           <p>{t("membersCopy")}</p>
         </SettingsCard>
