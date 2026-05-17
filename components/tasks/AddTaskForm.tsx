@@ -64,6 +64,8 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
       setRepeatType("once");
       setTimesOfDay(["20:00"]);
       setDaysOfWeek(defaultWeekdays);
+    } catch {
+      // The task hook surfaces and logs repository errors for the page-level calm error state.
     } finally {
       setSaving(false);
     }

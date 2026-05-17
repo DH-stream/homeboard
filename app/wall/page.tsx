@@ -48,7 +48,12 @@ export default function WallPage() {
 
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
-    await setTaskCompleted(task.id, willComplete, task.assignedToMemberId);
+    try {
+      await setTaskCompleted(task.id, willComplete, task.assignedToMemberId);
+    } catch {
+      return;
+    }
+
     if (willComplete) {
       const message = getCompletionEncouragement(completionFeedback?.message);
       setCompletionFeedback({ taskId: task.id, message });

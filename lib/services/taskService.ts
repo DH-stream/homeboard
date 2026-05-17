@@ -3,15 +3,18 @@ import type { CreateTaskInput, UpdateTaskInstanceInput } from "@/types";
 
 export function createTaskService(repository: TaskRepository) {
   return {
-    async listTodayTasks() {
-      return repository.listTaskInstances();
+    async listTaskTemplates(householdId?: string | null) {
+      return repository.listTaskTemplates(householdId);
     },
-    async createTask(input: CreateTaskInput) {
+    async listTodayTasks(householdId?: string | null) {
+      return repository.listTaskInstances(householdId);
+    },
+    async createTask(householdId: string | null, input: CreateTaskInput) {
       if (!input.title.trim()) {
         throw new Error("Task title is required.");
       }
 
-      return repository.createTask({ ...input, title: input.title.trim() });
+      return repository.createTask(householdId, { ...input, title: input.title.trim() });
     },
     async updateTask(input: UpdateTaskInstanceInput) {
       return repository.updateTaskInstance(input);
