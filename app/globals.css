@@ -115,12 +115,6 @@ button:disabled {
   }
 }
 
-@media (min-width: 641px) {
-  .setup-hero-card {
-    background: rgba(255, 255, 255, 0.62);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -243,12 +237,6 @@ button:disabled {
   }
 }
 
-@media (min-width: 641px) {
-  .setup-hero-card {
-    background: rgba(255, 255, 255, 0.62);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .task-waterfall-item,
   .task-card--celebrate,
@@ -260,10 +248,10 @@ button:disabled {
 }
 .setup-stage {
   background:
-    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.78), transparent 14rem),
-    radial-gradient(circle at 16% 14%, rgba(253, 186, 116, 0.42), transparent 24rem),
-    radial-gradient(circle at 84% 8%, rgba(20, 184, 166, 0.2), transparent 26rem),
-    linear-gradient(180deg, #fbdc9a 0%, #fdecc8 30%, #fbf7ef 72%, #f7efe3 100%);
+    radial-gradient(circle at 74% 9%, rgba(255, 255, 255, 0.96) 0 5.5rem, rgba(254, 240, 138, 0.54) 5.6rem 13rem, rgba(251, 191, 36, 0) 23rem),
+    radial-gradient(circle at 18% 2%, rgba(255, 255, 255, 0.58), transparent 18rem),
+    radial-gradient(circle at 12% 86%, rgba(254, 243, 199, 0.36), transparent 22rem),
+    linear-gradient(180deg, #8fd3ff 0%, #b7e4ff 32%, #e4f6ff 68%, #fff6df 100%);
 }
 
 .setup-stage--leaving .setup-sky {
@@ -297,7 +285,7 @@ button:disabled {
   background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 24%, rgba(253, 224, 71, 0.34) 25% 54%, rgba(251, 191, 36, 0) 72%);
   filter: blur(0.2px);
   opacity: 0.85;
-  animation: setup-sun-breathe 8s var(--ease-in-out) infinite alternate;
+  animation: setup-sun-breathe 5.8s var(--ease-in-out) infinite alternate;
 }
 
 .setup-cloud-anchor {
@@ -305,7 +293,7 @@ button:disabled {
   z-index: 3;
   opacity: 0.9;
   filter: drop-shadow(0 20px 30px rgba(120, 72, 22, 0.08));
-  animation: setup-anchor-cloud 22s var(--ease-in-out) infinite alternate;
+  animation: setup-anchor-cloud 11s var(--ease-in-out) infinite alternate;
 }
 
 .setup-cloud-anchor-left {
@@ -327,21 +315,21 @@ button:disabled {
   width: calc(100% + 84rem);
   transform: translateZ(0);
   will-change: transform;
-  animation: setup-cloud-drift 46s linear infinite;
+  animation: setup-cloud-drift 28s linear infinite;
 }
 
 .setup-cloud-track-far {
   top: 3%;
   z-index: 2;
   opacity: 0.9;
-  animation-duration: 64s;
+  animation-duration: 36s;
 }
 
 .setup-cloud-track-mid {
   top: 17%;
   z-index: 1;
   opacity: 0.92;
-  animation-duration: 52s;
+  animation-duration: 26s;
   animation-delay: -18s;
 }
 
@@ -349,7 +337,7 @@ button:disabled {
   bottom: -2%;
   z-index: 2;
   opacity: 0.94;
-  animation-duration: 42s;
+  animation-duration: 20s;
   animation-delay: -9s;
 }
 
@@ -426,7 +414,7 @@ button:disabled {
 }
 
 .setup-hero-card {
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.46);
   border-color: rgba(255, 255, 255, 0.64);
   box-shadow: 0 24px 85px rgba(84, 59, 34, 0.14);
   animation: setup-hero-in 620ms var(--ease-out) both;
@@ -666,25 +654,28 @@ button:disabled {
 
 @keyframes setup-anchor-cloud {
   from {
-    transform: translate3d(-0.3rem, 0, 0);
+    transform: translate3d(-0.6rem, 0, 0);
   }
   to {
-    transform: translate3d(0.7rem, -0.45rem, 0);
+    transform: translate3d(1.2rem, -0.55rem, 0);
   }
 }
 
 @keyframes setup-cloud-drift {
-  from {
+  0% {
     transform: translate3d(0, 0, 0);
   }
-  to {
-    transform: translate3d(42rem, 0, 0);
+  50% {
+    transform: translate3d(22rem, -0.35rem, 0);
+  }
+  100% {
+    transform: translate3d(44rem, 0, 0);
   }
 }
 
 @media (max-width: 640px) {
   .setup-hero-card {
-    background: rgba(255, 255, 255, 0.48);
+    background: rgba(255, 255, 255, 0.42);
     box-shadow: 0 20px 70px rgba(84, 59, 34, 0.13);
   }
 
@@ -754,7 +745,7 @@ button:disabled {
 
 @media (min-width: 641px) {
   .setup-hero-card {
-    background: rgba(255, 255, 255, 0.62);
+    background: rgba(255, 255, 255, 0.56);
   }
 }
 
