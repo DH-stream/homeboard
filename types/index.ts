@@ -62,7 +62,37 @@ export type TaskInstance = {
   updatedAt: string;
 };
 
-export type CalendarSourceType = "google" | "outlook" | "caldav" | "ics" | "manual";
+export type CalendarProvider = "google" | "microsoft" | "icloud_caldav" | "ics" | "manual";
+export type CalendarConnectionStatus = "connected" | "needs_reauth" | "error" | "mock";
+
+export type CalendarConnection = {
+  id: string;
+  householdId: string;
+  connectedByMemberId?: string;
+  provider: CalendarProvider;
+  accountLabel: string;
+  accountEmail?: string;
+  status: CalendarConnectionStatus;
+  lastSyncedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CalendarSource = {
+  id: string;
+  householdId: string;
+  connectionId: string;
+  providerCalendarId: string;
+  name: string;
+  color?: string;
+  enabled: boolean;
+  visibility: "household" | "private";
+  syncMode: "read_only";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CalendarSourceType = CalendarProvider;
 
 export type CalendarEvent = {
   id: string;

@@ -70,7 +70,7 @@ Preview persistence behavior on Vercel:
 The app intentionally separates UI, hooks, services, repositories, shared types, and mock data:
 
 - `types/` contains shared domain models for households, members, task templates, task schedules, task instances, calendar events, and devices.
-- `data/` contains non-private mock household, member, task, and calendar data.
+- `data/` contains non-private mock household, member, task, calendar connection, calendar source, and calendar event data.
 - `lib/repositories/` owns temporary persistence implementations.
 - `lib/services/` owns task, member, and calendar service functions consumed by hooks and API routes.
 - `lib/hooks/` exposes client hooks such as `useTasks`, `useCalendarEvents`, `useHousehold`, and `useMembers`.
@@ -89,7 +89,7 @@ For the preview:
 - Wall/mobile UI task state is stored in browser `localStorage` so added and completed tasks survive refreshes in the same browser.
 - API task state is stored in a temporary in-memory server repository. This is useful for shaping the API but is not durable and should not be treated as production storage.
 - The UI and API are intentionally not connected to the same store yet. API writes from future RUNAI/Home Assistant clients do **not** appear in the wall/mobile UI yet.
-- Mock calendar events are read-only and loaded through the calendar repository/service.
+- Mock calendar connections, sources, and events are read-only provider previews loaded through the calendar repository/service. Calendar source enablement is stored only in browser `localStorage` and does not store credentials or tokens.
 - Multi-device sync is not connected yet.
 - The next backend target is Supabase/Postgres.
 

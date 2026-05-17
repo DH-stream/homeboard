@@ -1,6 +1,7 @@
 "use client";
 
 import { AppShell } from "@/components/layout/AppShell";
+import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { useLanguage, type Language } from "@/lib/i18n";
 
@@ -34,9 +35,7 @@ export default function SettingsPage() {
         <SettingsCard status={t("mock")} title={t("members")}>
           <p>{t("membersCopy")}</p>
         </SettingsCard>
-        <SettingsCard status={t("planned")} title={t("calendarSources")}>
-          <p>{t("calendarSourcesCopy")}</p>
-        </SettingsCard>
+        <CalendarSourcesSettings />
         <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
           <p>{t("homeAssistantIntegrationCopy")}</p>
         </SettingsCard>
