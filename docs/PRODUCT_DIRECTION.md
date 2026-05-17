@@ -41,6 +41,13 @@ The intended setup path is:
 
 Security-sensitive pairing work should be implemented through scoped API routes and clear RLS/server-side rules. QR generation, pairing claims, session expiry, and device management should not rely on public browser writes alone.
 
+
+## Per-device start views
+
+HomeBoard should remember how each physical screen is used. A wall-mounted iPad or tablet should behave like an appliance and open `/wall` directly, while a family phone can open `/app` and an admin laptop can open `/settings`. This start view is a per-device preference, not a household-global setting.
+
+The current implementation stores `homeboard.deviceMode.v1` and `homeboard.defaultRoute.v1` in browser `localStorage`. Until QR/device pairing exists, that local preference controls the root route. Later, paired wall devices may keep a local device id and resolve a durable `devices.defaultView` value from Supabase.
+
 ## Task persistence and offline sync direction
 
 HomeBoard owns household tasks. The durable task model should treat `tasks` as what the task is and `task_schedules` as when it should appear. `task_instances` are not a future backlog; they store per-occurrence state only, such as `completed_at`, `completed_by_member_id`, future skip/snooze state, or an instance-specific title edit. Visible task cards can still be rendered as `TaskInstance`-shaped view models, but the read layer derives those occurrences from the task and schedule source data and merges saved state by a deterministic occurrence key (`taskId::YYYY-MM-DD::HH:mm`).

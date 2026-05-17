@@ -2,6 +2,7 @@
 
 import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
+import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { useLanguage, type Language } from "@/lib/i18n";
@@ -30,6 +31,7 @@ export default function SettingsPage() {
             <p className="font-bold text-stone-800">{languageName}</p>
           </div>
         </SettingsCard>
+        <DeviceStartViewSettings />
         <HouseholdSettings />
         <SettingsCard status={t("mock")} title={t("members")}>
           <p>{t("membersCopy")}</p>
@@ -46,9 +48,6 @@ export default function SettingsPage() {
         </SettingsCard>
         <SettingsCard status={t("planned")} title={t("runaiApiTokens")}>
           <p>{t("runaiApiTokensCopy")}</p>
-        </SettingsCard>
-        <SettingsCard status={t("localPreview")} title={t("displayDeviceSettings")}>
-          <p>{t("displayDeviceSettingsCopy")}</p>
         </SettingsCard>
         <SettingsCard status={t("previewMode")} title={t("dataBackendStatus")}>
           <div className="space-y-3">
