@@ -35,7 +35,7 @@ export function useTasks() {
       setError(null);
     } catch (unknownError) {
       console.error(unknownError);
-      setError(unknownError instanceof Error ? unknownError.message : copy.load);
+      setError(copy.load);
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export function useTasks() {
         return created;
       } catch (unknownError) {
         console.error(unknownError);
-        setError(unknownError instanceof Error ? unknownError.message : copy.save);
+        setError(copy.save);
         throw unknownError;
       }
     },
@@ -68,7 +68,7 @@ export function useTasks() {
         return updated;
       } catch (unknownError) {
         console.error(unknownError);
-        setError(unknownError instanceof Error ? unknownError.message : copy.save);
+        setError(copy.save);
         throw unknownError;
       }
     },
@@ -83,7 +83,7 @@ export function useTasks() {
         return updated;
       } catch (unknownError) {
         console.error(unknownError);
-        setError(unknownError instanceof Error ? unknownError.message : copy.save);
+        setError(copy.save);
         throw unknownError;
       }
     },
