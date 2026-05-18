@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentParentUser, PARENT_AUTH_CHANGED_EVENT, requestParentEmailCode, signOutParent, verifyParentEmailCode, type ParentAuthUser } from "@/lib/auth/parentAuth";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -10,10 +10,18 @@ export function useParentAuth() {
   const [user, setUser] = useState<ParentAuthUser | null>(null);
   const [status, setStatus] = useState<ParentAuthStatus>("loading");
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedOnceRef = useRef(false);
+  const refreshInFlightRef = useRef(false);
 
-  const refresh = useCallback(async () => {
-    setStatus("loading");
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    if (refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
+
+    if (!options?.silent && !hasLoadedOnceRef.current) {
+      setStatus("loading");
+    }
     setError(null);
+
     try {
       const nextUser = await getCurrentParentUser();
       setUser(nextUser);
@@ -22,6 +30,9 @@ export function useParentAuth() {
       console.warn("HomeBoard could not read parent auth state.", unknownError);
       setUser(null);
       setStatus("signed_out");
+    } finally {
+      hasLoadedOnceRef.current = true;
+      refreshInFlightRef.current = false;
     }
   }, []);
 
@@ -30,7 +41,7 @@ export function useParentAuth() {
   }, [refresh]);
 
   useEffect(() => {
-    const handleAuthChanged = () => void refresh();
+    const handleAuthChanged = () => void refresh({ silent: true });
     window.addEventListener(PARENT_AUTH_CHANGED_EVENT, handleAuthChanged);
     return () => window.removeEventListener(PARENT_AUTH_CHANGED_EVENT, handleAuthChanged);
   }, [refresh]);
@@ -39,12 +50,21 @@ export function useParentAuth() {
     const client = createBrowserSupabaseClient();
     if (!client) return;
 
-    const { data } = client.auth.onAuthStateChange(() => {
-      void refresh();
+    const { data } = client.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user
+        ? {
+            id: session.user.id,
+            email: session.user.email ?? undefined,
+          }
+        : null;
+
+      setUser(nextUser);
+      setStatus(nextUser ? "signed_in" : "signed_out");
+      hasLoadedOnceRef.current = true;
     });
 
     return () => data.subscription.unsubscribe();
-  }, [refresh]);
+  }, []);
 
   const requestCode = useCallback(async (email: string) => {
     setError(null);
@@ -56,6 +76,7 @@ export function useParentAuth() {
     const nextUser = await verifyParentEmailCode(email, token);
     setUser(nextUser);
     setStatus(nextUser ? "signed_in" : "signed_out");
+    hasLoadedOnceRef.current = true;
     return nextUser;
   }, []);
 
@@ -64,6 +85,7 @@ export function useParentAuth() {
     await signOutParent();
     setUser(null);
     setStatus("signed_out");
+    hasLoadedOnceRef.current = true;
   }, []);
 
   return {
