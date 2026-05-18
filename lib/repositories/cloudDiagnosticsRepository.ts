@@ -1,4 +1,5 @@
-import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isCloudConfigured } from "@/lib/cloud/config";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export type CloudDiagnosticsStatus = "not_configured" | "active" | "unreachable";
 
@@ -31,13 +32,13 @@ export class SupabaseCloudDiagnosticsRepository implements CloudDiagnosticsRepos
     const checkedAt = new Date().toISOString();
     const base = {
       checkedAt,
-      isProjectConfigured: isSupabaseConfigured(),
+      isProjectConfigured: isCloudConfigured(),
       householdId,
       householdName: null,
       memberCount: null,
       taskCount: null,
       calendarEventCount: null,
-      repositoryMode: isSupabaseConfigured() && householdId ? ("cloud" as const) : ("local" as const),
+      repositoryMode: isCloudConfigured() && householdId ? ("cloud" as const) : ("local" as const),
     };
 
     if (!this.client || !householdId) {

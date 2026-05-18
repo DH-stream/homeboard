@@ -1,13 +1,14 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getCloudConfig, isCloudConfigured } from "@/lib/cloud/config";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+export { isCloudConfigured };
 
 export function isSupabaseConfigured() {
-  return Boolean(supabaseUrl && supabaseAnonKey);
+  return isCloudConfigured();
 }
 
 export function createBrowserSupabaseClient(): SupabaseClient | null {
-  if (!supabaseUrl || !supabaseAnonKey) return null;
-  return createClient(supabaseUrl, supabaseAnonKey);
+  const config = getCloudConfig();
+  if (!config) return null;
+  return createClient(config.url, config.publishableKey);
 }

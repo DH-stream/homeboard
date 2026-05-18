@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { calendarRepository } from "@/lib/repositories/calendarRepository";
 import { createCalendarService } from "@/lib/services/calendarService";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { isCloudConfigured } from "@/lib/cloud/config";
 import type { CalendarConnection, CalendarSource } from "@/types";
 
 const service = createCalendarService(calendarRepository);
@@ -18,7 +18,7 @@ export function useCalendarSettings() {
   const { householdId } = useResolvedHouseholdId();
 
   const setupState = useMemo<CalendarSetupState>(() => {
-    if (!isSupabaseConfigured()) return "missing_cloud_config";
+    if (!isCloudConfigured()) return "missing_cloud_config";
     if (!householdId) return "missing_household";
     return "ready";
   }, [householdId]);

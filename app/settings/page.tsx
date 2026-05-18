@@ -44,7 +44,7 @@ export default function SettingsPage() {
         <WallTaskCreatorSettings />
         <HouseholdSettings />
         <CloudStatusSettings />
-        <SettingsCard status={t("mock")} title={t("members")}>
+        <SettingsCard title={t("members")}>
           <p>{t("membersCopy")}</p>
         </SettingsCard>
         <CalendarSourcesSettings />
