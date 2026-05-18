@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getCurrentParentUser, PARENT_AUTH_CHANGED_EVENT, requestParentEmailCode, signOutParent, verifyParentEmailCode, type ParentAuthUser } from "@/lib/auth/parentAuth";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export type ParentAuthStatus = "loading" | "signed_out" | "signed_in";
 
@@ -32,6 +33,17 @@ export function useParentAuth() {
     const handleAuthChanged = () => void refresh();
     window.addEventListener(PARENT_AUTH_CHANGED_EVENT, handleAuthChanged);
     return () => window.removeEventListener(PARENT_AUTH_CHANGED_EVENT, handleAuthChanged);
+  }, [refresh]);
+
+  useEffect(() => {
+    const client = createBrowserSupabaseClient();
+    if (!client) return;
+
+    const { data } = client.auth.onAuthStateChange(() => {
+      void refresh();
+    });
+
+    return () => data.subscription.unsubscribe();
   }, [refresh]);
 
   const requestCode = useCallback(async (email: string) => {
