@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { getLocale, useLanguage, type Language } from "@/lib/i18n";
 import { getWeekDays, toLocalDateKey } from "@/lib/utils/date";
 import type { CalendarEvent } from "@/types";
@@ -37,25 +37,30 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
   const isWall = variant === "wall";
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
-  const touchStartX = useRef<number | null>(null);
+  const pointerStartX = useRef<number | null>(null);
   const days = useMemo(() => (isWall ? getWeekDaysFromOffset(weekOffset) : getWeekDays()), [isWall, weekOffset]);
   const today = toLocalDateKey();
+  const selectedDayIndex = isWall ? days.findIndex((day) => toLocalDateKey(day) === selectedDayKey) : -1;
+  const weekGridTemplateColumns = isWall
+    ? days
+        .flatMap((_, index) => (index === selectedDayIndex ? ["minmax(5.2rem,1fr)", "minmax(15rem,2.4fr)"] : ["minmax(5.2rem,1fr)"]))
+        .join(" ")
+    : undefined;
 
   function changeWeek(direction: -1 | 1) {
     setSelectedDayKey(null);
     setWeekOffset((current) => current + direction);
   }
 
-  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
+  function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
     if (!isWall) return;
-    touchStartX.current = event.touches[0]?.clientX ?? null;
+    pointerStartX.current = event.clientX;
   }
 
-  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
-    if (!isWall || touchStartX.current === null) return;
-    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
-    const deltaX = endX - touchStartX.current;
-    touchStartX.current = null;
+  function handlePointerUp(event: React.PointerEvent<HTMLElement>) {
+    if (!isWall || pointerStartX.current === null) return;
+    const deltaX = event.clientX - pointerStartX.current;
+    pointerStartX.current = null;
 
     if (Math.abs(deltaX) < 48) return;
     changeWeek(deltaX > 0 ? -1 : 1);
@@ -67,15 +72,16 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
   }
 
   return (
-    <section className={`surface-card rounded-[2rem] ${isWall ? "p-5" : "p-4"}`} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <section className={`surface-card rounded-[2rem] ${isWall ? "p-5" : "p-4"}`} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className={`font-black tracking-tight text-stone-950 ${isWall ? "text-2xl" : "text-xl"}`}>{t("weekPreview")}</h2>
-        {isWall ? <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-400">Swipe</p> : null}
+        {isWall ? <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-400">Dra</p> : null}
       </div>
 
       <div
-        className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? "grid grid-flow-col auto-cols-[minmax(5.2rem,1fr)] gap-2 overflow-hidden" : "grid grid-cols-7 gap-2"}`}
+        className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? "grid gap-2 overflow-visible py-1" : "grid grid-cols-7 gap-2"}`}
         onClick={isWall ? closeDetailsOnBackground : undefined}
+        style={isWall ? { gridTemplateColumns: weekGridTemplateColumns } : undefined}
       >
         {days.map((day) => {
           const key = toLocalDateKey(day);
@@ -94,7 +100,7 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
           const dayButton = isWall ? (
             <button
               aria-pressed={isSelected}
-              className={`pressable min-h-28 rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] ${dayToneClassName}`}
+              className={`min-h-28 rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] hover:-translate-y-0.5 active:translate-y-0 ${dayToneClassName}`}
               onClick={(event) => {
                 event.stopPropagation();
                 setSelectedDayKey((current) => (current === key ? null : key));
@@ -140,7 +146,7 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
           const selectedEvents = dayEvents;
 
           return (
-            <div className={`grid gap-2 transition-[grid-template-columns] duration-300 ease-[var(--ease-out)] ${detailsOpen ? "grid-cols-[minmax(5.2rem,1fr)_minmax(15rem,2.25fr)]" : "grid-cols-[minmax(5.2rem,1fr)]"}`} key={key}>
+            <Fragment key={key}>
               {dayButton}
               {detailsOpen ? (
                 <div
@@ -167,7 +173,7 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
                   </div>
                 </div>
               ) : null}
-            </div>
+            </Fragment>
           );
         })}
       </div>
