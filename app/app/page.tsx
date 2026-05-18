@@ -16,12 +16,11 @@ import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { useLanguage } from "@/lib/i18n";
-import { isFutureLocalDay, isSameLocalDay } from "@/lib/utils/date";
+import { shouldShowInCompletedTasks, shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
+import { isFutureLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
 
-type Filter = "all" | "open" | "completed";
-
-const DAILY_RECURRING_REVEAL_MINUTES = 90;
+type Filter = "open" | "completed";
 
 function isRecurringTask(task: TaskInstance) {
   return task.scheduleType === "daily" || task.scheduleType === "weekly";
@@ -33,20 +32,12 @@ function getFirstCreatedTaskId(created: unknown) {
   return firstTask?.id ?? null;
 }
 
-function shouldShowTodayTask(task: TaskInstance, now: Date) {
-  if (!isSameLocalDay(task.dueDate, now)) return false;
-  if (task.completedAt || task.scheduleType !== "daily") return true;
-
-  const revealAt = new Date(task.dueDate).getTime() - DAILY_RECURRING_REVEAL_MINUTES * 60 * 1000;
-  return now.getTime() >= revealAt;
-}
-
 export default function MobileAppPage() {
-  const { getCompletionEncouragement, t } = useLanguage();
+  const { getCompletionEncouragement, language, t } = useLanguage();
   const { members } = useMembers();
   const { todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted, updateTask, error: taskError, mode: taskMode } = useTasks();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("open");
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("app"));
@@ -73,15 +64,17 @@ export default function MobileAppPage() {
 
   const filteredTasks = useMemo(() => {
     return todayTasks.filter((task) => {
-      const statusMatch = filter === "all" || (filter === "completed" ? task.completedAt : !task.completedAt);
+      const statusMatch = filter === "completed" ? shouldShowInCompletedTasks(task) : shouldShowInRemainingTasks(task, now);
       const memberMatch = memberFilter === null || task.assignedToMemberId === memberFilter;
       return statusMatch && memberMatch;
     });
-  }, [filter, memberFilter, todayTasks]);
+  }, [filter, memberFilter, now, todayTasks]);
 
   const todayTaskAnimationKey = `today-${memberFilter ?? "all-members"}-${filter}`;
   const taskStorageLabel = taskMode === "supabase" ? t("homeCloudSync") : t("previewStorage");
   const taskStorageNote = taskMode === "supabase" ? t("cloudTaskDueDatePreview") : t("dueDatePreview");
+  const remainingEmptyTitle = language === "sv" ? "Allt är klart för idag." : "Everything is done for today.";
+  const remainingEmptyBody = language === "sv" ? "Klara uppgifter finns under Klart." : "Completed tasks are under Done.";
 
   const handleTaskCreated = useCallback((created: unknown) => {
     const createdTaskId = getFirstCreatedTaskId(created);
@@ -127,7 +120,6 @@ export default function MobileAppPage() {
   }
 
   const filterLabels: Record<Filter, string> = {
-    all: t("all"),
     open: t("filtersOpen"),
     completed: t("filtersCompleted"),
   };
@@ -162,23 +154,27 @@ export default function MobileAppPage() {
           <h2 className="mt-2 text-2xl font-black tracking-tight text-stone-950">{t("todaysTasks")}</h2>
         </div>
         <MemberFilterPills members={members} onSelectMember={setMemberFilter} selectedMemberId={memberFilter} />
-        <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl bg-stone-100 p-1 text-sm font-black text-stone-600">
-          {(["all", "open", "completed"] as Filter[]).map((next) => (
+        <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl bg-stone-100 p-1 text-sm font-black text-stone-600">
+          {(["open", "completed"] as Filter[]).map((next) => (
             <button className={`pressable min-h-11 min-w-0 truncate rounded-xl px-2 py-2 text-center sm:px-3 ${filter === next ? "bg-white text-stone-950 shadow-sm" : ""}`} key={next} onClick={() => setFilter(next)} type="button">
               {filterLabels[next]}
             </button>
           ))}
         </div>
-        <TaskList
-          animationKey={todayTaskAnimationKey}
-          members={members}
-          onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })}
-          onToggle={toggleTask}
-          recentlyCompletedId={completionFeedback?.taskId ?? null}
-          recentlyCreatedId={recentlyCreatedTaskId}
-          completionMessage={completionFeedback?.message}
-          tasks={filteredTasks}
-        />
+        {filter === "open" && !filteredTasks.length && stats.total > 0 ? (
+          <EmptyState title={remainingEmptyTitle}>{remainingEmptyBody}</EmptyState>
+        ) : (
+          <TaskList
+            animationKey={todayTaskAnimationKey}
+            members={members}
+            onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })}
+            onToggle={toggleTask}
+            recentlyCompletedId={completionFeedback?.taskId ?? null}
+            recentlyCreatedId={recentlyCreatedTaskId}
+            completionMessage={completionFeedback?.message}
+            tasks={filteredTasks}
+          />
+        )}
       </section>
 
       <section className={`surface-card mt-5 rounded-[2rem] p-4 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-7" : ""}`}>

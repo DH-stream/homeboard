@@ -10,6 +10,7 @@ import { TaskList } from "@/components/tasks/TaskList";
 import { WallQuickTaskButton } from "@/components/wall/WallQuickTaskButton";
 import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
 import { ActionToast } from "@/components/ui/ActionToast";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { isCloudConfigured } from "@/lib/cloud/config";
 import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
@@ -22,7 +23,7 @@ import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type Wall
 import { saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
-import { shouldShowTodayTask } from "@/lib/tasks/visibility";
+import { shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
 import type { TaskInstance } from "@/types";
 
 const QUICK_CREATOR_CLOSE_MS = 240;
@@ -55,14 +56,18 @@ export default function WallPage() {
   const quickCreatorTimerRef = useRef<number | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
+  const remainingTodayTasks = useMemo(() => todayTasks.filter((task) => shouldShowInRemainingTasks(task, now)), [now, todayTasks]);
   const filteredTodayTasks = useMemo(() => {
-    if (!selectedMemberId) return todayTasks;
-    return todayTasks.filter((task) => task.assignedToMemberId === selectedMemberId);
-  }, [selectedMemberId, todayTasks]);
+    if (!selectedMemberId) return remainingTodayTasks;
+    return remainingTodayTasks.filter((task) => task.assignedToMemberId === selectedMemberId);
+  }, [selectedMemberId, remainingTodayTasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
   }, [todayTasks]);
+  const allVisibleTasksDone = todayTasks.length > 0 && filteredTodayTasks.length === 0;
+  const allDoneTitle = language === "sv" ? "Allt är klart för idag." : "Everything is done for today.";
+  const allDoneBody = language === "sv" ? "Klara uppgifter finns kvar i mobilvyn under Klart." : "Completed tasks remain available in the mobile Done view.";
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
@@ -197,7 +202,11 @@ export default function WallPage() {
             </div>
           ) : null}
           <ActionToast message={createSuccessMessage} onDismiss={() => setCreateSuccessMessage(null)} placement="inline" />
-          <TaskList members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} recentlyCreatedId={recentlyCreatedTaskId} completionMessage={completionFeedback?.message} roomy tasks={filteredTodayTasks} />
+          {allVisibleTasksDone ? (
+            <EmptyState title={allDoneTitle}>{allDoneBody}</EmptyState>
+          ) : (
+            <TaskList members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} recentlyCreatedId={recentlyCreatedTaskId} completionMessage={completionFeedback?.message} roomy tasks={filteredTodayTasks} />
+          )}
         </section>
         <aside className={`grid content-start gap-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
           <TodayAgenda events={todayEvents} />
