@@ -89,7 +89,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const { language } = useLanguage();
   const copy = setupCopy[language];
   const { householdId } = useResolvedHouseholdId();
-  const { isLoading: isParentAuthLoading, isSignedIn: isParentSignedIn } = useParentAuth();
+  const { isLoading: isParentAuthLoading, isSignedIn: isParentSignedIn, user: parentUser } = useParentAuth();
   const [householdName, setHouseholdName] = useState(copy.defaultName);
   const [memberNames, setMemberNames] = useState(["", ""]);
   const [households, setHouseholds] = useState<Household[]>([]);
@@ -101,9 +101,14 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const initialMembers = useMemo(
     () =>
       memberNames
-        .map((name, index) => ({ displayName: name.trim(), color: memberColors[index % memberColors.length], role: "adult" as const }))
+        .map((name, index) => ({
+          displayName: name.trim(),
+          color: memberColors[index % memberColors.length],
+          role: "adult" as const,
+          userId: index === 0 ? parentUser?.id : undefined,
+        }))
         .filter((member) => member.displayName),
-    [memberNames],
+    [memberNames, parentUser?.id],
   );
 
   useEffect(() => {
@@ -143,14 +148,17 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = householdName.trim();
-    if (!name || !isParentSignedIn) return;
+    if (!name || !isParentSignedIn || !parentUser) return;
 
     setSaving(true);
     setError(null);
 
     try {
-      const household = await service.createHousehold({ name });
-      await service.createHouseholdMembers(household.id, initialMembers);
+      const household = await service.createHousehold({ name, ownerUserId: parentUser.id });
+      const members = initialMembers.length
+        ? initialMembers
+        : [{ displayName: parentUser.email ?? copy.member, color: memberColors[0], role: "adult" as const, userId: parentUser.id }];
+      await service.createHouseholdMembers(household.id, members);
       saveSelectedHouseholdId(household.id);
     } catch (nextError) {
       console.warn("HomeBoard could not create a cloud home during setup.", nextError);
