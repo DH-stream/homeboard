@@ -9,6 +9,7 @@ import type { CalendarEvent } from "@/types";
 
 const service = createCalendarService(calendarRepository);
 const MOCK_SOURCE_ID = "local-mock-calendar-source";
+const SHOULD_SHOW_DEV_MOCK_EVENTS = process.env.NODE_ENV === "development";
 
 function startOfLocalWeek(date: Date) {
   const next = new Date(date);
@@ -27,6 +28,8 @@ function createLocalIso(dayOffset: number, hour: number, minute = 0) {
 }
 
 function createMockCalendarEvents(): CalendarEvent[] {
+  if (!SHOULD_SHOW_DEV_MOCK_EVENTS) return [];
+
   const events = [
     { title: "Frukosttest i molnet", dayOffset: 0, startHour: 7, endHour: 7, endMinute: 45, color: "#f59e0b" },
     { title: "Hämta Leah på förskolan", dayOffset: 0, startHour: 16, startMinute: 15, endHour: 16, endMinute: 45, color: "#f97316" },
