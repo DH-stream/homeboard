@@ -7,12 +7,13 @@ HomeBoard should feel simple for a household. The product language is **Cloud sy
 For normal families, setup should work like this:
 
 1. Open HomeBoard.
-2. Create or choose a home.
+2. Create a new home or choose an existing home in the app.
 3. **Molnsynk** / **Cloud sync** is available automatically in the standard hosted HomeBoard app.
-4. Open HomeBoard on the wall display or iPad.
-5. Pair wall and mobile devices with a QR flow when that feature is implemented.
+4. HomeBoard remembers the selected home on that device.
+5. Open HomeBoard on the wall display or iPad.
+6. Pair wall and mobile devices with a QR flow when that feature is implemented.
 
-A parent should not need to know about Supabase projects, Vercel environment variables, SQL, RLS, UUIDs, or database tables.
+A parent should not need to know about Supabase projects, Vercel environment variables, SQL, RLS, UUIDs, or database tables. Household UUIDs are internal implementation details; normal setup should never require copying one from a backend dashboard.
 
 ## Built-in official HomeBoard cloud
 
@@ -39,7 +40,7 @@ Set these only when you want to point HomeBoard at another cloud project:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (preferred) or `NEXT_PUBLIC_SUPABASE_ANON_KEY` (legacy alias)
-- `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID` for a development household override, or choose/create a home in the app.
+- `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID` only as an optional development override. Normal setup should choose or create a home in the app instead of copying a UUID.
 
 To disable the bundled official HomeBoard cloud during local development, set:
 
@@ -49,7 +50,7 @@ NEXT_PUBLIC_HOMEBOARD_DISABLE_BUILT_IN_CLOUD=true
 
 Then HomeBoard behaves as local/device-only unless you also provide a complete self-host cloud override.
 
-After configuring an override or using the built-in cloud, open `/settings` and check **Cloud status** / **Molnstatus**. It should show the home name, member count, task count, and calendar-event count when a household is selected or supplied by `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID`.
+After configuring an override or using the built-in cloud, open HomeBoard and create or select a home in the in-app setup screen. Then open `/settings` and check **Cloud status** / **Molnstatus**. It should show the home name, member count, task count, and calendar-event count. `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID` remains available only for development shortcuts.
 
 ## Calendar events today
 
