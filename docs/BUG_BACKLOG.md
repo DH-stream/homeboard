@@ -12,6 +12,116 @@ Use this for things that are not product ideas, but real problems or demo risks.
 
 ## Open issues
 
+### P0 — Wall must show the same due-today tasks as mobile
+
+Status: open
+
+Context:
+
+A task exists and is visible in the mobile `/app` view, but it does not appear in `/wall`.
+
+This breaks trust in HomeBoard because the wall is supposed to be the shared household source of truth for today's tasks.
+
+Likely areas to inspect:
+
+- `/app` and `/wall` currently have separate today-task visibility logic.
+- One-off tasks due today may be filtered differently between views.
+- Daily recurring tasks have a 90-minute reveal rule that may not belong to all task types.
+- Cloud/local household selection may differ between mobile and wall devices.
+- Task cache or refresh behavior may make one view stale.
+
+Expected behavior:
+
+- A task created in `/app` for today appears in `/wall` Dagens uppgifter.
+- A one-off task due today is visible all day in both views, even if its due time is later.
+- Completed tasks due today remain visible in both views.
+- `/app` and `/wall` use one shared `shouldShowTodayTask()` helper so they cannot drift.
+
+Acceptance:
+
+- Create `Test från mobilen` in `/app`.
+- Confirm it appears immediately in `/app` today list.
+- Open `/wall`.
+- Confirm it appears in Dagens uppgifter.
+- Reload `/wall`.
+- Confirm it still appears.
+
+### P1 — Wall task cards are too square and hard to read
+
+Status: open
+
+Context:
+
+Tasks in `/wall` currently become small square-like cards. The text is hard to read, especially when task groups are laid out in many narrow columns.
+
+This is a wall-display UX problem: the wall must be readable from a distance.
+
+Likely areas to inspect:
+
+- `TaskList grouped` uses too many columns for wall mode, including `xl:grid-cols-4`.
+- `TaskCard roomy` uses a large checkbox that steals horizontal text space in narrow columns.
+- Task titles may not wrap enough for wall readability.
+- `MemberTaskGroup` behaves more like a tile than a readable list column.
+
+Expected behavior:
+
+- Wall task cards are wide, list-like, and readable.
+- Grouped wall tasks should use max two columns on large screens unless design testing proves otherwise.
+- Normal task titles such as `Packa gympapåse till Leah` should be readable without leaning into the screen.
+- Task titles may wrap to two lines in wall mode.
+- Member groups should feel like readable columns/lists, not tiny tiles.
+
+Acceptance:
+
+- `/wall` Dagens uppgifter is readable on iPhone/iPad preview and wall layout.
+- Task cards no longer look like small squares.
+- Text is large enough and has enough horizontal space.
+
+### P1 — WeekPreview calendar events are too small on wall
+
+Status: open
+
+Context:
+
+Calendar events in `/wall` WeekPreview are still too small to read. Current event pills are tiny, truncated, and designed more like a compact preview than a wall display.
+
+Expected behavior:
+
+- WeekPreview supports a wall/readable variant.
+- `/wall` should use the readable wall variant.
+- Event text should be larger than current `text-xs` styling.
+- Event titles should wrap to two lines where useful instead of always truncating.
+- Calendar test events such as `Frukosttest i molnet`, `Hämta Leah`, `Handla inför veckan`, and `Helgplan` should be readable.
+
+Acceptance:
+
+- `/wall` WeekPreview events can be read without leaning into the screen.
+- The week still fits reasonably in the layout.
+- Mobile/compact calendar use is not made worse.
+
+### P1 — Wall member pills are not clickable/filterable
+
+Status: open
+
+Context:
+
+Members are displayed in `/wall`, but the member pills are not clickable. On a wall display, tapping a person should help the family filter or focus the task board.
+
+Expected behavior:
+
+- Member pills in `/wall` are interactive.
+- Tapping a member filters/focuses Dagens uppgifter for that member.
+- There should be a clear selected state.
+- There should be an easy way back to all members, for example an `Alla` chip.
+- The interaction must be touch-friendly and readable on a wall/iPad.
+
+Acceptance:
+
+- Tap `Max`, `Felicia`, or `Leah` on `/wall`.
+- Dagens uppgifter updates to show that member's tasks.
+- Selected member is visually obvious.
+- Tap `Alla` to return to the full household task view.
+
 ### P0 — Adding tasks must never silently fail
 
 Status: fixed in PR “Fix task creation feedback”
