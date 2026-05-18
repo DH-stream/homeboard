@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { isCloudConfigured } from "@/lib/cloud/config";
 import { saveSelectedHouseholdId } from "@/lib/households/selection";
+import { useParentAuth } from "@/lib/hooks/useParentAuth";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useLanguage, type Language } from "@/lib/i18n";
 import { householdRepository } from "@/lib/repositories/householdRepository";
@@ -31,6 +33,7 @@ const setupCopy: Record<
     listError: string;
     loadingHomes: string;
     member: string;
+    parentRequired: string;
     remembersChoice: string;
     thisHome: string;
     title: string;
@@ -53,6 +56,7 @@ const setupCopy: Record<
     listError: "We could not load existing homes right now. You can still create a new home.",
     loadingHomes: "Loading homes…",
     member: "Member",
+    parentRequired: "Sign in as a grown-up before creating a new home.",
     remembersChoice: "HomeBoard remembers this choice on this device.",
     thisHome: "This home",
     title: "Choose your HomeBoard home.",
@@ -74,6 +78,7 @@ const setupCopy: Record<
     listError: "Vi kunde inte ladda befintliga hem just nu. Du kan fortfarande skapa ett nytt hem.",
     loadingHomes: "Laddar hem…",
     member: "Medlem",
+    parentRequired: "Logga in som vuxen innan du skapar ett nytt hem.",
     remembersChoice: "HomeBoard kommer ihåg valet på den här enheten.",
     thisHome: "Det här hemmet",
     title: "Välj ditt HomeBoard-hem.",
@@ -84,6 +89,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const { language } = useLanguage();
   const copy = setupCopy[language];
   const { householdId } = useResolvedHouseholdId();
+  const { isLoading: isParentAuthLoading, isSignedIn: isParentSignedIn } = useParentAuth();
   const [householdName, setHouseholdName] = useState(copy.defaultName);
   const [memberNames, setMemberNames] = useState(["", ""]);
   const [households, setHouseholds] = useState<Household[]>([]);
@@ -137,7 +143,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = householdName.trim();
-    if (!name) return;
+    if (!name || !isParentSignedIn) return;
 
     setSaving(true);
     setError(null);
@@ -192,53 +198,60 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
       ) : null}
 
       {!isLoadingHouseholds ? (
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          <h3 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">{copy.createNewHome}</h3>
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.householdName}</span>
-            <input
-              className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
-              onChange={(event) => setHouseholdName(event.target.value)}
-              required
-              value={householdName}
-            />
-          </label>
+        <div className="mt-5 space-y-4">
+          <ParentAuthCard compact />
+          {!isParentSignedIn ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.parentRequired}</p> : null}
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <h3 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">{copy.createNewHome}</h3>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.householdName}</span>
+              <input
+                className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400"
+                disabled={!isParentSignedIn}
+                onChange={(event) => setHouseholdName(event.target.value)}
+                required
+                value={householdName}
+              />
+            </label>
 
-          <div className="rounded-[1.5rem] border border-stone-200/80 bg-stone-50 p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.initialMembers}</p>
-                <p className="text-sm font-semibold text-stone-600">{copy.initialMembersCopy}</p>
+            <div className="rounded-[1.5rem] border border-stone-200/80 bg-stone-50 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.initialMembers}</p>
+                  <p className="text-sm font-semibold text-stone-600">{copy.initialMembersCopy}</p>
+                </div>
+                <button
+                  className="pressable min-h-10 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm font-black text-stone-800 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={!isParentSignedIn}
+                  onClick={() => setMemberNames((current) => [...current, ""])}
+                  type="button"
+                >
+                  {copy.add}
+                </button>
               </div>
-              <button
-                className="pressable min-h-10 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm font-black text-stone-800 shadow-sm"
-                onClick={() => setMemberNames((current) => [...current, ""])}
-                type="button"
-              >
-                {copy.add}
-              </button>
+              <div className="space-y-2">
+                {memberNames.map((memberName, index) => (
+                  <label className="flex items-center gap-2" key={index}>
+                    <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white" style={{ backgroundColor: memberColors[index % memberColors.length] }} />
+                    <input
+                      className="min-h-11 flex-1 rounded-2xl border border-stone-200 bg-white px-3 py-2 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400"
+                      disabled={!isParentSignedIn}
+                      onChange={(event) => setMemberNames((current) => current.map((value, nextIndex) => (nextIndex === index ? event.target.value : value)))}
+                      placeholder={`${copy.member} ${index + 1}`}
+                      value={memberName}
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              {memberNames.map((memberName, index) => (
-                <label className="flex items-center gap-2" key={index}>
-                  <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white" style={{ backgroundColor: memberColors[index % memberColors.length] }} />
-                  <input
-                    className="min-h-11 flex-1 rounded-2xl border border-stone-200 bg-white px-3 py-2 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
-                    onChange={(event) => setMemberNames((current) => current.map((value, nextIndex) => (nextIndex === index ? event.target.value : value)))}
-                    placeholder={`${copy.member} ${index + 1}`}
-                    value={memberName}
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
 
-          {error ? <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</p> : null}
+            {error ? <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</p> : null}
 
-          <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isSaving || !householdName.trim()} type="submit">
-            {isSaving ? copy.creating : copy.create}
-          </button>
-        </form>
+            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isSaving || isParentAuthLoading || !isParentSignedIn || !householdName.trim()} type="submit">
+              {isSaving ? copy.creating : copy.create}
+            </button>
+          </form>
+        </div>
       ) : null}
     </section>
   );
