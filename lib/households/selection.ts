@@ -18,7 +18,10 @@ export function isLocalOnlyModeEnabled() {
 }
 
 export function resolveCurrentHouseholdId() {
-  return getHouseholdIdOverride() ?? getLocalSelectedHouseholdId();
+  const overrideHouseholdId = getHouseholdIdOverride();
+  if (overrideHouseholdId) return overrideHouseholdId;
+  if (isLocalOnlyModeEnabled()) return null;
+  return getLocalSelectedHouseholdId();
 }
 
 export function saveSelectedHouseholdId(householdId: string) {
@@ -31,7 +34,6 @@ export function saveSelectedHouseholdId(householdId: string) {
 
 export function enableLocalOnlyMode() {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(SELECTED_HOUSEHOLD_STORAGE_KEY);
   window.localStorage.setItem(LOCAL_ONLY_MODE_STORAGE_KEY, "true");
   window.dispatchEvent(new CustomEvent(SELECTED_HOUSEHOLD_CHANGED_EVENT, { detail: { householdId: null } }));
   window.dispatchEvent(new CustomEvent(LOCAL_ONLY_MODE_CHANGED_EVENT, { detail: true }));
@@ -40,6 +42,7 @@ export function enableLocalOnlyMode() {
 export function disableLocalOnlyMode() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(LOCAL_ONLY_MODE_STORAGE_KEY);
+  window.dispatchEvent(new CustomEvent(SELECTED_HOUSEHOLD_CHANGED_EVENT, { detail: { householdId: resolveCurrentHouseholdId() } }));
   window.dispatchEvent(new CustomEvent(LOCAL_ONLY_MODE_CHANGED_EVENT, { detail: false }));
 }
 
