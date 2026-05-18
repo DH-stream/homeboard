@@ -184,6 +184,7 @@ export default function WallPage() {
               <WallQuickTaskCreator members={members} onCreated={handleTaskCreated} onCreateTask={createTask} />
             </div>
           ) : null}
+          <ActionToast message={createSuccessMessage} onDismiss={() => setCreateSuccessMessage(null)} placement="inline" />
           <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} recentlyCreatedId={recentlyCreatedTaskId} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
         </section>
         <aside className={`grid content-start gap-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
@@ -191,7 +192,6 @@ export default function WallPage() {
           <WeekPreview events={events} />
         </aside>
       </div>
-      <ActionToast message={createSuccessMessage} onDismiss={() => setCreateSuccessMessage(null)} />
     </WallShell>
   );
 }

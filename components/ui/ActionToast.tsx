@@ -2,15 +2,18 @@
 
 import { useEffect } from "react";
 
+type ActionToastPlacement = "fixed" | "inline";
 type ActionToastTone = "success";
 
 export function ActionToast({
   message,
   onDismiss,
+  placement = "fixed",
   tone = "success",
 }: {
   message: string | null;
   onDismiss: () => void;
+  placement?: ActionToastPlacement;
   tone?: ActionToastTone;
 }) {
   useEffect(() => {
@@ -23,7 +26,7 @@ export function ActionToast({
   if (!message) return null;
 
   return (
-    <div className={`action-toast action-toast--${tone}`} role="status" aria-live="polite">
+    <div className={`action-toast action-toast--${tone} action-toast--${placement}`} role="status" aria-live="polite">
       <span className="action-toast__check" aria-hidden>
         ✓
       </span>
