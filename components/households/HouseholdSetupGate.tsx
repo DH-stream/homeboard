@@ -20,6 +20,11 @@ const setupCopy: Record<
     add: string;
     body: string;
     chooseHome: string;
+    cloudBenefitBackup: string;
+    cloudBenefitDevices: string;
+    cloudBenefitGrownUp: string;
+    cloudChoiceBody: string;
+    cloudChoiceTitle: string;
     continueLocal: string;
     continueLocalBody: string;
     continueWithHome: string;
@@ -34,6 +39,10 @@ const setupCopy: Record<
     initialMembersCopy: string;
     listError: string;
     loadingHomes: string;
+    localBenefitNoAccount: string;
+    localBenefitPrivate: string;
+    localBenefitUpgrade: string;
+    localChoiceTitle: string;
     member: string;
     parentRequired: string;
     remembersChoice: string;
@@ -43,10 +52,15 @@ const setupCopy: Record<
 > = {
   en: {
     add: "Add",
-    body: "Use HomeBoard locally without an account, or sign in as a grown-up when you want cloud sync and mobile sync.",
+    body: "Choose the mode that fits this screen. You can start locally now and turn on cloud sync later.",
     chooseHome: "Choose cloud home",
-    continueLocal: "Continue on this device",
-    continueLocalBody: "No sign-in needed. Tasks stay on this device until you turn on cloud sync later.",
+    cloudBenefitBackup: "Safer if the device is replaced or reset.",
+    cloudBenefitDevices: "Syncs tasks and calendar between phone and wall screens.",
+    cloudBenefitGrownUp: "Lets a grown-up manage the home and pair more devices.",
+    cloudChoiceBody: "Best when you want mobile sync, several screens, and shared family data. Requires grown-up sign-in.",
+    cloudChoiceTitle: "Use cloud sync",
+    continueLocal: "Continue locally",
+    continueLocalBody: "No sign-in needed. Everything stays on this device until you choose cloud sync later.",
     continueWithHome: "Continue with this home",
     create: "Create cloud home",
     createNewHome: "Create cloud home",
@@ -59,6 +73,10 @@ const setupCopy: Record<
     initialMembersCopy: "Optional. Add the people who should appear first.",
     listError: "We could not load existing homes right now. You can still continue locally or create a new cloud home.",
     loadingHomes: "Loading homes…",
+    localBenefitNoAccount: "Works immediately without account or email code.",
+    localBenefitPrivate: "Tasks and settings are stored only on this device.",
+    localBenefitUpgrade: "You can turn on cloud sync later when you want mobile sync.",
+    localChoiceTitle: "Use this device only",
     member: "Member",
     parentRequired: "Sign in as a grown-up before creating a cloud home.",
     remembersChoice: "HomeBoard remembers this choice on this device.",
@@ -67,10 +85,15 @@ const setupCopy: Record<
   },
   sv: {
     add: "Lägg till",
-    body: "Använd HomeBoard lokalt utan konto, eller logga in som vuxen när du vill ha molnsynk och mobilsynk.",
+    body: "Välj det läge som passar den här skärmen. Du kan börja lokalt nu och aktivera molnsynk senare.",
     chooseHome: "Välj molnhem",
-    continueLocal: "Fortsätt på den här enheten",
-    continueLocalBody: "Ingen inloggning behövs. Uppgifter sparas på den här enheten tills du aktiverar molnsynk senare.",
+    cloudBenefitBackup: "Tryggare om enheten byts ut eller nollställs.",
+    cloudBenefitDevices: "Synkar uppgifter och kalender mellan mobil och väggskärmar.",
+    cloudBenefitGrownUp: "Låter en vuxen hantera hemmet och koppla fler enheter.",
+    cloudChoiceBody: "Bäst när du vill ha mobilsynk, flera skärmar och delad familjedata. Kräver vuxeninloggning.",
+    cloudChoiceTitle: "Använd molnsynk",
+    continueLocal: "Fortsätt lokalt",
+    continueLocalBody: "Ingen inloggning behövs. Allt stannar på den här enheten tills du väljer molnsynk senare.",
     continueWithHome: "Fortsätt med det här hemmet",
     create: "Skapa molnhem",
     createNewHome: "Skapa molnhem",
@@ -83,6 +106,10 @@ const setupCopy: Record<
     initialMembersCopy: "Valfritt. Lägg till personerna som ska visas först.",
     listError: "Vi kunde inte ladda befintliga hem just nu. Du kan fortfarande fortsätta lokalt eller skapa ett nytt molnhem.",
     loadingHomes: "Laddar hem…",
+    localBenefitNoAccount: "Fungerar direkt utan konto eller e-postkod.",
+    localBenefitPrivate: "Uppgifter och inställningar sparas bara på den här enheten.",
+    localBenefitUpgrade: "Du kan aktivera molnsynk senare när du vill synka med mobilen.",
+    localChoiceTitle: "Använd bara den här enheten",
     member: "Medlem",
     parentRequired: "Logga in som vuxen innan du skapar ett molnhem.",
     remembersChoice: "HomeBoard kommer ihåg valet på den här enheten.",
@@ -192,7 +219,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const showHouseholdList = households.length > 0;
 
   return (
-    <section className="surface-card mx-auto mt-4 max-w-xl rounded-[2rem] p-5 shadow-xl shadow-amber-900/5 sm:p-6" aria-labelledby="household-setup-title">
+    <section className="surface-card mx-auto mt-4 max-w-2xl rounded-[2rem] p-5 shadow-xl shadow-amber-900/5 sm:p-6" aria-labelledby="household-setup-title">
       <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
       <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">{copy.eyebrow}</p>
       <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950" id="household-setup-title">
@@ -200,14 +227,33 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
       </h2>
       <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.body}</p>
 
-      <button
-        className="pressable mt-5 w-full rounded-[1.7rem] border border-amber-200 bg-amber-50 px-4 py-4 text-left shadow-sm transition-[border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] hover:border-amber-300"
-        onClick={continueLocalOnly}
-        type="button"
-      >
-        <span className="block text-lg font-black text-stone-950">{copy.continueLocal}</span>
-        <span className="mt-1 block text-sm font-bold leading-6 text-stone-600">{copy.continueLocalBody}</span>
-      </button>
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <button
+          className="pressable rounded-[1.7rem] border border-amber-200 bg-amber-50 px-4 py-4 text-left shadow-sm transition-[border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] hover:border-amber-300"
+          onClick={continueLocalOnly}
+          type="button"
+        >
+          <span className="block text-xs font-black uppercase tracking-[0.16em] text-amber-700">{copy.localChoiceTitle}</span>
+          <span className="mt-2 block text-lg font-black text-stone-950">{copy.continueLocal}</span>
+          <span className="mt-1 block text-sm font-bold leading-6 text-stone-600">{copy.continueLocalBody}</span>
+          <span className="mt-3 block space-y-1 text-xs font-bold leading-5 text-stone-500">
+            <span className="block">✓ {copy.localBenefitNoAccount}</span>
+            <span className="block">✓ {copy.localBenefitPrivate}</span>
+            <span className="block">✓ {copy.localBenefitUpgrade}</span>
+          </span>
+        </button>
+
+        <div className="rounded-[1.7rem] border border-stone-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">{copy.cloudChoiceTitle}</p>
+          <p className="mt-2 text-lg font-black text-stone-950">{copy.createNewHome}</p>
+          <p className="mt-1 text-sm font-bold leading-6 text-stone-600">{copy.cloudChoiceBody}</p>
+          <div className="mt-3 space-y-1 text-xs font-bold leading-5 text-stone-500">
+            <p>✓ {copy.cloudBenefitDevices}</p>
+            <p>✓ {copy.cloudBenefitBackup}</p>
+            <p>✓ {copy.cloudBenefitGrownUp}</p>
+          </div>
+        </div>
+      </div>
 
       {isLoadingHouseholds ? <p className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-600">{copy.loadingHomes}</p> : null}
       {listError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{listError}</p> : null}
@@ -236,7 +282,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
       ) : null}
 
       {!isLoadingHouseholds ? (
-        <div className="mt-5 space-y-4">
+        <div className="mt-5 space-y-4 rounded-[1.7rem] border border-stone-200 bg-stone-50 p-4">
           <ParentAuthCard compact />
           {!isParentSignedIn ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.parentRequired}</p> : null}
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -252,7 +298,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
               />
             </label>
 
-            <div className="rounded-[1.5rem] border border-stone-200/80 bg-stone-50 p-3">
+            <div className="rounded-[1.5rem] border border-stone-200/80 bg-white p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.initialMembers}</p>
