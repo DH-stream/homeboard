@@ -14,6 +14,11 @@ function broadcastParentAuthChanged() {
   window.dispatchEvent(new CustomEvent(PARENT_AUTH_CHANGED_EVENT));
 }
 
+function getParentAuthRedirectUrl() {
+  if (typeof window === "undefined") return undefined;
+  return `${window.location.origin}/settings`;
+}
+
 function mapSupabaseUser(user: { id: string; email?: string | null } | null | undefined): ParentAuthUser | null {
   if (!user) return null;
   return {
@@ -41,6 +46,7 @@ export async function requestParentEmailCode(email: string) {
   const { error } = await client.auth.signInWithOtp({
     email: normalizedEmail,
     options: {
+      emailRedirectTo: getParentAuthRedirectUrl(),
       shouldCreateUser: true,
     },
   });
