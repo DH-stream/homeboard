@@ -11,6 +11,8 @@ type TaskWaterfallStyle = CSSProperties & {
   "--task-waterfall-delay": string;
 };
 
+const WALL_TWO_COLUMN_TASK_THRESHOLD = 4;
+
 export function TaskList({
   tasks,
   members,
@@ -45,9 +47,13 @@ export function TaskList({
       .map((member) => ({ member, tasks: tasks.filter((task) => task.assignedToMemberId === member.id) }))
       .filter((group) => group.tasks.length);
     const unassigned = tasks.filter((task) => !task.assignedToMemberId);
+    const shouldUseWallTwoColumns = roomy && tasks.length >= WALL_TWO_COLUMN_TASK_THRESHOLD;
+    const groupedGridClassName = roomy
+      ? `grid gap-4 ${shouldUseWallTwoColumns ? "xl:grid-cols-2" : ""}`
+      : "grid gap-4 md:grid-cols-2 xl:grid-cols-4";
 
     return (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className={groupedGridClassName}>
         {groups.map((group, index) => (
           <div className="task-waterfall-item" key={`${animationKey ?? "grouped"}-${group.member.id}`} style={{ "--task-waterfall-delay": `${index * 80}ms` } as TaskWaterfallStyle}>
             <MemberTaskGroup member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} recentlyCreatedId={recentlyCreatedId} completionMessage={completionMessage} roomy={roomy} tasks={group.tasks} />
@@ -62,8 +68,11 @@ export function TaskList({
     );
   }
 
+  const shouldUseWallTwoColumns = roomy && tasks.length >= WALL_TWO_COLUMN_TASK_THRESHOLD;
+  const listClassName = shouldUseWallTwoColumns ? "grid gap-3 xl:grid-cols-2" : "space-y-3";
+
   return (
-    <div className="space-y-3">
+    <div className={listClassName}>
       {tasks.map((task, index) => (
         <div className="task-waterfall-item" key={`${animationKey ?? "list"}-${task.id}`} style={{ "--task-waterfall-delay": `${index * 70}ms` } as TaskWaterfallStyle}>
           <TaskCard
