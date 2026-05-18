@@ -3,8 +3,8 @@ import { StatusChip } from "@/components/ui/StatusChip";
 
 function getStatusTone(status: string): "amber" | "emerald" | "stone" {
   const normalized = status.toLowerCase();
-  if (normalized.includes("preview") || normalized.includes("local") || normalized.includes("förhands")) return "amber";
-  if (normalized.includes("prepared") || normalized.includes("mock")) return "emerald";
+  if (normalized.includes("preview") || normalized.includes("local") || normalized.includes("förhands") || normalized.includes("device") || normalized.includes("enhet")) return "amber";
+  if (normalized.includes("prepared") || normalized.includes("mock") || normalized.includes("cloud") || normalized.includes("moln")) return "emerald";
   return "stone";
 }
 

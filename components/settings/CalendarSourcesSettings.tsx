@@ -28,7 +28,7 @@ export function CalendarSourcesSettings() {
   const needsSetup = setupState !== "ready";
 
   return (
-    <SettingsCard status={needsSetup ? t("planned") : t("supabaseReady")} title={t("calendarSources")}>
+    <SettingsCard status={needsSetup ? t("planned") : t("cloudReady")} title={t("calendarSources")}>
       <div className="space-y-4">
         <p>{t("calendarSourcesCopy")}</p>
 

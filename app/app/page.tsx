@@ -80,8 +80,8 @@ export default function MobileAppPage() {
   }, [filter, memberFilter, todayTasks]);
 
   const todayTaskAnimationKey = `today-${memberFilter ?? "all-members"}-${filter}`;
-  const taskStorageLabel = taskMode === "supabase" ? t("supabaseHouseholdSync") : t("previewStorage");
-  const taskStorageNote = taskMode === "supabase" ? t("supabaseTaskDueDatePreview") : t("dueDatePreview");
+  const taskStorageLabel = taskMode === "supabase" ? t("homeCloudSync") : t("previewStorage");
+  const taskStorageNote = taskMode === "supabase" ? t("cloudTaskDueDatePreview") : t("dueDatePreview");
 
   const handleTaskCreated = useCallback((created: unknown) => {
     const createdTaskId = getFirstCreatedTaskId(created);

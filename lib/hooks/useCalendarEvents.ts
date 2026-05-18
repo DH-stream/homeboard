@@ -12,12 +12,21 @@ const service = createCalendarService(calendarRepository);
 export function useCalendarEvents() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { householdId } = useResolvedHouseholdId();
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    setEvents(await service.listEvents(householdId));
-    setLoading(false);
+    try {
+      setEvents(await service.listEvents(householdId));
+      setError(null);
+    } catch (unknownError) {
+      console.warn("HomeBoard calendar events could not be loaded from cloud.", unknownError);
+      setEvents([]);
+      setError("calendar_unreachable");
+    } finally {
+      setLoading(false);
+    }
   }, [householdId]);
 
   useEffect(() => {
@@ -29,5 +38,5 @@ export function useCalendarEvents() {
     return events.filter((event) => toLocalDateKey(event.startAt) === today);
   }, [events]);
 
-  return { events, todayEvents, isLoading, refresh };
+  return { events, todayEvents, isLoading, error, refresh };
 }

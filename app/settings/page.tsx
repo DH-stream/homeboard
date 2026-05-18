@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
+import { CloudStatusSettings } from "@/components/settings/CloudStatusSettings";
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
@@ -42,6 +43,7 @@ export default function SettingsPage() {
         <DeviceStartViewSettings />
         <WallTaskCreatorSettings />
         <HouseholdSettings />
+        <CloudStatusSettings />
         <SettingsCard status={t("mock")} title={t("members")}>
           <p>{t("membersCopy")}</p>
         </SettingsCard>
@@ -76,7 +78,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="font-bold text-stone-500">{t("nextBackendTarget")}</dt>
-                <dd className="text-right font-black text-stone-900">Supabase/Postgres</dd>
+                <dd className="text-right font-black text-stone-900">{t("sharedCloud")}</dd>
               </div>
             </dl>
             <p>{t("storageClarification")}</p>

@@ -144,14 +144,16 @@ export class SupabaseCalendarRepository implements CalendarRepository {
 
     const sources = await this.listSources(householdId);
     const enabledSourceIds = sources.filter((source) => source.enabled).map((source) => source.id);
-    if (!enabledSourceIds.length) return [];
 
-    const { data, error } = await this.client
+    let query = this.client
       .from("calendar_events")
       .select("id, household_id, source_id, external_event_id, title, description, location, start_at, end_at, all_day, color")
       .eq("household_id", householdId)
-      .in("source_id", enabledSourceIds)
       .order("start_at", { ascending: true });
+
+    if (enabledSourceIds.length) query = query.in("source_id", enabledSourceIds);
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return ((data ?? []) as CalendarEventRow[]).map(mapEvent);

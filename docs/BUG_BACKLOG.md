@@ -56,3 +56,66 @@ Verification notes for “Fix task creation feedback”:
 - Verified `/wall` quick task creator in `Alltid framme` mode with `Ställ fram frukost`: saving state appears, success check/toast appears, the task appears in the wall today list, and it survives reload.
 - Simulated a local cache write failure and verified the Swedish error is visible, input text is preserved, and retry remains possible.
 - Verified route smoke checks for `/`, `/app`, `/wall`, `/settings`, and `/api/tasks`.
+
+### P0 — Cloud tables need RLS/security before real public use
+
+Status: open
+
+Context:
+
+The reviewed HomeBoard cloud project currently has RLS disabled on HomeBoard tables. This is acceptable only for controlled development/testing. It must be fixed before real public multi-household use.
+
+Required follow-up:
+
+- Add authentication boundaries for households and members.
+- Design and test RLS policies for `households`, `household_members`, `tasks`, `task_schedules`, `task_instances`, `calendar_connections`, `calendar_sources`, `calendar_events`, and device-pairing tables.
+- Verify policies with automated tests or reproducible SQL checks before enabling them in production.
+
+### P1 — First-class cloud setup and home creation flow
+
+Status: open
+
+Expected behavior:
+
+- A parent can create or choose a home from the product UI.
+- The UI explains “Spara i molnet”, “Synka med mobilen”, and “Endast på den här enheten” without exposing backend implementation details.
+- Broken env/config states are detected and explained in Cloud status / Molnstatus.
+
+### P1 — QR pairing for wall displays
+
+Status: open
+
+Expected behavior:
+
+- A wall/iPad display can show a pairing QR code.
+- A phone signed into or connected to the home can pair the wall device to the same household.
+- Pairing sessions expire and are protected by the future auth/RLS model.
+
+### P1 — Calendar provider connection flow
+
+Status: open
+
+Expected behavior:
+
+- Families can connect Google, Apple/iCloud, Microsoft, or ICS calendars without manual SQL.
+- Provider tokens are stored server-side only, encrypted where appropriate, and never exposed in browser tables.
+- Calendar events remain read-only in v1 unless a future product pass explicitly changes that.
+
+### P1 — Cloud diagnostics should detect broken config clearly
+
+Status: open
+
+Expected behavior:
+
+- Cloud status can distinguish missing env vars, missing/invalid household, unavailable backend, and empty-but-connected data.
+- Normal users see product language.
+- Developer details remain collapsed and avoid exposing secrets.
+
+### P2 — Collapse developer details away from normal family UI
+
+Status: open
+
+Expected behavior:
+
+- Technical ids, repository modes, env-var references, and backend implementation notes stay in collapsed diagnostics or docs.
+- Family-facing settings focus on home, members, cloud sync, and device behavior.
