@@ -43,6 +43,7 @@ export function MembersSettings() {
   const [role, setRole] = useState<"adult" | "child">("adult");
   const [color, setColor] = useState(colors[0]);
   const [isSaving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!householdId) {
@@ -50,20 +51,23 @@ export function MembersSettings() {
       return;
     }
 
-    service.listHouseholdMembers(householdId).then(setMembers).catch(() => setMembers([]));
-  }, [householdId]);
+    service.listHouseholdMembers(householdId).then((next) => { setMembers(next); setError(null); }).catch(() => { setMembers([]); setError(language === "sv" ? "Kunde inte ladda medlemmar." : "Could not load members."); });
+  }, [householdId, language]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!householdId || !name.trim()) return;
     setSaving(true);
     try {
+      setError(null);
       await service.createHouseholdMembers(householdId, [{ displayName: name.trim(), color, role }]);
       setName("");
       setRole("adult");
       setColor(colors[0]);
       const next = await service.listHouseholdMembers(householdId);
       setMembers(next);
+    } catch {
+      setError(language === "sv" ? "Kunde inte lägga till medlem." : "Could not add member.");
     } finally {
       setSaving(false);
     }
@@ -87,6 +91,7 @@ export function MembersSettings() {
             ))}
           </ul>
           {members.length === 0 ? <p className="text-sm font-bold text-stone-500">{t.empty}</p> : null}
+          {error ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">{error}</p> : null}
           <form className="space-y-3 rounded-2xl border border-stone-200 bg-white p-3" onSubmit={onSubmit}>
             <input className="min-h-11 w-full rounded-xl border border-stone-200 px-3 font-semibold" onChange={(e) => setName(e.target.value)} placeholder={t.name} required value={name} />
             <div className="grid grid-cols-2 gap-2">

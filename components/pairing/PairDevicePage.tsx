@@ -1,21 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
+import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { usePairingCode } from "@/lib/hooks/useDevicePairing";
-import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
+import { useParentAuth } from "@/lib/hooks/useParentAuth";
 import { useLanguage, type Language } from "@/lib/i18n";
+import { householdRepository } from "@/lib/repositories/householdRepository";
+import { createHouseholdService } from "@/lib/services/householdService";
+import type { Household } from "@/types";
 
-const pairingCopy: Record<Language, { claimFailed: string }> = {
+const service = createHouseholdService(householdRepository);
+const pairingCopy: Record<Language, { claimFailed: string; successBody: string; chooseHome: string; confirmHome: string }> = {
   en: {
     claimFailed: "Could not connect the wall screen. Try again.",
+    successBody: "The wall screen will open this home in a moment.",
+    chooseHome: "Choose home",
+    confirmHome: "Connect this wall screen to",
   },
   sv: {
     claimFailed: "Kunde inte koppla väggskärmen. Försök igen.",
+    successBody: "Väggskärmen öppnar hemmet om en liten stund.",
+    chooseHome: "Välj hem",
+    confirmHome: "Koppla den här väggskärmen till",
   },
 };
 
@@ -24,20 +33,33 @@ function PairDeviceContent() {
   const pairingCode = params.get("code");
   const { language, t } = useLanguage();
   const copy = pairingCopy[language];
-  const { household, householdId } = useActiveHousehold();
   const { claim, error, isLoading, session } = usePairingCode(pairingCode);
+  const { isSignedIn } = useParentAuth();
   const [isClaiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [homes, setHomes] = useState<Household[]>([]);
+  const [isLoadingHomes, setLoadingHomes] = useState(false);
+  const [selectedHomeId, setSelectedHomeId] = useState<string>("");
   const isExpired = session?.status === "expired";
   const isClaimed = session?.status === "claimed";
-  const canClaim = Boolean(householdId && session?.status === "pending");
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    setLoadingHomes(true);
+    service.listHouseholds().then((next) => {
+      setHomes(next);
+      setSelectedHomeId((current) => current || next[0]?.id || "");
+    }).finally(() => setLoadingHomes(false));
+  }, [isSignedIn]);
+
+  const canClaim = Boolean(selectedHomeId && session?.status === "pending" && isSignedIn);
 
   async function claimPairing() {
-    if (!householdId) return;
+    if (!selectedHomeId) return;
     setClaiming(true);
     setClaimError(null);
     try {
-      await claim(householdId);
+      await claim(selectedHomeId);
     } catch (unknownError) {
       console.warn("HomeBoard could not claim the wall pairing session.", unknownError);
       setClaimError("claim_failed");
@@ -45,6 +67,8 @@ function PairDeviceContent() {
       setClaiming(false);
     }
   }
+
+  const selectedHome = homes.find((home) => home.id === selectedHomeId);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl items-center justify-center px-4 py-8">
@@ -58,22 +82,28 @@ function PairDeviceContent() {
         {isExpired ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeExpiredPhone")}</p> : null}
         {claimError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.claimFailed}</p> : null}
 
+        {!isSignedIn ? <div className="mt-5"><ParentAuthCard compact /></div> : null}
+
         {isClaimed ? (
           <div className="mt-5 space-y-4">
             <StatusChip tone="emerald">{t("pairComplete")}</StatusChip>
-            <p className="text-base font-bold leading-7 text-stone-600">{t("pairComplete")}</p>
+            <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody}</p>
             <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">
               {t("open")}
             </Link>
           </div>
         ) : null}
 
-        {canClaim && !isClaimed ? (
+        {isSignedIn && !isClaimed && session?.status === "pending" ? (
           <div className="mt-5 space-y-5">
-            <p className="text-lg font-bold leading-8 text-stone-700">
-              {t("pairConfirmPrefix")} <span className="font-black text-stone-950">{household?.name ?? t("home")}</span>{t("pairConfirmSuffix")}
-            </p>
-            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isClaiming} onClick={claimPairing} type="button">
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.chooseHome}</span>
+              <select className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950" disabled={isLoadingHomes} onChange={(event) => setSelectedHomeId(event.target.value)} value={selectedHomeId}>
+                {homes.map((home) => <option key={home.id} value={home.id}>{home.name}</option>)}
+              </select>
+            </label>
+            <p className="text-lg font-bold leading-8 text-stone-700">{copy.confirmHome} <span className="font-black text-stone-950">{selectedHome?.name ?? t("home")}</span>?</p>
+            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isClaiming || !canClaim} onClick={claimPairing} type="button">
               {isClaiming ? t("saving") : t("pairSubmit")}
             </button>
           </div>
@@ -84,15 +114,5 @@ function PairDeviceContent() {
 }
 
 export function PairDevicePage() {
-  const { householdId } = useResolvedHouseholdId();
-
-  if (!householdId) {
-    return (
-      <HouseholdSetupGate>
-        <PairDeviceContent />
-      </HouseholdSetupGate>
-    );
-  }
-
   return <PairDeviceContent />;
 }

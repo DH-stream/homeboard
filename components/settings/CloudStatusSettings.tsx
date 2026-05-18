@@ -32,6 +32,7 @@ const activationCopy: Record<
     createCloudHome: string;
     createError: string;
     createIntro: string;
+    yourName: string;
     createSuccess: string;
     devOverrideBody: string;
     devOverrideTitle: string;
@@ -77,6 +78,7 @@ const activationCopy: Record<
     createCloudHome: "Create cloud home",
     createError: "We could not create the cloud home. Nothing local changed — you can keep using this device and try again.",
     createIntro: "Name the family home that phones and wall screens should share.",
+    yourName: "Your name",
     createSuccess: "Cloud sync is active. This device now opens the selected home.",
     devOverrideBody: "A development override is active. Normal device selection cannot change the active home until the override is removed.",
     devOverrideTitle: "Development override active",
@@ -121,6 +123,7 @@ const activationCopy: Record<
     createCloudHome: "Skapa molnhem",
     createError: "Vi kunde inte skapa molnhemmet. Inget lokalt ändrades — du kan fortsätta använda den här enheten och försöka igen.",
     createIntro: "Namnge familjens hem som mobiler och väggskärmar ska dela.",
+    yourName: "Ditt namn",
     createSuccess: "Molnsynk är aktiv. Den här enheten öppnar nu valt hem.",
     devOverrideBody: "En utvecklingsoverride är aktiv. Vanligt enhetsval kan inte ändra aktivt hem förrän overriden tas bort.",
     devOverrideTitle: "Utvecklingsoverride aktiv",
@@ -172,6 +175,7 @@ export function CloudStatusSettings() {
   const [isActivating, setActivating] = useState(false);
   const [householdName, setHouseholdName] = useState(language === "sv" ? "Vårt hem" : "Our Home");
   const [households, setHouseholds] = useState<Household[]>([]);
+  const [ownerName, setOwnerName] = useState("");
   const [isLoadingHouseholds, setLoadingHouseholds] = useState(false);
   const [isCreatingHousehold, setCreatingHousehold] = useState(false);
   const [flowError, setFlowError] = useState<string | null>(null);
@@ -322,7 +326,7 @@ export function CloudStatusSettings() {
       const nextHousehold = await service.createHousehold({ name, ownerUserId: user.id });
       await service.createHouseholdMembers(nextHousehold.id, [
         {
-          displayName: user.email ?? (language === "sv" ? "Vuxen" : "Grown-up"),
+          displayName: ownerName.trim() || (language === "sv" ? "Vuxen" : "Grown-up"),
           color: "#f97316",
           role: "adult",
           userId: user.id,
@@ -416,6 +420,15 @@ export function CloudStatusSettings() {
                         onChange={(event) => setHouseholdName(event.target.value)}
                         required
                         value={householdName}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.yourName}</span>
+                      <input
+                        className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100"
+                        disabled={isCreatingHousehold}
+                        onChange={(event) => setOwnerName(event.target.value)}
+                        value={ownerName}
                       />
                     </label>
                     <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60" disabled={isCreatingHousehold} type="submit">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { enableLocalOnlyMode, forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
@@ -7,9 +8,9 @@ import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { useCloudDiagnostics } from "@/lib/hooks/useCloudDiagnostics";
 import { useLanguage, type Language } from "@/lib/i18n";
 
-const copy: Record<Language, { active: string; local: string; forget: string; status: string }> = {
-  en: { active: "Cloud sync active", local: "Only on this device", forget: "Forget cloud home on this device", status: "Status" },
-  sv: { active: "Molnsynk aktiv", local: "Endast på den här enheten", forget: "Glöm molnhem på den här enheten", status: "Status" },
+const copy: Record<Language, { active: string; local: string; forget: string; status: string; confirm: string; cancel: string }> = {
+  en: { active: "Cloud sync active", local: "Only on this device", forget: "Forget cloud home on this device", status: "Status", confirm: "Forget this cloud home on this device?", cancel: "Cancel" },
+  sv: { active: "Molnsynk aktiv", local: "Endast på den här enheten", forget: "Glöm molnhem på den här enheten", status: "Status", confirm: "Glöm det här molnhemmet på den här enheten?", cancel: "Avbryt" },
 };
 
 export function HouseholdSettings() {
@@ -19,6 +20,7 @@ export function HouseholdSettings() {
   const labels = copy[language];
 
   const hasCloudHousehold = Boolean(householdId);
+  const [isConfirming, setConfirming] = useState(false);
 
   function forgetOnDevice() {
     forgetSelectedCloudHouseholdOnThisDevice();
@@ -45,9 +47,19 @@ export function HouseholdSettings() {
         </dl>
 
         {selectedHouseholdId ? (
-          <button className="pressable min-h-11 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-950 shadow-sm" onClick={forgetOnDevice} type="button">
-            {labels.forget}
-          </button>
+          isConfirming ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-bold text-amber-950">{labels.confirm}</p>
+              <div className="mt-3 flex gap-2">
+                <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white" onClick={forgetOnDevice} type="button">{labels.forget}</button>
+                <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800" onClick={() => setConfirming(false)} type="button">{labels.cancel}</button>
+              </div>
+            </div>
+          ) : (
+            <button className="pressable min-h-11 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-950 shadow-sm" onClick={() => setConfirming(true)} type="button">
+              {labels.forget}
+            </button>
+          )
         ) : null}
       </div>
     </SettingsCard>
