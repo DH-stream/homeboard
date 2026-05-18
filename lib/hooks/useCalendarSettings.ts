@@ -6,6 +6,7 @@ import { createCalendarService } from "@/lib/services/calendarService";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { isCloudConfigured } from "@/lib/cloud/config";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { getParentAccessToken } from "@/lib/auth/parentAuth";
 import type { CalendarConnection, CalendarSource } from "@/types";
 
 const service = createCalendarService(calendarRepository);
@@ -40,8 +41,17 @@ export function useCalendarSettings() {
     await refresh();
   }, [connections, householdId, refresh]);
 
-  const syncSource = useCallback(async (sourceId: string) => { await fetch("/api/calendar/sync-source", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sourceId }) }); await refresh(); }, [refresh]);
-  const syncAll = useCallback(async () => { if (!householdId) return; await fetch("/api/calendar/sync-all", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ householdId }) }); await refresh(); }, [householdId, refresh]);
+  const syncSource = useCallback(async (sourceId: string) => {
+    const token = await getParentAccessToken();
+    await fetch("/api/calendar/sync-source", { method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ sourceId }) });
+    await refresh();
+  }, [refresh]);
+  const syncAll = useCallback(async () => {
+    if (!householdId) return;
+    const token = await getParentAccessToken();
+    await fetch("/api/calendar/sync-all", { method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ householdId }) });
+    await refresh();
+  }, [householdId, refresh]);
 
   return { connections, sources, householdId, isLoading, setupState, updateSourceEnabled, refresh, addIcsSource, syncSource, syncAll };
 }

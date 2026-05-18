@@ -5,6 +5,7 @@ import { calendarRepository } from "@/lib/repositories/calendarRepository";
 import { createCalendarService } from "@/lib/services/calendarService";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { toLocalDateKey } from "@/lib/utils/date";
+import { getParentAccessToken } from "@/lib/auth/parentAuth";
 import type { CalendarEvent } from "@/types";
 
 const service = createCalendarService(calendarRepository);
@@ -75,9 +76,10 @@ export function useCalendarEvents() {
     isAutoSyncingRef.current = true;
     try {
       globalThis.localStorage?.setItem(cacheKey, String(now));
+      const token = await getParentAccessToken();
       await fetch("/api/calendar/sync-stale", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ householdId }),
       });
     } finally {

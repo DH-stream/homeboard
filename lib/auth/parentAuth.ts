@@ -75,3 +75,11 @@ export async function signOutParent() {
   await client.auth.signOut();
   broadcastParentAuthChanged();
 }
+
+export async function getParentAccessToken(): Promise<string | null> {
+  const client = createBrowserSupabaseClient();
+  if (!client) return null;
+  const { data, error } = await client.auth.getSession();
+  if (error) return null;
+  return data.session?.access_token ?? null;
+}

@@ -2,17 +2,34 @@ import ical from "ical";
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const normalizeIcsUrl = (raw: string) => raw.replace(/^webcal:/i, "https:").trim();
-const getClient = () => { if (!url || !key) throw new Error("Supabase config missing for server sync."); return createClient(url, key); };
+const getClient = () => {
+  if (!url || !key) throw new Error("Missing server sync config. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  return createClient(url, key);
+};
 
-function mapEvents(sourceId: string, householdId: string, sourceColor: string | null, entries: Record<string, any>, from: Date, to: Date) {
-  const out: Record<string, any> = {};
-  Object.values(entries).forEach((ev: any) => {
+type IcsEvent = {
+  type?: string;
+  uid?: string;
+  start?: Date;
+  end?: Date;
+  summary?: string;
+  description?: string;
+  location?: string;
+  datetype?: string;
+  status?: string;
+  rrule?: { between: (from: Date, to: Date, inc?: boolean) => Date[] };
+};
+
+function mapEvents(sourceId: string, householdId: string, sourceColor: string | null, entries: Record<string, unknown>, from: Date, to: Date) {
+  const out: Record<string, Record<string, unknown>> = {};
+  Object.values(entries).forEach((entry) => {
+    const ev = entry as IcsEvent;
     if (!ev || ev.type !== "VEVENT" || !ev.uid || !ev.start || !ev.end) return;
     const starts = ev.rrule?.between ? ev.rrule.between(from, to, true) : [new Date(ev.start)];
     starts.forEach((start: Date) => {
-      const end = new Date(start.getTime() + Math.max(new Date(ev.end).getTime() - new Date(ev.start).getTime(), 30 * 60 * 1000));
+      const end = new Date(start.getTime() + Math.max(new Date(ev.end as Date).getTime() - new Date(ev.start as Date).getTime(), 30 * 60 * 1000));
       const external = `${ev.uid}__${start.toISOString()}`;
       out[external] = { household_id: householdId, source_id: sourceId, external_event_id: external, title: ev.summary || "Untitled", description: ev.description || null, location: ev.location || null, start_at: start.toISOString(), end_at: end.toISOString(), all_day: !!ev.datetype, color: sourceColor, status: (ev.status || "confirmed").toLowerCase(), raw: ev };
     });
@@ -32,8 +49,10 @@ export async function syncCalendarSourceById(sourceId: string) {
     const from = new Date(); from.setDate(from.getDate() - 7);
     const to = new Date(); to.setDate(to.getDate() + 90);
     const rows = mapEvents(source.id, source.household_id, source.color, parsed, from, to);
-    const externalIds = rows.map((row) => row.external_event_id);
-    await client.from("calendar_events").delete().eq("source_id", sourceId).not("external_event_id", "in", `(${externalIds.map((id) => `"${id.replaceAll('"', '\\"')}"`).join(",") || '"__none__"'})`);
+    const externalIds = rows.map((row) => String(row.external_event_id));
+    let staleQuery = client.from("calendar_events").delete().eq("source_id", sourceId).gte("start_at", from.toISOString()).lte("start_at", to.toISOString());
+    if (externalIds.length) staleQuery = staleQuery.not("external_event_id", "in", `(${externalIds.map((id) => `"${id.replaceAll('"', '\\"')}"`).join(",")})`);
+    await staleQuery;
     if (rows.length) await client.from("calendar_events").upsert(rows, { onConflict: "source_id,external_event_id" });
     await client.from("calendar_sources").update({ last_synced_at: new Date().toISOString(), last_error: null }).eq("id", sourceId);
     return { sourceId, upserted: rows.length };

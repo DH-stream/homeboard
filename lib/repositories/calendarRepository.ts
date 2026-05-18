@@ -149,6 +149,7 @@ export class SupabaseCalendarRepository implements CalendarRepository {
     if (!this.client || !householdId) return [];
 
     const sources = await this.listSources(householdId);
+    if (sources.length > 0 && !sources.some((source) => source.enabled)) return [];
     const enabledSourceIds = sources.filter((source) => source.enabled).map((source) => source.id);
 
     let query = this.client
