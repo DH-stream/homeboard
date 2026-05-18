@@ -133,17 +133,17 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
           const selectedEvents = dayEvents;
 
           return (
-            <div className={`grid gap-2 transition-[grid-template-columns] duration-300 ease-[var(--ease-out)] ${detailsOpen ? "grid-cols-[minmax(5.2rem,1fr)_minmax(11rem,1.4fr)]" : "grid-cols-[minmax(5.2rem,1fr)]"}`} key={key}>
+            <div className={`grid gap-2 transition-[grid-template-columns] duration-300 ease-[var(--ease-out)] ${detailsOpen ? "grid-cols-[minmax(5.2rem,1fr)_minmax(15rem,2.25fr)]" : "grid-cols-[minmax(5.2rem,1fr)]"}`} key={key}>
               {dayButton}
               {detailsOpen ? (
                 <div
-                  className="min-h-28 rounded-2xl border border-stone-200 bg-white p-3 text-stone-950 shadow-lg shadow-stone-950/10"
+                  className="max-h-32 min-h-28 overflow-y-auto rounded-2xl border border-stone-200 bg-white p-3 text-stone-950 shadow-lg shadow-stone-950/10"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <p className="text-xs font-black uppercase tracking-[0.12em] text-stone-500">
                     {new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric" }).format(day)}
                   </p>
-                  <div className="mt-2 space-y-2">
+                  <div className="mt-2 grid gap-2">
                     {selectedEvents.length ? (
                       selectedEvents.map((event) => {
                         const time = formatEventTime(event, locale);
