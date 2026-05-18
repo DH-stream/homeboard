@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
 import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { TaskList } from "@/components/tasks/TaskList";
+import { ActionToast } from "@/components/ui/ActionToast";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
@@ -24,6 +25,12 @@ const DAILY_RECURRING_REVEAL_MINUTES = 90;
 
 function isRecurringTask(task: TaskInstance) {
   return task.scheduleType === "daily" || task.scheduleType === "weekly";
+}
+
+function getFirstCreatedTaskId(created: unknown) {
+  if (!Array.isArray(created)) return null;
+  const firstTask = created.find((task): task is TaskInstance => Boolean(task && typeof task === "object" && "id" in task));
+  return firstTask?.id ?? null;
 }
 
 function shouldShowTodayTask(task: TaskInstance, now: Date) {
@@ -44,6 +51,8 @@ export default function MobileAppPage() {
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("app"));
   const [pendingFutureTask, setPendingFutureTask] = useState<TaskInstance | null>(null);
+  const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
+  const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -73,6 +82,15 @@ export default function MobileAppPage() {
   const todayTaskAnimationKey = `today-${memberFilter ?? "all-members"}-${filter}`;
   const taskStorageLabel = taskMode === "supabase" ? t("supabaseHouseholdSync") : t("previewStorage");
   const taskStorageNote = taskMode === "supabase" ? t("supabaseTaskDueDatePreview") : t("dueDatePreview");
+
+  const handleTaskCreated = useCallback((created: unknown) => {
+    const createdTaskId = getFirstCreatedTaskId(created);
+    setCreateSuccessMessage(t("taskAdded"));
+    setRecentlyCreatedTaskId(createdTaskId);
+    window.setTimeout(() => {
+      setRecentlyCreatedTaskId((current) => (current === createdTaskId ? null : current));
+    }, 1800);
+  }, [setCreateSuccessMessage, setRecentlyCreatedTaskId, t]);
 
   async function completeTask(task: TaskInstance, completed: boolean) {
     try {
@@ -133,7 +151,7 @@ export default function MobileAppPage() {
       </section>
 
       <div className={isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-3" : undefined}>
-        <AddTaskForm members={members} onCreate={createTask} />
+        <AddTaskForm members={members} onCreate={createTask} onCreated={handleTaskCreated} />
       </div>
 
       {taskError ? <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{t("tasksSyncError")}</p> : null}
@@ -157,6 +175,7 @@ export default function MobileAppPage() {
           onEdit={(task, title) => updateTask({ id: task.id, titleSnapshot: title })}
           onToggle={toggleTask}
           recentlyCompletedId={completionFeedback?.taskId ?? null}
+          recentlyCreatedId={recentlyCreatedTaskId}
           completionMessage={completionFeedback?.message}
           tasks={filteredTasks}
         />
@@ -178,6 +197,8 @@ export default function MobileAppPage() {
       <div className={`mt-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
         <TodayAgenda compact events={todayEvents} />
       </div>
+
+      <ActionToast message={createSuccessMessage} onDismiss={() => setCreateSuccessMessage(null)} />
 
       {pendingFutureTask ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/45 px-4 py-5 backdrop-blur-sm sm:items-center" role="presentation">

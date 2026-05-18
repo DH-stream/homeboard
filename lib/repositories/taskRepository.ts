@@ -698,7 +698,9 @@ export class CachedTaskRepository implements TaskRepository {
   async createTask(householdId: string | null, input: CreateTaskInput) {
     try {
       const created = await this.remote.createTask(householdId, input);
-      await this.remote.listTaskInstances(householdId);
+      this.remote.listTaskInstances(householdId).catch((error) => {
+        console.warn("HomeBoard task sync cache refresh failed after create; keeping the created task visible.", error);
+      });
       return created;
     } catch (error) {
       console.warn("HomeBoard task sync create is queued until Supabase is reachable.", error);

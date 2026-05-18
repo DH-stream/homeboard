@@ -6,10 +6,17 @@ import type { CreateTaskInput, HouseholdMember, TaskSchedule } from "@/types";
 
 type RepeatType = TaskSchedule["type"];
 
+const MINIMUM_SAVE_FEEDBACK_MS = 320;
+
+async function waitForMinimumSaveFeedback(saveStartedAt: number) {
+  const remainingFeedbackMs = MINIMUM_SAVE_FEEDBACK_MS - (performance.now() - saveStartedAt);
+  if (remainingFeedbackMs > 0) await new Promise((resolve) => window.setTimeout(resolve, remainingFeedbackMs));
+}
+
 const defaultWeekdays = [1, 2, 3, 4, 5];
 const weekDays = [1, 2, 3, 4, 5, 6, 0];
 
-export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[]; onCreate: (input: CreateTaskInput) => Promise<unknown> }) {
+export function AddTaskForm({ members, onCreate, onCreated }: { members: HouseholdMember[]; onCreate: (input: CreateTaskInput) => Promise<unknown>; onCreated?: (created: unknown) => void }) {
   const { language, t } = useLanguage();
   const locale = getLocale(language);
   const [title, setTitle] = useState("");
@@ -19,6 +26,7 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
   const [timesOfDay, setTimesOfDay] = useState(["20:00"]);
   const [daysOfWeek, setDaysOfWeek] = useState(defaultWeekdays);
   const [isSaving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const visibleTimes = repeatType === "once" ? timesOfDay.slice(0, 1) : timesOfDay;
 
@@ -33,8 +41,10 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSaving) return;
+    setCreateError(null);
     setSaving(true);
+    const saveStartedAt = performance.now();
 
     const [firstTime = "20:00"] = timesOfDay;
     const dueDate = date ? new Date(`${date}T00:00:00`) : new Date();
@@ -53,19 +63,22 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
           };
 
     try {
-      await onCreate({
-        title,
+      const created = await onCreate({
+        title: title.trim(),
         assignedToMemberId: assignedToMemberId || undefined,
         dueDate: dueDate.toISOString(),
         schedule,
       });
+      await waitForMinimumSaveFeedback(saveStartedAt);
+      onCreated?.(created);
       setTitle("");
       setDate("");
       setRepeatType("once");
       setTimesOfDay(["20:00"]);
       setDaysOfWeek(defaultWeekdays);
     } catch {
-      // The task hook surfaces and logs repository errors for the page-level calm error state.
+      await waitForMinimumSaveFeedback(saveStartedAt);
+      setCreateError(t("taskSaveError"));
     } finally {
       setSaving(false);
     }
@@ -187,8 +200,15 @@ export function AddTaskForm({ members, onCreate }: { members: HouseholdMember[];
         </div>
       ) : null}
 
-      <button className="pressable mt-3 min-h-12 w-full rounded-2xl bg-amber-300 px-4 py-3 font-black text-stone-950 hover:bg-amber-200 disabled:opacity-60" disabled={isSaving || (repeatType === "weekly" && daysOfWeek.length === 0)} type="submit">
-        {isSaving ? t("adding") : date || repeatType !== "once" ? t("addTask") : t("addToToday")}
+      {createError ? (
+        <p className="mt-3 rounded-2xl border border-red-200/30 bg-red-500/12 px-4 py-3 text-sm font-black text-red-100" role="alert">
+          {createError}
+        </p>
+      ) : null}
+
+      <button className="pressable mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-amber-300 px-4 py-3 font-black text-stone-950 hover:bg-amber-200 disabled:opacity-60" disabled={isSaving || (repeatType === "weekly" && daysOfWeek.length === 0)} type="submit">
+        {isSaving ? <span className="save-spinner" aria-hidden /> : null}
+        {isSaving ? t("saving") : date || repeatType !== "once" ? t("addTask") : t("addToToday")}
       </button>
     </form>
   );

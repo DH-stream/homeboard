@@ -7,6 +7,12 @@ import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useLanguage, type Language } from "@/lib/i18n";
 import type { CreateTaskInput, TaskInstance, UpdateTaskInstanceInput } from "@/types";
 
+function mergeTaskInstances(current: TaskInstance[], next: TaskInstance[]) {
+  const byId = new Map(current.map((task) => [task.id, task]));
+  for (const task of next) byId.set(task.id, task);
+  return Array.from(byId.values()).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+}
+
 const taskErrorCopy: Record<Language, { load: string; save: string }> = {
   en: {
     load: "Unable to load tasks.",
@@ -61,7 +67,12 @@ export function useTasks() {
     async (input: CreateTaskInput) => {
       try {
         const created = await service.createTask(householdId, input);
-        await refresh();
+        setTasks((current) => mergeTaskInstances(current, created));
+        try {
+          await refresh();
+        } catch (refreshError) {
+          console.warn("HomeBoard kept the newly created task visible while refresh failed.", refreshError);
+        }
         return created;
       } catch (unknownError) {
         console.error(unknownError);

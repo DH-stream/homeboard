@@ -5,41 +5,56 @@ import { useLanguage } from "@/lib/i18n";
 import { atLocalTime } from "@/lib/utils/date";
 import type { CreateTaskInput, HouseholdMember } from "@/types";
 
+const MINIMUM_SAVE_FEEDBACK_MS = 320;
+
+async function waitForMinimumSaveFeedback(saveStartedAt: number) {
+  const remainingFeedbackMs = MINIMUM_SAVE_FEEDBACK_MS - (performance.now() - saveStartedAt);
+  if (remainingFeedbackMs > 0) await new Promise((resolve) => window.setTimeout(resolve, remainingFeedbackMs));
+}
+
 export function WallQuickTaskCreator({
   members,
   onCancel,
+  onCreated,
   onCreateTask,
   variant = "panel",
 }: {
   members: HouseholdMember[];
   onCancel?: () => void;
   onCreateTask: (input: CreateTaskInput) => Promise<unknown>;
+  onCreated?: (created: unknown) => void;
   variant?: "popover" | "panel";
 }) {
   const { t } = useLanguage();
   const [title, setTitle] = useState("");
   const [assignedToMemberId, setAssignedToMemberId] = useState<string | undefined>();
   const [isSaving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedTitle = title.trim();
     if (!trimmedTitle || isSaving) return;
 
+    setCreateError(null);
     setSaving(true);
+    const saveStartedAt = performance.now();
     try {
-      await onCreateTask({
+      const created = await onCreateTask({
         title: trimmedTitle,
         assignedToMemberId,
         dueDate: atLocalTime(20, 0),
         schedule: { type: "once" },
         source: "manual",
       });
+      await waitForMinimumSaveFeedback(saveStartedAt);
+      onCreated?.(created);
       setTitle("");
       setAssignedToMemberId(undefined);
       if (variant === "popover") onCancel?.();
     } catch {
-      // useTasks surfaces/logs repository errors for the page-level calm error state.
+      await waitForMinimumSaveFeedback(saveStartedAt);
+      setCreateError(t("taskSaveError"));
     } finally {
       setSaving(false);
     }
@@ -102,9 +117,16 @@ export function WallQuickTaskCreator({
         </div>
       </fieldset>
 
+      {createError ? (
+        <p className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700" role="alert">
+          {createError}
+        </p>
+      ) : null}
+
       <div className="mt-3 flex gap-2">
-        <button className="pressable min-h-12 flex-1 rounded-2xl bg-amber-300 px-4 py-3 font-black text-stone-950 shadow-sm disabled:opacity-50" disabled={!title.trim() || isSaving} type="submit">
-          {isSaving ? t("adding") : t("wallQuickTaskSubmit")}
+        <button className="pressable inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-300 px-4 py-3 font-black text-stone-950 shadow-sm disabled:opacity-50" disabled={!title.trim() || isSaving} type="submit">
+          {isSaving ? <span className="save-spinner" aria-hidden /> : null}
+          {isSaving ? t("saving") : t("wallQuickTaskSubmit")}
         </button>
       </div>
     </form>

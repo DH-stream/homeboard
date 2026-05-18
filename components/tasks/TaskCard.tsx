@@ -13,6 +13,7 @@ export function TaskCard({
   onEdit,
   roomy = false,
   celebrated = false,
+  recentlyCreated = false,
   completionMessage,
 }: {
   task: TaskInstance;
@@ -21,6 +22,7 @@ export function TaskCard({
   onEdit?: (task: TaskInstance, title: string) => Promise<unknown> | void;
   roomy?: boolean;
   celebrated?: boolean;
+  recentlyCreated?: boolean;
   completionMessage?: string;
 }) {
   const { language, t } = useLanguage();
@@ -53,7 +55,7 @@ export function TaskCard({
         completed
           ? "border-emerald-200 bg-emerald-50/85 text-stone-500 shadow-inner shadow-emerald-100/70"
           : "border-white/85 bg-white/88 text-stone-950 shadow-[0_14px_40px_rgba(87,64,38,0.08)]"
-      } ${celebrated ? "task-card--celebrate" : ""} ${roomy ? "lg:p-5" : ""}`}
+      } ${celebrated ? "task-card--celebrate" : ""} ${recentlyCreated ? "task-card--created" : ""} ${roomy ? "lg:p-5" : ""}`}
     >
       <div className="flex items-center gap-4">
         <button
