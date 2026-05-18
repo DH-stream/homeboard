@@ -16,6 +16,8 @@ import { createHouseholdService } from "@/lib/services/householdService";
 import type { Household } from "@/types";
 
 const service = createHouseholdService(householdRepository);
+const CLOUD_ACTIVATION_MILESTONE_DURATION_MS = 5600;
+const CLOUD_ACTIVATION_STAGE_DELAYS_MS = [1250, 2600, 3950];
 
 const activationCopy: Record<
   Language,
@@ -36,6 +38,10 @@ const activationCopy: Record<
     existingError: string;
     cloudActivationMilestone: string;
     cloudActivationMilestoneBody: string;
+    cloudActivationStepPreparing: string;
+    cloudActivationStepConnecting: string;
+    cloudActivationStepBuilding: string;
+    cloudActivationStepActive: string;
     connectedDevice: string;
     forgetCloudHome: string;
     forgetCloudHomeBody: string;
@@ -77,6 +83,10 @@ const activationCopy: Record<
     existingError: "We could not load your cloud homes right now. You can stay local or try again later.",
     cloudActivationMilestone: "HomeBoard is synced for the family",
     cloudActivationMilestoneBody: "This device is now connected to your shared cloud home and ready for mobile sync.",
+    cloudActivationStepPreparing: "Preparing cloud sync…",
+    cloudActivationStepConnecting: "Connecting this device to the home…",
+    cloudActivationStepBuilding: "Building the family’s shared view…",
+    cloudActivationStepActive: "Cloud sync is active",
     connectedDevice: "This device",
     forgetCloudHome: "Forget cloud home on this device",
     forgetCloudHomeBody: "This only forgets the selected home on this device. The cloud home is not deleted, and cloud tasks, members, and calendar data are not removed.",
@@ -117,6 +127,10 @@ const activationCopy: Record<
     existingError: "Vi kunde inte ladda dina molnhem just nu. Du kan fortsätta lokalt eller försöka igen senare.",
     cloudActivationMilestone: "HomeBoard är synkat för familjen",
     cloudActivationMilestoneBody: "Den här enheten är nu kopplad till ert delade molnhem och redo för mobilsynk.",
+    cloudActivationStepPreparing: "Förbereder molnsynk…",
+    cloudActivationStepConnecting: "Kopplar den här enheten till hemmet…",
+    cloudActivationStepBuilding: "Bygger familjens gemensamma vy…",
+    cloudActivationStepActive: "Molnsynk är aktiv",
     connectedDevice: "Den här enheten",
     forgetCloudHome: "Glöm molnhem på den här enheten",
     forgetCloudHomeBody: "Detta glömmer bara valt hem på den här enheten. Hemmet raderas inte i molnet, och uppgifter, medlemmar och kalenderdata i molnet tas inte bort.",
@@ -164,6 +178,7 @@ export function CloudStatusSettings() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isForgetConfirming, setForgetConfirming] = useState(false);
   const [isCloudActivationCelebrating, setCloudActivationCelebrating] = useState(false);
+  const [cloudActivationStage, setCloudActivationStage] = useState(0);
 
   const status = diagnostics?.status ?? "not_configured";
   const isConfigured = isCloudConfigured();
@@ -178,6 +193,8 @@ export function CloudStatusSettings() {
   };
   const cloudSyncLabel = isConfigured && !hasCloudHousehold ? (isLocalOnly ? copy.localTitle : copy.availableTitle) : statusLabels[status];
   const checkedAt = diagnostics?.checkedAt ? new Intl.DateTimeFormat(getLocale(language), { dateStyle: "short", timeStyle: "short" }).format(new Date(diagnostics.checkedAt)) : "—";
+  const cloudActivationSteps = [copy.cloudActivationStepPreparing, copy.cloudActivationStepConnecting, copy.cloudActivationStepBuilding, copy.cloudActivationStepActive];
+  const cloudActivationStageCopy = cloudActivationSteps[cloudActivationStage] ?? copy.cloudActivationMilestone;
 
   const mode = useMemo<{ title: string; body: string; tone: "amber" | "emerald" | "rose" | "stone" | "dark" }>(() => {
     if (isDevOverride) return { title: copy.devOverrideTitle, body: copy.devOverrideBody, tone: "amber" as const };
@@ -200,8 +217,13 @@ export function CloudStatusSettings() {
   useEffect(() => {
     if (!isCloudActivationCelebrating) return;
 
-    const celebrationTimer = window.setTimeout(() => setCloudActivationCelebrating(false), 2400);
-    return () => window.clearTimeout(celebrationTimer);
+    setCloudActivationStage(0);
+    const stageTimers = CLOUD_ACTIVATION_STAGE_DELAYS_MS.map((delay, index) => window.setTimeout(() => setCloudActivationStage(index + 1), delay));
+    const celebrationTimer = window.setTimeout(() => setCloudActivationCelebrating(false), CLOUD_ACTIVATION_MILESTONE_DURATION_MS);
+    return () => {
+      stageTimers.forEach(window.clearTimeout);
+      window.clearTimeout(celebrationTimer);
+    };
   }, [isCloudActivationCelebrating]);
 
   useEffect(() => {
@@ -238,6 +260,7 @@ export function CloudStatusSettings() {
     setFlowError(null);
     setSuccessMessage(null);
     setCloudActivationCelebrating(false);
+    setCloudActivationStage(0);
   }
 
   function cancelActivation() {
@@ -254,6 +277,7 @@ export function CloudStatusSettings() {
     setFlowError(null);
     setSuccessMessage(null);
     setCloudActivationCelebrating(false);
+    setCloudActivationStage(0);
   }
 
   function forgetCloudHomeOnThisDevice() {
@@ -266,6 +290,7 @@ export function CloudStatusSettings() {
     setFlowError(null);
     setSuccessMessage(null);
     setCloudActivationCelebrating(false);
+    setCloudActivationStage(0);
     void refresh();
   }
 
@@ -277,6 +302,7 @@ export function CloudStatusSettings() {
     setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(message);
+    setCloudActivationStage(0);
     setCloudActivationCelebrating(true);
     void refresh();
   }
@@ -321,23 +347,33 @@ export function CloudStatusSettings() {
       <div className="space-y-4">
         <p>{t("cloudStatusCopy")}</p>
 
-        <div className={`cloud-mode-card ${isCloudActivationCelebrating ? "cloud-mode-card--celebrating" : hasCloudHousehold ? "cloud-mode-card--active" : "cloud-mode-card--local"}`}>
+        <div className={`cloud-mode-card ${isCloudActivationCelebrating ? `cloud-mode-card--celebrating cloud-mode-card--stage-${cloudActivationStage}` : hasCloudHousehold ? "cloud-mode-card--active" : "cloud-mode-card--local"}`}>
           <div className="cloud-mode-card__shine" />
           <div className="relative flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">{isCloudActivationCelebrating ? t("cloudSync") : copy.mode}</p>
-              <h3 className="mt-1 text-xl font-black tracking-tight text-stone-950">{isCloudActivationCelebrating ? copy.cloudActivationMilestone : mode.title}</h3>
+              <h3 className="mt-1 text-xl font-black tracking-tight text-stone-950">{isCloudActivationCelebrating ? cloudActivationStageCopy : mode.title}</h3>
             </div>
-            <StatusChip tone={isCloudActivationCelebrating ? "emerald" : mode.tone}>{isCloudActivationCelebrating ? t("cloudSyncActive") : mode.title}</StatusChip>
+            <StatusChip tone={isCloudActivationCelebrating && cloudActivationStage >= 3 ? "emerald" : mode.tone}>{isCloudActivationCelebrating && cloudActivationStage >= 3 ? t("cloudSyncActive") : mode.title}</StatusChip>
           </div>
           <p className="relative mt-2 text-sm font-semibold leading-6 text-stone-700">{isCloudActivationCelebrating ? copy.cloudActivationMilestoneBody : mode.body}</p>
           {isCloudActivationCelebrating ? (
-            <div className="cloud-connection-path" aria-hidden="true">
-              <span>{copy.connectedDevice}</span>
-              <i />
-              <i />
-              <i />
-              <span>{copy.sharedCloudHome}</span>
+            <div className="cloud-milestone-stage" aria-live="polite">
+              <div className="cloud-connection-path" aria-hidden="true">
+                <span>{copy.connectedDevice}</span>
+                <i />
+                <i />
+                <i />
+                <span>{copy.sharedCloudHome}</span>
+              </div>
+              <ol className="cloud-milestone-steps">
+                {cloudActivationSteps.map((step, index) => (
+                  <li className={index <= cloudActivationStage ? "cloud-milestone-step cloud-milestone-step--active" : "cloud-milestone-step"} key={step}>
+                    <span />
+                    {step}
+                  </li>
+                ))}
+              </ol>
             </div>
           ) : null}
           {!hasCloudHousehold && canUseCloud ? (
