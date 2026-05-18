@@ -3,7 +3,7 @@
 import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { saveSelectedHouseholdId } from "@/lib/households/selection";
+import { enableLocalOnlyMode, isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useParentAuth } from "@/lib/hooks/useParentAuth";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useLanguage, type Language } from "@/lib/i18n";
@@ -20,6 +20,8 @@ const setupCopy: Record<
     add: string;
     body: string;
     chooseHome: string;
+    continueLocal: string;
+    continueLocalBody: string;
     continueWithHome: string;
     create: string;
     createNewHome: string;
@@ -41,11 +43,13 @@ const setupCopy: Record<
 > = {
   en: {
     add: "Add",
-    body: "Choose an existing home or create a new one. HomeBoard remembers this choice on this device.",
-    chooseHome: "Choose home",
+    body: "Use HomeBoard locally without an account, or sign in as a grown-up when you want cloud sync and mobile sync.",
+    chooseHome: "Choose cloud home",
+    continueLocal: "Continue on this device",
+    continueLocalBody: "No sign-in needed. Tasks stay on this device until you turn on cloud sync later.",
     continueWithHome: "Continue with this home",
-    create: "Create home",
-    createNewHome: "Create new home",
+    create: "Create cloud home",
+    createNewHome: "Create cloud home",
     creating: "Creating…",
     defaultName: "Our Home",
     error: "Could not create home. Try again in a moment.",
@@ -53,21 +57,23 @@ const setupCopy: Record<
     householdName: "Home name",
     initialMembers: "Initial members",
     initialMembersCopy: "Optional. Add the people who should appear first.",
-    listError: "We could not load existing homes right now. You can still create a new home.",
+    listError: "We could not load existing homes right now. You can still continue locally or create a new cloud home.",
     loadingHomes: "Loading homes…",
     member: "Member",
-    parentRequired: "Sign in as a grown-up before creating a new home.",
+    parentRequired: "Sign in as a grown-up before creating a cloud home.",
     remembersChoice: "HomeBoard remembers this choice on this device.",
-    thisHome: "This home",
-    title: "Choose your HomeBoard home.",
+    thisHome: "Cloud home",
+    title: "How should this device use HomeBoard?",
   },
   sv: {
     add: "Lägg till",
-    body: "Välj ett hem som redan finns eller skapa ett nytt. HomeBoard kommer ihåg valet på den här enheten.",
-    chooseHome: "Välj hem",
+    body: "Använd HomeBoard lokalt utan konto, eller logga in som vuxen när du vill ha molnsynk och mobilsynk.",
+    chooseHome: "Välj molnhem",
+    continueLocal: "Fortsätt på den här enheten",
+    continueLocalBody: "Ingen inloggning behövs. Uppgifter sparas på den här enheten tills du aktiverar molnsynk senare.",
     continueWithHome: "Fortsätt med det här hemmet",
-    create: "Skapa hem",
-    createNewHome: "Skapa nytt hem",
+    create: "Skapa molnhem",
+    createNewHome: "Skapa molnhem",
     creating: "Skapar…",
     defaultName: "Vårt hem",
     error: "Kunde inte skapa hem. Försök igen om en stund.",
@@ -75,13 +81,13 @@ const setupCopy: Record<
     householdName: "Namn på hemmet",
     initialMembers: "Första medlemmarna",
     initialMembersCopy: "Valfritt. Lägg till personerna som ska visas först.",
-    listError: "Vi kunde inte ladda befintliga hem just nu. Du kan fortfarande skapa ett nytt hem.",
+    listError: "Vi kunde inte ladda befintliga hem just nu. Du kan fortfarande fortsätta lokalt eller skapa ett nytt molnhem.",
     loadingHomes: "Laddar hem…",
     member: "Medlem",
-    parentRequired: "Logga in som vuxen innan du skapar ett nytt hem.",
+    parentRequired: "Logga in som vuxen innan du skapar ett molnhem.",
     remembersChoice: "HomeBoard kommer ihåg valet på den här enheten.",
-    thisHome: "Det här hemmet",
-    title: "Välj ditt HomeBoard-hem.",
+    thisHome: "Molnhem",
+    title: "Hur vill du använda HomeBoard på den här enheten?",
   },
 };
 
@@ -94,6 +100,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const [memberNames, setMemberNames] = useState(["", ""]);
   const [households, setHouseholds] = useState<Household[]>([]);
   const [isLoadingHouseholds, setLoadingHouseholds] = useState(true);
+  const [isLocalOnly, setLocalOnly] = useState(() => isLocalOnlyModeEnabled());
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
@@ -112,7 +119,17 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (!isCloudConfigured() || householdId) return;
+    const refreshLocalOnly = () => setLocalOnly(isLocalOnlyModeEnabled());
+    window.addEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, refreshLocalOnly);
+    window.addEventListener("storage", refreshLocalOnly);
+    return () => {
+      window.removeEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, refreshLocalOnly);
+      window.removeEventListener("storage", refreshLocalOnly);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isCloudConfigured() || householdId || isLocalOnly) return;
 
     let isMounted = true;
     setLoadingHouseholds(true);
@@ -137,12 +154,16 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [copy.listError, householdId]);
+  }, [copy.listError, householdId, isLocalOnly]);
 
-  if (!isCloudConfigured() || householdId) return <>{children}</>;
+  if (!isCloudConfigured() || householdId || isLocalOnly) return <>{children}</>;
 
   function selectHousehold(nextHouseholdId: string) {
     saveSelectedHouseholdId(nextHouseholdId);
+  }
+
+  function continueLocalOnly() {
+    enableLocalOnlyMode();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -178,6 +199,15 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
         {copy.title}
       </h2>
       <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.body}</p>
+
+      <button
+        className="pressable mt-5 w-full rounded-[1.7rem] border border-amber-200 bg-amber-50 px-4 py-4 text-left shadow-sm transition-[border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] hover:border-amber-300"
+        onClick={continueLocalOnly}
+        type="button"
+      >
+        <span className="block text-lg font-black text-stone-950">{copy.continueLocal}</span>
+        <span className="mt-1 block text-sm font-bold leading-6 text-stone-600">{copy.continueLocalBody}</span>
+      </button>
 
       {isLoadingHouseholds ? <p className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-600">{copy.loadingHomes}</p> : null}
       {listError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{listError}</p> : null}
