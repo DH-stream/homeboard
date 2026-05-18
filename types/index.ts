@@ -91,6 +91,9 @@ export type CalendarSource = {
   enabled: boolean;
   visibility: "household" | "private";
   syncMode: "read_only";
+  syncUrl?: string;
+  lastSyncedAt?: string;
+  lastError?: string;
   createdAt: string;
   updatedAt: string;
 };
