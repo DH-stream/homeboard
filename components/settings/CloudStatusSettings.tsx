@@ -34,10 +34,15 @@ const activationCopy: Record<
     devOverrideBody: string;
     devOverrideTitle: string;
     existingError: string;
+    cloudActivationMilestone: string;
+    cloudActivationMilestoneBody: string;
+    connectedDevice: string;
     forgetCloudHome: string;
     forgetCloudHomeBody: string;
     forgetCloudHomeConfirm: string;
+    forgetCloudHomeEyebrow: string;
     forgetCloudHomeTitle: string;
+    sharedCloudHome: string;
     homeName: string;
     listLoading: string;
     localBody: string;
@@ -70,10 +75,15 @@ const activationCopy: Record<
     devOverrideBody: "A development override is active. Normal device selection cannot change the active home until the override is removed.",
     devOverrideTitle: "Development override active",
     existingError: "We could not load your cloud homes right now. You can stay local or try again later.",
+    cloudActivationMilestone: "HomeBoard is synced for the family",
+    cloudActivationMilestoneBody: "This device is now connected to your shared cloud home and ready for mobile sync.",
+    connectedDevice: "This device",
     forgetCloudHome: "Forget cloud home on this device",
     forgetCloudHomeBody: "This only forgets the selected home on this device. The cloud home is not deleted, and cloud tasks, members, and calendar data are not removed.",
     forgetCloudHomeConfirm: "Forget this cloud home on this device? The home is not deleted in cloud sync, and cloud tasks, members, and calendar data are not removed.",
+    forgetCloudHomeEyebrow: "This device",
     forgetCloudHomeTitle: "This device can stop using the selected cloud home",
+    sharedCloudHome: "Shared cloud home",
     homeName: "Home name",
     listLoading: "Loading cloud homes…",
     localBody: "Tasks and settings stay on this browser. No sign-in is required, and you can turn on cloud sync later.",
@@ -105,10 +115,15 @@ const activationCopy: Record<
     devOverrideBody: "En utvecklingsoverride är aktiv. Vanligt enhetsval kan inte ändra aktivt hem förrän overriden tas bort.",
     devOverrideTitle: "Utvecklingsoverride aktiv",
     existingError: "Vi kunde inte ladda dina molnhem just nu. Du kan fortsätta lokalt eller försöka igen senare.",
+    cloudActivationMilestone: "HomeBoard är synkat för familjen",
+    cloudActivationMilestoneBody: "Den här enheten är nu kopplad till ert delade molnhem och redo för mobilsynk.",
+    connectedDevice: "Den här enheten",
     forgetCloudHome: "Glöm molnhem på den här enheten",
     forgetCloudHomeBody: "Detta glömmer bara valt hem på den här enheten. Hemmet raderas inte i molnet, och uppgifter, medlemmar och kalenderdata i molnet tas inte bort.",
     forgetCloudHomeConfirm: "Glöm det här molnhemmet på den här enheten? Hemmet raderas inte i molnsynk, och uppgifter, medlemmar och kalenderdata i molnet tas inte bort.",
+    forgetCloudHomeEyebrow: "Den här enheten",
     forgetCloudHomeTitle: "Den här enheten kan sluta använda valt molnhem",
+    sharedCloudHome: "Delat molnhem",
     homeName: "Namn på hemmet",
     listLoading: "Laddar molnhem…",
     localBody: "Uppgifter och inställningar stannar i den här webbläsaren. Ingen inloggning krävs, och du kan aktivera molnsynk senare.",
@@ -148,6 +163,7 @@ export function CloudStatusSettings() {
   const [flowError, setFlowError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isForgetConfirming, setForgetConfirming] = useState(false);
+  const [isCloudActivationCelebrating, setCloudActivationCelebrating] = useState(false);
 
   const status = diagnostics?.status ?? "not_configured";
   const isConfigured = isCloudConfigured();
@@ -182,6 +198,13 @@ export function CloudStatusSettings() {
   }, []);
 
   useEffect(() => {
+    if (!isCloudActivationCelebrating) return;
+
+    const celebrationTimer = window.setTimeout(() => setCloudActivationCelebrating(false), 2400);
+    return () => window.clearTimeout(celebrationTimer);
+  }, [isCloudActivationCelebrating]);
+
+  useEffect(() => {
     if (!isActivating || !canUseCloud || !isSignedIn) return;
 
     let isMounted = true;
@@ -214,6 +237,7 @@ export function CloudStatusSettings() {
     setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(null);
+    setCloudActivationCelebrating(false);
   }
 
   function cancelActivation() {
@@ -229,6 +253,7 @@ export function CloudStatusSettings() {
     setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(null);
+    setCloudActivationCelebrating(false);
   }
 
   function forgetCloudHomeOnThisDevice() {
@@ -240,6 +265,7 @@ export function CloudStatusSettings() {
     setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(null);
+    setCloudActivationCelebrating(false);
     void refresh();
   }
 
@@ -251,6 +277,7 @@ export function CloudStatusSettings() {
     setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(message);
+    setCloudActivationCelebrating(true);
     void refresh();
   }
 
@@ -294,23 +321,33 @@ export function CloudStatusSettings() {
       <div className="space-y-4">
         <p>{t("cloudStatusCopy")}</p>
 
-        <div className="rounded-[1.7rem] border border-amber-100 bg-amber-50/80 p-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className={`cloud-mode-card ${isCloudActivationCelebrating ? "cloud-mode-card--celebrating" : hasCloudHousehold ? "cloud-mode-card--active" : "cloud-mode-card--local"}`}>
+          <div className="cloud-mode-card__shine" />
+          <div className="relative flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">{copy.mode}</p>
-              <h3 className="mt-1 text-xl font-black tracking-tight text-stone-950">{mode.title}</h3>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">{isCloudActivationCelebrating ? t("cloudSync") : copy.mode}</p>
+              <h3 className="mt-1 text-xl font-black tracking-tight text-stone-950">{isCloudActivationCelebrating ? copy.cloudActivationMilestone : mode.title}</h3>
             </div>
-            <StatusChip tone={mode.tone}>{mode.title}</StatusChip>
+            <StatusChip tone={isCloudActivationCelebrating ? "emerald" : mode.tone}>{isCloudActivationCelebrating ? t("cloudSyncActive") : mode.title}</StatusChip>
           </div>
-          <p className="mt-2 text-sm font-semibold leading-6 text-stone-700">{mode.body}</p>
+          <p className="relative mt-2 text-sm font-semibold leading-6 text-stone-700">{isCloudActivationCelebrating ? copy.cloudActivationMilestoneBody : mode.body}</p>
+          {isCloudActivationCelebrating ? (
+            <div className="cloud-connection-path" aria-hidden="true">
+              <span>{copy.connectedDevice}</span>
+              <i />
+              <i />
+              <i />
+              <span>{copy.sharedCloudHome}</span>
+            </div>
+          ) : null}
           {!hasCloudHousehold && canUseCloud ? (
-            <button className="pressable mt-4 min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm shadow-stone-950/10" onClick={startActivation} type="button">
+            <button className="pressable relative mt-4 min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm shadow-stone-950/10" onClick={startActivation} type="button">
               {copy.turnOn}
             </button>
           ) : null}
         </div>
 
-        {successMessage ? <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-950">{successMessage}</p> : null}
+        {successMessage ? <p className={`cloud-success-copy ${isCloudActivationCelebrating ? "cloud-success-copy--celebrating" : ""}`}>{successMessage}</p> : null}
 
         {isActivating ? (
           <div className="rounded-[1.7rem] border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
@@ -386,7 +423,7 @@ export function CloudStatusSettings() {
 
         {canForgetSelectedCloudHousehold ? (
           <section className="rounded-[1.7rem] border border-stone-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{t("deviceStartViewTitle")}</p>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.forgetCloudHomeEyebrow}</p>
             <h3 className="mt-1 text-lg font-black tracking-tight text-stone-950">{copy.forgetCloudHomeTitle}</h3>
             <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.forgetCloudHomeBody}</p>
             {isForgetConfirming ? (

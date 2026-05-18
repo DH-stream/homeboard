@@ -1079,3 +1079,164 @@ button:disabled {
     display: none;
   }
 }
+
+.cloud-mode-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(252, 211, 77, 0.52);
+  border-radius: 1.7rem;
+  background: rgba(254, 243, 199, 0.78);
+  padding: 1rem;
+  box-shadow: 0 10px 28px rgba(120, 72, 22, 0.08);
+  transition:
+    background 420ms var(--ease-out),
+    border-color 420ms var(--ease-out),
+    box-shadow 520ms var(--ease-out),
+    transform 520ms var(--ease-out);
+}
+
+.cloud-mode-card--active,
+.cloud-mode-card--celebrating {
+  border-color: rgba(110, 231, 183, 0.72);
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.9), rgba(255, 251, 235, 0.74));
+  box-shadow: 0 18px 58px rgba(16, 185, 129, 0.14);
+}
+
+.cloud-mode-card--celebrating {
+  transform: translateY(-0.12rem) scale(1.008);
+  animation: cloud-milestone-settle 900ms var(--ease-out) both;
+}
+
+.cloud-mode-card__shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.72) 42%, transparent 64%);
+  opacity: 0;
+  transform: translateX(-80%);
+}
+
+.cloud-mode-card--celebrating .cloud-mode-card__shine {
+  animation: cloud-milestone-shine 1150ms var(--ease-out) both;
+}
+
+.cloud-connection-path {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  color: rgb(6, 95, 70);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cloud-connection-path i {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(0.72);
+  animation: cloud-connection-dot 680ms var(--ease-out) both;
+}
+
+.cloud-connection-path i:nth-of-type(2) {
+  animation-delay: 120ms;
+}
+
+.cloud-connection-path i:nth-of-type(3) {
+  animation-delay: 240ms;
+}
+
+.cloud-success-copy {
+  border: 1px solid rgb(167, 243, 208);
+  border-radius: 1rem;
+  background: rgb(236, 253, 245);
+  padding: 0.75rem 1rem;
+  color: rgb(6, 78, 59);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.cloud-success-copy--celebrating {
+  animation: cloud-success-land 520ms var(--ease-out) both;
+}
+
+@keyframes cloud-milestone-settle {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 10px 28px rgba(120, 72, 22, 0.08);
+  }
+  45% {
+    transform: translateY(-0.18rem) scale(1.012);
+    box-shadow: 0 24px 76px rgba(16, 185, 129, 0.24);
+  }
+  100% {
+    transform: translateY(-0.12rem) scale(1.008);
+    box-shadow: 0 18px 58px rgba(16, 185, 129, 0.14);
+  }
+}
+
+@keyframes cloud-milestone-shine {
+  0% {
+    opacity: 0;
+    transform: translateX(-80%);
+  }
+  22% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(78%);
+  }
+}
+
+@keyframes cloud-connection-dot {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) translateY(0.12rem);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.18) translateY(0);
+  }
+  100% {
+    opacity: 0.72;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes cloud-success-land {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud-mode-card,
+  .cloud-mode-card--celebrating,
+  .cloud-mode-card__shine,
+  .cloud-mode-card--celebrating .cloud-mode-card__shine,
+  .cloud-connection-path i,
+  .cloud-success-copy--celebrating {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .cloud-mode-card__shine {
+    display: none;
+  }
+
+  .cloud-connection-path i {
+    opacity: 0.72;
+  }
+}
