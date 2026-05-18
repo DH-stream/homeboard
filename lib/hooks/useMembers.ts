@@ -7,13 +7,24 @@ import { createMemberService } from "@/lib/services/memberService";
 import type { Household, HouseholdMember } from "@/types";
 
 export function useHousehold() {
+  const { householdId } = useResolvedHouseholdId();
   const [household, setHousehold] = useState<Household | null>(null);
+  const [isLoading, setLoading] = useState(true);
 
   useEffect(() => {
-    createMemberService(getMemberRepository(null)).getHousehold().then(setHousehold);
-  }, []);
+    const service = createMemberService(getMemberRepository(householdId));
+    setLoading(true);
+    service
+      .getHousehold(householdId)
+      .then(setHousehold)
+      .catch((error) => {
+        console.warn("HomeBoard household could not be loaded from cloud; using device data.", error);
+        return createMemberService(getMemberRepository(null)).getHousehold(null).then(setHousehold);
+      })
+      .finally(() => setLoading(false));
+  }, [householdId]);
 
-  return { household, isLoading: !household };
+  return { household, isLoading };
 }
 
 export function useMembers() {

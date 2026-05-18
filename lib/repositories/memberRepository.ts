@@ -3,6 +3,13 @@ import { mockMembers } from "@/data/mockMembers";
 import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Household, HouseholdMember, HouseholdMemberRole } from "@/types";
 
+type HouseholdRow = {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type HouseholdMemberRow = {
   id: string;
   household_id: string;
@@ -13,6 +20,15 @@ type HouseholdMemberRow = {
   created_at: string;
   updated_at: string;
 };
+
+function mapHousehold(row: HouseholdRow): Household {
+  return {
+    id: row.id,
+    name: row.name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 function mapHouseholdMember(row: HouseholdMemberRow): HouseholdMember {
   return {
@@ -28,7 +44,7 @@ function mapHouseholdMember(row: HouseholdMemberRow): HouseholdMember {
 }
 
 export interface MemberRepository {
-  getHousehold(): Promise<Household>;
+  getHousehold(householdId?: string | null): Promise<Household | null>;
   listMembers(householdId?: string | null): Promise<HouseholdMember[]>;
 }
 
@@ -44,8 +60,13 @@ export const mockMemberRepository: MemberRepository = {
 export class SupabaseMemberRepository implements MemberRepository {
   private readonly client = createBrowserSupabaseClient();
 
-  async getHousehold() {
-    return mockHousehold;
+  async getHousehold(householdId?: string | null) {
+    if (!this.client || !householdId) return null;
+
+    const { data, error } = await this.client.from("households").select("id, name, created_at, updated_at").eq("id", householdId).maybeSingle();
+
+    if (error) throw error;
+    return data ? mapHousehold(data as HouseholdRow) : null;
   }
 
   async listMembers(householdId?: string | null) {
