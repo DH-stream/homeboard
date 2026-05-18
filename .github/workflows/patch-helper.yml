@@ -1,0 +1,166 @@
+name: Patch helper
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Existing branch to patch. Leave empty to create a new PR branch from main.'
+        required: false
+        type: string
+      file_path:
+        description: 'Repository-relative file path'
+        required: true
+        type: string
+      search:
+        description: 'Exact text to search for. Use \n for line breaks.'
+        required: true
+        type: string
+      replace:
+        description: 'Exact replacement text. Use \n for line breaks.'
+        required: true
+        type: string
+      change_name:
+        description: 'Short name for branch, commit and PR'
+        required: false
+        default: 'manual patch'
+        type: string
+      expected_matches:
+        description: 'Expected match count'
+        required: false
+        default: '1'
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prepare patch metadata
+        id: meta
+        shell: bash
+        run: |
+          CHANGE_NAME="${{ inputs.change_name }}"
+          if [ -z "$CHANGE_NAME" ]; then
+            CHANGE_NAME="manual patch"
+          fi
+
+          TARGET_BRANCH="${{ inputs.target_branch }}"
+          TARGET_BRANCH="$(echo "${TARGET_BRANCH}" | xargs)"
+
+          SLUG=$(echo "$CHANGE_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')
+          if [ -z "$SLUG" ]; then
+            SLUG="manual-patch"
+          fi
+
+          TITLE="Apply patch: ${CHANGE_NAME}"
+
+          if [ -n "$TARGET_BRANCH" ]; then
+            echo "mode=existing" >> "$GITHUB_OUTPUT"
+            echo "branch_name=$TARGET_BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=new" >> "$GITHUB_OUTPUT"
+            echo "branch_name=patch/${SLUG}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout selected base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.meta.outputs.mode == 'existing' && steps.meta.outputs.branch_name || 'main' }}
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create patch branch
+        if: steps.meta.outputs.mode == 'new'
+        run: git checkout -b "${{ steps.meta.outputs.branch_name }}"
+
+      - name: Apply exact text replacement
+        env:
+          PATCH_FILE_PATH: ${{ inputs.file_path }}
+          PATCH_SEARCH: ${{ inputs.search }}
+          PATCH_REPLACE: ${{ inputs.replace }}
+          PATCH_EXPECTED_MATCHES: ${{ inputs.expected_matches }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          function decodeEscapes(value) {
+            return String(value ?? '')
+              .replace(/\\r\\n/g, '\n')
+              .replace(/\\n/g, '\n')
+              .replace(/\\t/g, '\t');
+          }
+
+          function normalizeRepoPath(filePath, label) {
+            const normalizedPath = path.normalize(filePath);
+            if (normalizedPath.startsWith('..') || path.isAbsolute(normalizedPath)) {
+              throw new Error(`${label} must be a repository-relative path. Got: ${filePath}`);
+            }
+            return normalizedPath;
+          }
+
+          const filePath = process.env.PATCH_FILE_PATH?.trim();
+          const search = decodeEscapes(process.env.PATCH_SEARCH);
+          const replace = decodeEscapes(process.env.PATCH_REPLACE);
+          const expectedMatches = Number(String(process.env.PATCH_EXPECTED_MATCHES || '1').trim());
+
+          if (!filePath) throw new Error('Missing file_path.');
+          if (!search.trim()) throw new Error('Missing search text.');
+          if (!Number.isInteger(expectedMatches) || expectedMatches < 1) {
+            throw new Error(`expected_matches must be a positive integer. Got: ${process.env.PATCH_EXPECTED_MATCHES}`);
+          }
+
+          const normalizedPath = normalizeRepoPath(filePath, 'file_path');
+          if (!fs.existsSync(normalizedPath)) throw new Error(`File does not exist: ${filePath}`);
+
+          const before = fs.readFileSync(normalizedPath, 'utf8');
+          const matchCount = before.split(search).length - 1;
+          if (matchCount !== expectedMatches) {
+            throw new Error(`Expected ${expectedMatches} match(es) in ${filePath}, but found ${matchCount}. Refusing to patch.`);
+          }
+
+          const after = before.split(search).join(replace);
+          if (after === before) throw new Error('Patch produced no changes.');
+
+          fs.writeFileSync(normalizedPath, after, 'utf8');
+          console.log(`Patched ${normalizedPath}. Replaced ${matchCount} occurrence(s).`);
+          NODE
+
+      - name: Verify diff exists
+        run: |
+          git diff --check
+          git diff --exit-code && {
+            echo "No changes produced."
+            exit 1
+          } || true
+
+      - name: Commit and push
+        run: |
+          git add -A
+          git commit -m "${{ steps.meta.outputs.title }}"
+          git push --set-upstream origin "${{ steps.meta.outputs.branch_name }}"
+
+      - name: Open pull request
+        if: steps.meta.outputs.mode == 'new'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "${{ steps.meta.outputs.branch_name }}" \
+            --title "${{ steps.meta.outputs.title }}" \
+            --body "Created by the manual Patch helper workflow."
+
+      - name: Report existing branch update
+        if: steps.meta.outputs.mode == 'existing'
+        run: |
+          echo "Patched existing branch: ${{ steps.meta.outputs.branch_name }}"
