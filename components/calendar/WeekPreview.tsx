@@ -101,11 +101,11 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
         <h2 className={`font-black tracking-tight text-stone-950 ${isWall ? "text-2xl" : "text-xl"}`}>{t("weekPreview")}</h2>
       </div>
 
-      <div className="relative">
+      <div className={`relative ${isWall ? "min-h-[8.25rem]" : ""}`}>
         {isWall && selectedDayKey ? <button aria-label="Close calendar details" className="absolute inset-0 z-20 cursor-default bg-transparent" onClick={closeDetailsOnBackground} type="button" /> : null}
         {isWall ? <span className="pointer-events-none absolute -left-3 top-1/2 z-10 -translate-y-1/2 text-xl font-black text-stone-300">‹</span> : null}
         {isWall ? <span className="pointer-events-none absolute -right-3 top-1/2 z-10 -translate-y-1/2 text-xl font-black text-stone-300">›</span> : null}
-        <div className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? `relative z-10 grid grid-cols-7 gap-2 overflow-visible py-1 ${getWeekAnimationClassName(weekAnimationDirection)}` : "grid grid-cols-7 gap-2"}`}>
+        <div className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? `relative z-10 grid grid-cols-7 items-stretch gap-2 overflow-visible py-1 ${getWeekAnimationClassName(weekAnimationDirection)}` : "grid grid-cols-7 gap-2"}`}>
           {days.map((day, dayIndex) => {
             const key = toLocalDateKey(day);
             const dayEvents = events.filter((event) => toLocalDateKey(event.startAt) === key);
@@ -121,10 +121,10 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
             const eventPreviewClassName = isSelected ? "bg-amber-200/75 text-stone-950" : isToday ? "bg-white/15" : "bg-stone-100";
 
             return isWall ? (
-              <div className="relative" key={key}>
+              <div className="relative flex" key={key}>
                 <button
                   aria-pressed={isSelected}
-                  className={`min-h-28 w-full rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] hover:-translate-y-0.5 active:translate-y-0 ${dayToneClassName}`}
+                  className={`flex min-h-[8rem] w-full flex-col rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] hover:-translate-y-0.5 active:translate-y-0 ${dayToneClassName}`}
                   onClick={(event) => {
                     event.stopPropagation();
                     setSelectedDayKey((current) => (current === key ? null : key));
@@ -134,11 +134,11 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
                   <p className={`text-xs font-black uppercase tracking-[0.12em] ${labelToneClassName}`}>
                     {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(day)}
                   </p>
-                  <div className="mt-1 flex flex-wrap items-baseline gap-1">
+                  <div className="mt-1 flex min-h-8 flex-wrap items-baseline gap-1">
                     <p className="text-3xl font-black leading-none">{day.getDate()}</p>
                     {isToday ? <span className={`rounded-full px-1.5 py-0.5 text-[0.56rem] font-black uppercase tracking-[0.08em] leading-none ${isSelected ? "bg-amber-200 text-amber-900" : "bg-white/15 text-amber-200"}`}>{copy.today}</span> : null}
                   </div>
-                  <div className="mt-2 space-y-1">
+                  <div className="mt-2 min-h-[3.35rem] space-y-1">
                     {dayEvents.slice(0, visibleEventCount).map((event) => (
                       <p key={event.id} className={`truncate rounded-full px-2 py-0.5 text-[0.66rem] font-black leading-tight ${eventPreviewClassName}`}>
                         {event.title}
@@ -149,7 +149,7 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
                 </button>
                 {isSelected ? (
                   <div
-                    className={`absolute top-0 z-30 max-h-32 min-h-28 w-[18rem] overflow-y-auto rounded-2xl border border-stone-300 bg-white p-3 text-stone-950 shadow-2xl shadow-stone-950/25 ring-1 ring-white animate-[weekSlideFromRight_180ms_var(--ease-out)] ${getDetailPlacementClassName(dayIndex)}`}
+                    className={`absolute top-0 z-30 max-h-32 min-h-[8rem] w-[18rem] overflow-y-auto rounded-2xl border border-stone-300 bg-white p-3 text-stone-950 shadow-2xl shadow-stone-950/25 ring-1 ring-white animate-[weekSlideFromRight_180ms_var(--ease-out)] ${getDetailPlacementClassName(dayIndex)}`}
                     onClick={(event) => event.stopPropagation()}
                   >
                     <p className="text-xs font-black uppercase tracking-[0.12em] text-stone-600">
