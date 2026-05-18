@@ -10,7 +10,7 @@ const maskUrl = (url?: string) => (url ? `${url.slice(0, 24)}••••` : "")
 type ProviderChoice = "apple" | "google" | "microsoft" | "link";
 
 export function CalendarSourcesSettings() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { sources, setupState, isLoading, isSyncing, syncError, addSourceAndSync, updateSourceEnabled, syncSource, syncAll } = useCalendarSettings();
   const [showAdd, setShowAdd] = useState(false);
   const [provider, setProvider] = useState<ProviderChoice>("apple");
@@ -24,6 +24,9 @@ export function CalendarSourcesSettings() {
     microsoft: t("calendarProviderMicrosoftHelp"),
     link: t("calendarLinkTitle"),
   } as const;
+
+  const chooseProviderLabel = language === "sv" ? "Välj kalender" : "Choose your calendar";
+  const colorLabel = language === "sv" ? "Färg" : "Color";
 
   async function submitCalendar(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,7 +71,7 @@ export function CalendarSourcesSettings() {
           <div className="rounded-[2rem] border border-stone-200/80 bg-white/85 p-4 shadow-sm">
             <div className="mb-3 h-1.5 w-12 rounded-full bg-amber-300" />
             <h3 className="text-xl font-black tracking-tight text-stone-950">{t("calendarAdd")}</h3>
-            <p className="mt-1 text-sm font-semibold leading-6 text-stone-600">{t("calendarChooseProvider")}</p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-stone-600">{chooseProviderLabel}</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               {(["apple", "google", "microsoft", "link"] as ProviderChoice[]).map((choice) => {
                 const selected = provider === choice;
@@ -79,7 +82,7 @@ export function CalendarSourcesSettings() {
               <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-bold leading-6 text-amber-900">{providerHelpByChoice[provider]}</p>
               <input className="min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-bold text-stone-950 outline-none focus:border-amber-400" onChange={(event) => setName(event.target.value)} placeholder={t("calendarSourceName")} value={name} />
               <input className="min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-bold text-stone-950 outline-none focus:border-amber-400" onChange={(event) => setUrl(event.target.value)} placeholder={t("calendarLinkUrl")} value={url} />
-              <label className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-black text-stone-700"><span>{t("calendarColor")}</span><input className="h-9 w-14 cursor-pointer rounded-xl border-0 bg-transparent" onChange={(event) => setColor(event.target.value)} type="color" value={color} /></label>
+              <label className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-black text-stone-700"><span>{colorLabel}</span><input className="h-9 w-14 cursor-pointer rounded-xl border-0 bg-transparent" onChange={(event) => setColor(event.target.value)} type="color" value={color} /></label>
               <button className="pressable min-h-12 rounded-2xl bg-stone-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-50" disabled={isLoading || isSyncing || !name.trim() || !url.trim()} type="submit">{isSyncing ? t("calendarSyncing") : t("calendarSaveAndSync")}</button>
             </form>
           </div>
