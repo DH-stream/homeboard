@@ -26,12 +26,20 @@ type DevicePairingSessionRow = {
 
 const PAIRING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const PAIRING_CODE_LENGTH = 6;
+const PAIRING_CODE_CREATE_ATTEMPTS = 3;
 const PAIRING_TTL_MINUTES = 10;
 
 function createPairingCode() {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.getRandomValues) throw new Error("Secure random values are not available in this browser.");
+
   const values = new Uint32Array(PAIRING_CODE_LENGTH);
-  crypto.getRandomValues(values);
+  cryptoApi.getRandomValues(values);
   return Array.from(values, (value) => PAIRING_CODE_ALPHABET[value % PAIRING_CODE_ALPHABET.length]).join("");
+}
+
+function isPossibleDuplicateCodeError(error: unknown) {
+  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "23505");
 }
 
 function mapPairingSession(row: DevicePairingSessionRow): DevicePairingSession {
@@ -71,14 +79,20 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     if (deviceError) throw deviceError;
 
-    const { data: session, error: sessionError } = await this.client
-      .from("device_pairing_sessions")
-      .insert({ device_id: (device as DeviceRow).id, pairing_code: createPairingCode(), status: "pending", expires_at: expiresAt })
-      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
-      .single();
+    let lastError: unknown = null;
+    for (let attempt = 0; attempt < PAIRING_CODE_CREATE_ATTEMPTS; attempt += 1) {
+      const { data: session, error: sessionError } = await this.client
+        .from("device_pairing_sessions")
+        .insert({ device_id: (device as DeviceRow).id, pairing_code: createPairingCode(), status: "pending", expires_at: expiresAt })
+        .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
+        .single();
 
-    if (sessionError) throw sessionError;
-    return mapPairingSession(session as DevicePairingSessionRow);
+      if (!sessionError) return mapPairingSession(session as DevicePairingSessionRow);
+      lastError = sessionError;
+      if (!isPossibleDuplicateCodeError(sessionError)) break;
+    }
+
+    throw lastError;
   }
 
   async getPairingSession(pairingCode: string) {
