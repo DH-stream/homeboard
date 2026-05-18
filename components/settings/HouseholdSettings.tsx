@@ -46,6 +46,12 @@ const settingsCopy: Record<
   },
 };
 
+function maskId(id: string | null) {
+  if (!id) return "—";
+  if (id.length <= 10) return id;
+  return `${id.slice(0, 6)}…${id.slice(-4)}`;
+}
+
 export function HouseholdSettings() {
   const { household, householdId, isDevOverride, isLoading, refreshHouseholdId } = useActiveHousehold();
   const { language, t } = useLanguage();
@@ -69,12 +75,6 @@ export function HouseholdSettings() {
             <dd className="text-right font-black text-stone-900">{selectedHouseholdName}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="font-bold text-stone-500">{copy.householdId}</dt>
-            <dd className="max-w-[12rem] truncate text-right font-mono text-xs font-black text-stone-900" title={householdId ?? undefined}>
-              {householdId ?? copy.none}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-3">
             <dt className="font-bold text-stone-500">{copy.selectionSource}</dt>
             <dd className="text-right font-black text-stone-900">{selectionSource}</dd>
           </div>
@@ -83,6 +83,21 @@ export function HouseholdSettings() {
           {copy.resetSelectedHousehold}
         </button>
         {isDevOverride ? <p className="text-xs font-bold text-stone-500">{copy.overrideActiveCopy}</p> : null}
+        <details className="rounded-2xl border border-stone-200/80 bg-white/75 p-4 text-sm">
+          <summary className="cursor-pointer font-black text-stone-800">{t("technicalInfo")}</summary>
+          <dl className="mt-3 grid gap-2">
+            <div className="flex justify-between gap-3">
+              <dt className="font-bold text-stone-500">{copy.householdId}</dt>
+              <dd className="text-right font-mono text-xs font-black text-stone-900" title={householdId ?? undefined}>
+                {maskId(householdId)}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="font-bold text-stone-500">{copy.selectionSource}</dt>
+              <dd className="text-right font-black text-stone-900">{selectionSource}</dd>
+            </div>
+          </dl>
+        </details>
       </div>
     </SettingsCard>
   );
