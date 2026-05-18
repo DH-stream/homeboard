@@ -4,6 +4,25 @@ HomeBoard is an open-source family wall calendar and task dashboard inspired by 
 
 The first preview is a Vercel-ready Next.js app with a polished wall dashboard, a mobile task-management view, settings placeholders, shared TypeScript data models, and repository/service boundaries so persistence can be replaced later without rewriting the UI.
 
+## Project goal
+
+HomeBoard’s goal is to become a self-hostable, family-friendly wall calendar and shared task board for the home.
+
+It should work as a calm “family screen” on a kitchen, hallway, or tablet wall display, while also being usable from mobile. The app should be simple enough for normal families to set up, but technically clear enough to release as an open-source GitHub project that other people can run, fork, and adapt.
+
+HomeBoard must support two safe paths:
+
+- **Local-only:** works immediately on one device without login, account, paid service, or cloud setup.
+- **Cloud sync:** can be enabled when a household wants shared data between wall screens, mobile devices, and future integrations.
+
+A core product rule is that local-only must never require login. Login is only required for cloud homes, mobile sync, adult/admin cloud actions, and future wall-screen pairing approval.
+
+Another core rule is that household data must be hard to lose by accident. Switching local/cloud modes must not delete a household or silently forget a cloud home. “Forget cloud home on this device” should only exist as an explicit Settings action with a confirmation dialog, and it must clearly explain that it only disconnects this device and does not delete the household in the cloud.
+
+The user-facing language should stay family-friendly: use words like Cloud, Cloud sync, Home, This device, Local-only, and Grown-up access. Users should not need to understand Supabase, UUIDs, or backend implementation details to set up HomeBoard.
+
+For project handoff and future AI/Codex work, see [`docs/BOOTLOADER.md`](docs/BOOTLOADER.md).
+
 ## Current status
 
 This repository currently ships a usable product preview:
