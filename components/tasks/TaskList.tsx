@@ -68,8 +68,11 @@ export function TaskList({
     );
   }
 
+  const shouldUseWallTwoColumns = roomy && tasks.length >= WALL_TWO_COLUMN_TASK_THRESHOLD;
+  const listClassName = shouldUseWallTwoColumns ? "grid gap-3 xl:grid-cols-2" : "space-y-3";
+
   return (
-    <div className="space-y-3">
+    <div className={listClassName}>
       {tasks.map((task, index) => (
         <div className="task-waterfall-item" key={`${animationKey ?? "list"}-${task.id}`} style={{ "--task-waterfall-delay": `${index * 70}ms` } as TaskWaterfallStyle}>
           <TaskCard
