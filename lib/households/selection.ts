@@ -46,8 +46,10 @@ export function disableLocalOnlyMode() {
   window.dispatchEvent(new CustomEvent(LOCAL_ONLY_MODE_CHANGED_EVENT, { detail: false }));
 }
 
-export function resetSelectedHouseholdId() {
+export function forgetSelectedCloudHouseholdOnThisDevice() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(SELECTED_HOUSEHOLD_STORAGE_KEY);
   window.dispatchEvent(new CustomEvent(SELECTED_HOUSEHOLD_CHANGED_EVENT, { detail: { householdId: null } }));
 }
+
+export const resetSelectedHouseholdId = forgetSelectedCloudHouseholdOnThisDevice;
