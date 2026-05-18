@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getCurrentParentUser, requestParentEmailCode, signOutParent, verifyParentEmailCode, type ParentAuthUser } from "@/lib/auth/parentAuth";
+import { getCurrentParentUser, PARENT_AUTH_CHANGED_EVENT, requestParentEmailCode, signOutParent, verifyParentEmailCode, type ParentAuthUser } from "@/lib/auth/parentAuth";
 
 export type ParentAuthStatus = "loading" | "signed_out" | "signed_in";
 
@@ -26,6 +26,12 @@ export function useParentAuth() {
 
   useEffect(() => {
     void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    const handleAuthChanged = () => void refresh();
+    window.addEventListener(PARENT_AUTH_CHANGED_EVENT, handleAuthChanged);
+    return () => window.removeEventListener(PARENT_AUTH_CHANGED_EVENT, handleAuthChanged);
   }, [refresh]);
 
   const requestCode = useCallback(async (email: string) => {
