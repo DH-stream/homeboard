@@ -11,7 +11,6 @@ import { WallQuickTaskButton } from "@/components/wall/WallQuickTaskButton";
 import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
 import { ActionToast } from "@/components/ui/ActionToast";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { isCloudConfigured } from "@/lib/cloud/config";
 import { saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
@@ -21,10 +20,10 @@ import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/fi
 import { useTasks } from "@/lib/hooks/useTasks";
 import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type WallTaskCreatorMode } from "@/lib/wallPreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
-import { formatShortDate, isSameLocalDay } from "@/lib/utils/date";
+import { formatShortDate } from "@/lib/utils/date";
+import { shouldShowTodayTask } from "@/lib/tasks/visibility";
 import type { TaskInstance } from "@/types";
 
-const DAILY_RECURRING_REVEAL_MINUTES = 90;
 const QUICK_CREATOR_CLOSE_MS = 240;
 const QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS = 20;
 
@@ -32,14 +31,6 @@ function getFirstCreatedTaskId(created: unknown) {
   if (!Array.isArray(created)) return null;
   const firstTask = created.find((task): task is TaskInstance => Boolean(task && typeof task === "object" && "id" in task));
   return firstTask?.id ?? null;
-}
-
-function shouldShowTodayTask(task: TaskInstance, now: Date) {
-  if (!isSameLocalDay(task.dueDate, now)) return false;
-  if (task.completedAt || task.scheduleType !== "daily") return true;
-
-  const revealAt = new Date(task.dueDate).getTime() - DAILY_RECURRING_REVEAL_MINUTES * 60 * 1000;
-  return now.getTime() >= revealAt;
 }
 
 export default function WallPage() {
@@ -54,6 +45,7 @@ export default function WallPage() {
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
   const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
   const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("wall"));
   const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
@@ -62,6 +54,10 @@ export default function WallPage() {
   const quickCreatorTimerRef = useRef<number | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
+  const filteredTodayTasks = useMemo(() => {
+    if (!selectedMemberId) return todayTasks;
+    return todayTasks.filter((task) => task.assignedToMemberId === selectedMemberId);
+  }, [selectedMemberId, todayTasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
@@ -173,19 +169,19 @@ export default function WallPage() {
 
       <div className={`mt-5 flex flex-wrap gap-2 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-5" : ""}`}>
         {members.map((member) => (
-          <MemberBadge key={member.id} member={member} />
+          <MemberBadge
+            isSelected={selectedMemberId === member.id}
+            key={member.id}
+            member={member}
+            onClick={() => setSelectedMemberId((current) => (current === member.id ? null : member.id))}
+          />
         ))}
       </div>
 
       <div className="mt-6 grid flex-1 gap-5 xl:grid-cols-[1fr_0.9fr]">
         <section className={`surface-card rounded-[2.25rem] p-4 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-6" : ""}`}>
           <SectionHeader
-            action={(
-              <div className="flex flex-wrap justify-end gap-2">
-                <StatusChip>{t("allPeople")}</StatusChip>
-                {wallTaskCreatorMode === "docked" ? <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={toggleQuickCreator} /> : null}
-              </div>
-            )}
+            action={wallTaskCreatorMode === "docked" ? <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={toggleQuickCreator} /> : null}
             eyebrow={t("touchToCheckOff")}
             title={t("todaysTasks")}
           />
@@ -200,7 +196,7 @@ export default function WallPage() {
             </div>
           ) : null}
           <ActionToast message={createSuccessMessage} onDismiss={() => setCreateSuccessMessage(null)} placement="inline" />
-          <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} recentlyCreatedId={recentlyCreatedTaskId} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
+          <TaskList members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} recentlyCreatedId={recentlyCreatedTaskId} completionMessage={completionFeedback?.message} roomy tasks={filteredTodayTasks} />
         </section>
         <aside className={`grid content-start gap-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
           <TodayAgenda events={todayEvents} />
