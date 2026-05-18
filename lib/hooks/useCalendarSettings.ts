@@ -16,6 +16,8 @@ export function useCalendarSettings() {
   const [connections, setConnections] = useState<CalendarConnection[]>([]);
   const [sources, setSources] = useState<CalendarSource[]>([]);
   const [isLoading, setLoading] = useState(true);
+  const [isSyncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<"calendarAdultLoginRequired" | null>(null);
   const { householdId } = useResolvedHouseholdId();
   const setupState = useMemo<CalendarSetupState>(() => (!isCloudConfigured() ? "missing_cloud_config" : !householdId ? "missing_household" : "ready"), [householdId]);
 
@@ -37,21 +39,51 @@ export function useCalendarSettings() {
       const { data: conn } = await client.from("calendar_connections").insert({ household_id: householdId, provider: "ics", account_label: "ICS", status: "connected" }).select("id").single();
       connectionId = conn?.id;
     }
-    await client.from("calendar_sources").insert({ household_id: householdId, connection_id: connectionId, provider_calendar_id: `ics:${Date.now()}`, name, color, enabled, sync_url: syncUrl });
+    const { data: source } = await client
+      .from("calendar_sources")
+      .insert({ household_id: householdId, connection_id: connectionId, provider_calendar_id: `ics:${Date.now()}`, name, color, enabled, sync_url: syncUrl })
+      .select("id")
+      .single();
     await refresh();
+    return source?.id as string | undefined;
   }, [connections, householdId, refresh]);
 
   const syncSource = useCallback(async (sourceId: string) => {
     const token = await getParentAccessToken();
-    await fetch("/api/calendar/sync-source", { method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ sourceId }) });
-    await refresh();
+    if (!token) {
+      setSyncError("calendarAdultLoginRequired");
+      return;
+    }
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      await fetch("/api/calendar/sync-source", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ sourceId }) });
+      await refresh();
+    } finally {
+      setSyncing(false);
+    }
   }, [refresh]);
   const syncAll = useCallback(async () => {
     if (!householdId) return;
     const token = await getParentAccessToken();
-    await fetch("/api/calendar/sync-all", { method: "POST", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ householdId }) });
-    await refresh();
+    if (!token) {
+      setSyncError("calendarAdultLoginRequired");
+      return;
+    }
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      await fetch("/api/calendar/sync-all", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ householdId }) });
+      await refresh();
+    } finally {
+      setSyncing(false);
+    }
   }, [householdId, refresh]);
 
-  return { connections, sources, householdId, isLoading, setupState, updateSourceEnabled, refresh, addIcsSource, syncSource, syncAll };
+  const addSourceAndSync = useCallback(async (name: string, syncUrl: string, color: string, enabled: boolean) => {
+    const newSourceId = await addIcsSource(name, syncUrl, color, enabled);
+    if (newSourceId) await syncSource(newSourceId);
+  }, [addIcsSource, syncSource]);
+
+  return { connections, sources, householdId, isLoading, isSyncing, syncError, setupState, updateSourceEnabled, refresh, addIcsSource, addSourceAndSync, syncSource, syncAll };
 }
