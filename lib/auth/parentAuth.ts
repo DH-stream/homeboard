@@ -2,10 +2,17 @@
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
+export const PARENT_AUTH_CHANGED_EVENT = "homeboard:parent-auth-changed";
+
 export type ParentAuthUser = {
   id: string;
   email?: string;
 };
+
+function broadcastParentAuthChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(PARENT_AUTH_CHANGED_EVENT));
+}
 
 function mapSupabaseUser(user: { id: string; email?: string | null } | null | undefined): ParentAuthUser | null {
   if (!user) return null;
@@ -52,6 +59,7 @@ export async function verifyParentEmailCode(email: string, token: string): Promi
   });
 
   if (error) throw error;
+  broadcastParentAuthChanged();
   return mapSupabaseUser(data.user);
 }
 
@@ -59,4 +67,5 @@ export async function signOutParent() {
   const client = createBrowserSupabaseClient();
   if (!client) return;
   await client.auth.signOut();
+  broadcastParentAuthChanged();
 }
