@@ -27,7 +27,7 @@ type DevicePairingSessionRow = {
 const PAIRING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const PAIRING_CODE_LENGTH = 6;
 const PAIRING_CODE_CREATE_ATTEMPTS = 3;
-const PAIRING_TTL_MINUTES = 10;
+const PAIRING_TTL_MINUTES = 2;
 
 function createPairingCode() {
   const cryptoApi = globalThis.crypto;

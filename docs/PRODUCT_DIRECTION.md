@@ -35,7 +35,7 @@ The intended setup path is:
 - The mobile/admin device scans the QR code and reviews the pairing request.
 - Mobile confirms which household should own the wall device.
 - The wall device is linked to that household and then loads the wall dashboard.
-- Pairing sessions should expire quickly, for example after 10 minutes.
+- Pairing sessions should expire quickly, with a 2-minute target in the current MVP.
 - Paired devices should be manageable later from Settings, including name, mode, last seen status, and unpairing.
 - A wall device should store a local device id and resolve its household through the pairing/device record, not through a hardcoded household id.
 
@@ -66,3 +66,14 @@ HomeBoard should support two operating modes with honest security expectations:
 
 - **Supabase sync mode:** durable admin permissions should eventually come from Supabase Auth plus `household_members.role`. Adult members can manage settings, members, recurring tasks, rewards, integrations, and device pairing. Child members can view tasks and complete allowed tasks, but should not manage household/admin settings. Full enforcement belongs in Auth/RLS/API policies later.
 - **Local-only mode:** there is no real account security. A local parent PIN can later act as a practical household UX guard for Settings/Admin and wall/kiosk unlock, but it must not be presented as cloud-grade security or a replacement for real auth.
+
+
+## Device pairing and child access direction
+
+Device pairing connects a device to a household and audience mode; it is not a member invite.
+
+- Pairing model direction: `deviceMode` (`wall` or `mobile`), `deviceAudience` (`adult`, `child`, `shared`), optional `linkedMemberId`, `householdId`, `approvedByUserId`, and `expiresAt`.
+- Grown-up auth is required for pairing approval and household administration.
+- Child devices should not require email/login for daily use.
+- Child devices should open HomeBoard with child-safe access and no Settings/admin routes.
+- Adult member linking/invite and stronger permission enforcement are follow-up work after this MVP.

@@ -12,13 +12,14 @@ import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
 import { ActionToast } from "@/components/ui/ActionToast";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { saveSelectedHouseholdId } from "@/lib/households/selection";
+import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type WallTaskCreatorMode } from "@/lib/wallPreferences";
+import { saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
 import { shouldShowTodayTask } from "@/lib/tasks/visibility";
@@ -132,7 +133,7 @@ export default function WallPage() {
   }, []);
 
   if (!householdId && !useLocalWall && isCloudConfigured()) {
-    return <WallPairingCard onPaired={finishPairing} onUseLocal={() => setUseLocalWall(true)} />;
+    return <WallPairingCard onPaired={finishPairing} onUseLocal={() => { saveDeviceStartView({ mode: "wall", route: "/wall" }); enableLocalOnlyMode(); setUseLocalWall(true); }} />;
   }
 
   async function toggleTask(task: TaskInstance) {

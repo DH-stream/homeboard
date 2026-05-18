@@ -8,6 +8,7 @@ import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSe
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
+import { MembersSettings } from "@/components/settings/MembersSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { useLanguage, type Language } from "@/lib/i18n";
 
@@ -41,13 +42,11 @@ export default function SettingsPage() {
           </div>
         </SettingsCard>
         <DeviceStartViewSettings />
-        <WallTaskCreatorSettings />
         <HouseholdSettings />
-        <CloudStatusSettings />
-        <SettingsCard title={t("members")}>
-          <p>{t("membersCopy")}</p>
-        </SettingsCard>
+        <MembersSettings />
+        <WallTaskCreatorSettings />
         <CalendarSourcesSettings />
+        <CloudStatusSettings />
         <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
           <p>{t("homeAssistantIntegrationCopy")}</p>
         </SettingsCard>

@@ -32,6 +32,8 @@ const activationCopy: Record<
     createCloudHome: string;
     createError: string;
     createIntro: string;
+    yourName: string;
+    yourNameHint: string;
     createSuccess: string;
     devOverrideBody: string;
     devOverrideTitle: string;
@@ -77,6 +79,8 @@ const activationCopy: Record<
     createCloudHome: "Create cloud home",
     createError: "We could not create the cloud home. Nothing local changed — you can keep using this device and try again.",
     createIntro: "Name the family home that phones and wall screens should share.",
+    yourName: "Your name",
+    yourNameHint: "Strongly recommended so family members see your name.",
     createSuccess: "Cloud sync is active. This device now opens the selected home.",
     devOverrideBody: "A development override is active. Normal device selection cannot change the active home until the override is removed.",
     devOverrideTitle: "Development override active",
@@ -121,6 +125,8 @@ const activationCopy: Record<
     createCloudHome: "Skapa molnhem",
     createError: "Vi kunde inte skapa molnhemmet. Inget lokalt ändrades — du kan fortsätta använda den här enheten och försöka igen.",
     createIntro: "Namnge familjens hem som mobiler och väggskärmar ska dela.",
+    yourName: "Ditt namn",
+    yourNameHint: "Rekommenderas starkt så familjen ser ditt namn.",
     createSuccess: "Molnsynk är aktiv. Den här enheten öppnar nu valt hem.",
     devOverrideBody: "En utvecklingsoverride är aktiv. Vanligt enhetsval kan inte ändra aktivt hem förrän overriden tas bort.",
     devOverrideTitle: "Utvecklingsoverride aktiv",
@@ -172,10 +178,10 @@ export function CloudStatusSettings() {
   const [isActivating, setActivating] = useState(false);
   const [householdName, setHouseholdName] = useState(language === "sv" ? "Vårt hem" : "Our Home");
   const [households, setHouseholds] = useState<Household[]>([]);
+  const [ownerName, setOwnerName] = useState("");
   const [isLoadingHouseholds, setLoadingHouseholds] = useState(false);
   const [isCreatingHousehold, setCreatingHousehold] = useState(false);
   const [flowError, setFlowError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isForgetConfirming, setForgetConfirming] = useState(false);
   const [isCloudActivationCelebrating, setCloudActivationCelebrating] = useState(false);
   const [cloudActivationStage, setCloudActivationStage] = useState(0);
@@ -258,7 +264,6 @@ export function CloudStatusSettings() {
     setActivating(true);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(null);
     setCloudActivationCelebrating(false);
     setCloudActivationStage(0);
   }
@@ -275,7 +280,6 @@ export function CloudStatusSettings() {
     setActivating(false);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(null);
     setCloudActivationCelebrating(false);
     setCloudActivationStage(0);
   }
@@ -288,20 +292,18 @@ export function CloudStatusSettings() {
     setActivating(false);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(null);
     setCloudActivationCelebrating(false);
     setCloudActivationStage(0);
     void refresh();
   }
 
-  function finishWithHousehold(nextHouseholdId: string, message = copy.createSuccess) {
+  function finishWithHousehold(nextHouseholdId: string) {
     saveSelectedHouseholdId(nextHouseholdId);
     refreshHouseholdId();
     setLocalOnly(false);
     setActivating(false);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(message);
     setCloudActivationStage(0);
     setCloudActivationCelebrating(true);
     void refresh();
@@ -327,7 +329,7 @@ export function CloudStatusSettings() {
       const nextHousehold = await service.createHousehold({ name, ownerUserId: user.id });
       await service.createHouseholdMembers(nextHousehold.id, [
         {
-          displayName: user.email ?? (language === "sv" ? "Vuxen" : "Grown-up"),
+          displayName: ownerName.trim() || (language === "sv" ? "Vuxen" : "Grown-up"),
           color: "#f97316",
           role: "adult",
           userId: user.id,
@@ -347,7 +349,8 @@ export function CloudStatusSettings() {
       <div className="space-y-4">
         <p>{t("cloudStatusCopy")}</p>
 
-        <div className={`cloud-mode-card ${isCloudActivationCelebrating ? `cloud-mode-card--celebrating cloud-mode-card--stage-${cloudActivationStage}` : hasCloudHousehold ? "cloud-mode-card--active" : "cloud-mode-card--local"}`}>
+        {(!hasCloudHousehold || isCloudActivationCelebrating) ? (
+        <div className={`cloud-mode-card ${isCloudActivationCelebrating ? `cloud-mode-card--celebrating cloud-mode-card--stage-${cloudActivationStage}` : "cloud-mode-card--local"}`}>
           <div className="cloud-mode-card__shine" />
           <div className="relative flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -382,8 +385,8 @@ export function CloudStatusSettings() {
             </button>
           ) : null}
         </div>
+        ) : null}
 
-        {successMessage ? <p className={`cloud-success-copy ${isCloudActivationCelebrating ? "cloud-success-copy--celebrating" : ""}`}>{successMessage}</p> : null}
 
         {isActivating ? (
           <div className="rounded-[1.7rem] border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
@@ -414,12 +417,22 @@ export function CloudStatusSettings() {
                   <form className="mt-4 space-y-3" onSubmit={createCloudHome}>
                     <label className="block">
                       <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.homeName}</span>
+                      <p className="mt-1 text-xs font-bold text-stone-500">{copy.yourNameHint}</p>
                       <input
                         className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100"
                         disabled={isCreatingHousehold}
                         onChange={(event) => setHouseholdName(event.target.value)}
                         required
                         value={householdName}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.yourName}</span>
+                      <input
+                        className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100"
+                        disabled={isCreatingHousehold}
+                        onChange={(event) => setOwnerName(event.target.value)}
+                        value={ownerName}
                       />
                     </label>
                     <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60" disabled={isCreatingHousehold} type="submit">
@@ -457,32 +470,10 @@ export function CloudStatusSettings() {
           </div>
         ) : null}
 
-        {canForgetSelectedCloudHousehold ? (
-          <section className="rounded-[1.7rem] border border-stone-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.forgetCloudHomeEyebrow}</p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-stone-950">{copy.forgetCloudHomeTitle}</h3>
-            <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.forgetCloudHomeBody}</p>
-            {isForgetConfirming ? (
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-bold leading-6 text-amber-950">{copy.forgetCloudHomeConfirm}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm" onClick={forgetCloudHomeOnThisDevice} type="button">
-                    {copy.forgetCloudHome}
-                  </button>
-                  <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800 shadow-sm" onClick={() => setForgetConfirming(false)} type="button">
-                    {copy.cancel}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button className="pressable mt-4 min-h-11 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-950 shadow-sm" onClick={() => setForgetConfirming(true)} type="button">
-                {copy.forgetCloudHome}
-              </button>
-            )}
-          </section>
-        ) : null}
-
-        <dl className="grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
+        
+        <details className="rounded-2xl border border-stone-200/80 bg-white/75 p-4 text-sm">
+          <summary className="cursor-pointer font-black text-stone-800">{t("technicalInfo")}</summary>
+          <dl className="mt-3 grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
           <div className="flex items-center justify-between gap-3">
             <dt className="font-bold text-stone-500">{t("cloudSync")}</dt>
             <dd className="text-right font-black text-stone-900">
@@ -510,27 +501,12 @@ export function CloudStatusSettings() {
             <dd className="text-right font-black text-stone-900">{checkedAt}</dd>
           </div>
         </dl>
+        </details>
         {status === "unreachable" ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-950">{t("cloudUnavailableBody")}</p> : null}
         <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800 shadow-sm" disabled={isLoading} onClick={refresh} type="button">
           {t("refreshCloudStatus")}
         </button>
-        <details className="rounded-2xl border border-stone-200/80 bg-white/75 p-4 text-sm">
-          <summary className="cursor-pointer font-black text-stone-800">{t("technicalInfo")}</summary>
-          <dl className="mt-3 grid gap-2">
-            <div className="flex justify-between gap-3">
-              <dt className="font-bold text-stone-500">{t("projectConfigured")}</dt>
-              <dd className="text-right font-black text-stone-900">{diagnostics?.isProjectConfigured ? t("yes") : t("no")}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="font-bold text-stone-500">{t("householdIdMasked")}</dt>
-              <dd className="text-right font-mono text-xs font-black text-stone-900">{maskId(diagnostics?.householdId ?? householdId)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="font-bold text-stone-500">{t("repositoryMode")}</dt>
-              <dd className="text-right font-black text-stone-900">{diagnostics?.repositoryMode === "cloud" ? t("cloud") : t("local")}</dd>
-            </div>
-          </dl>
-        </details>
+        
       </div>
     </SettingsCard>
   );

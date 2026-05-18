@@ -1,4 +1,4 @@
-import type { CreateHouseholdInput, CreateHouseholdMemberInput, HouseholdRepository } from "@/lib/repositories/householdRepository";
+import type { CreateHouseholdInput, CreateHouseholdMemberInput, HouseholdRepository, UpdateHouseholdMemberInput } from "@/lib/repositories/householdRepository";
 
 export function createHouseholdService(repository: HouseholdRepository) {
   return {
@@ -13,6 +13,12 @@ export function createHouseholdService(repository: HouseholdRepository) {
     },
     createHouseholdMembers(householdId: string, members: CreateHouseholdMemberInput[]) {
       return repository.createHouseholdMembers(householdId, members);
+    },
+    listHouseholdMembers(householdId: string) {
+      return repository.listHouseholdMembers(householdId);
+    },
+    updateHouseholdMember(memberId: string, patch: UpdateHouseholdMemberInput) {
+      return repository.updateHouseholdMember(memberId, patch);
     },
   };
 }
