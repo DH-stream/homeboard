@@ -183,13 +183,19 @@ Required follow-up:
 
 ### P1 — First-class cloud setup and home creation flow
 
-Status: open
+Status: partially fixed in PR “Harden Settings cloud activation”
 
 Expected behavior:
 
-- A parent can create or choose a home from the product UI.
-- The UI explains “Spara i molnet”, “Synka med mobilen”, and “Endast på den här enheten” without exposing backend implementation details.
-- Broken env/config states are detected and explained in Cloud status / Molnstatus.
+- A parent can create or choose a home from the product UI. ✅ Settings now supports activating cloud sync after choosing local-only.
+- The UI explains “Spara i molnet”, “Synka med mobilen”, and “Endast på den här enheten” without exposing backend implementation details. ✅ Normal Settings copy avoids backend product terminology and keeps IDs/env details collapsed under diagnostics.
+- Broken env/config states are detected and explained in Cloud status / Molnstatus. ✅ Missing/unreachable cloud and development override states are surfaced in Settings.
+
+Remaining risks / follow-up:
+
+- Existing cloud homes are listed through the current household repository only; future RLS and membership policies must scope this to homes the signed-in grown-up can administer.
+- Local preview tasks are not migrated into the cloud household yet. The activation flow intentionally leaves local data untouched on failure or cancel; a later migration/import flow should let families copy local tasks after cloud sync is active.
+- Calendar OAuth providers, QR pairing approval, and admin role enforcement remain backlog items and are intentionally not part of Settings cloud activation hardening.
 
 ### P1 — QR pairing for wall displays
 
