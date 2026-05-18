@@ -9,8 +9,8 @@ import { useCloudDiagnostics } from "@/lib/hooks/useCloudDiagnostics";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 const copy: Record<Language, { active: string; local: string; forget: string; status: string; confirm: string; cancel: string }> = {
-  en: { active: "Cloud sync active", local: "Only on this device", forget: "Forget cloud home on this device", status: "Status", confirm: "Forget this cloud home on this device?", cancel: "Cancel" },
-  sv: { active: "Molnsynk aktiv", local: "Endast på den här enheten", forget: "Glöm molnhem på den här enheten", status: "Status", confirm: "Glöm det här molnhemmet på den här enheten?", cancel: "Avbryt" },
+  en: { active: "Cloud sync active", local: "Only on this device", forget: "Forget cloud home on this device", status: "Status", confirm: "This only forgets the selected cloud home on this device. The home is not deleted in cloud sync, and tasks, members, and calendar data are not removed.", cancel: "Cancel" },
+  sv: { active: "Molnsynk aktiv", local: "Endast på den här enheten", forget: "Glöm molnhem på den här enheten", status: "Status", confirm: "Detta glömmer bara valt molnhem på den här enheten. Hemmet raderas inte i molnsynk, och uppgifter, medlemmar och kalenderdata tas inte bort.", cancel: "Avbryt" },
 };
 
 export function HouseholdSettings() {

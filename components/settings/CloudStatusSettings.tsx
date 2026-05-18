@@ -33,6 +33,7 @@ const activationCopy: Record<
     createError: string;
     createIntro: string;
     yourName: string;
+    yourNameHint: string;
     createSuccess: string;
     devOverrideBody: string;
     devOverrideTitle: string;
@@ -79,6 +80,7 @@ const activationCopy: Record<
     createError: "We could not create the cloud home. Nothing local changed — you can keep using this device and try again.",
     createIntro: "Name the family home that phones and wall screens should share.",
     yourName: "Your name",
+    yourNameHint: "Strongly recommended so family members see your name.",
     createSuccess: "Cloud sync is active. This device now opens the selected home.",
     devOverrideBody: "A development override is active. Normal device selection cannot change the active home until the override is removed.",
     devOverrideTitle: "Development override active",
@@ -124,6 +126,7 @@ const activationCopy: Record<
     createError: "Vi kunde inte skapa molnhemmet. Inget lokalt ändrades — du kan fortsätta använda den här enheten och försöka igen.",
     createIntro: "Namnge familjens hem som mobiler och väggskärmar ska dela.",
     yourName: "Ditt namn",
+    yourNameHint: "Rekommenderas starkt så familjen ser ditt namn.",
     createSuccess: "Molnsynk är aktiv. Den här enheten öppnar nu valt hem.",
     devOverrideBody: "En utvecklingsoverride är aktiv. Vanligt enhetsval kan inte ändra aktivt hem förrän overriden tas bort.",
     devOverrideTitle: "Utvecklingsoverride aktiv",
@@ -414,6 +417,7 @@ export function CloudStatusSettings() {
                   <form className="mt-4 space-y-3" onSubmit={createCloudHome}>
                     <label className="block">
                       <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.homeName}</span>
+                      <p className="mt-1 text-xs font-bold text-stone-500">{copy.yourNameHint}</p>
                       <input
                         className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100"
                         disabled={isCreatingHousehold}

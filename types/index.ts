@@ -112,11 +112,15 @@ export type CalendarEvent = {
   externalId?: string;
 };
 
+export type DeviceAudience = "adult" | "child" | "shared";
+
 export type Device = {
   id: string;
   householdId: string;
   name: string;
   mode: "wall" | "mobile" | "admin";
+  audience?: DeviceAudience;
+  linkedMemberId?: string;
   lastSeenAt?: string;
   defaultView?: string;
 };
@@ -138,7 +142,7 @@ export type DevicePairingSession = {
 
 export type CreateDevicePairingSessionInput = {
   deviceName: string;
-  mode: Device["mode"];
+  mode: "wall" | "mobile";
 };
 
 export type CreateTaskScheduleInput = {

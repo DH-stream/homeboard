@@ -13,18 +13,24 @@ import { createHouseholdService } from "@/lib/services/householdService";
 import type { Household } from "@/types";
 
 const service = createHouseholdService(householdRepository);
-const pairingCopy: Record<Language, { claimFailed: string; successBody: string; chooseHome: string; confirmHome: string }> = {
+const pairingCopy: Record<Language, { claimFailed: string; successBody: string; chooseHome: string; confirmHome: string; noHomes: string; homesFailed: string; expiredHint: string }> = {
   en: {
-    claimFailed: "Could not connect the wall screen. Try again.",
-    successBody: "The wall screen will open this home in a moment.",
+    claimFailed: "Could not connect this device. Try again.",
+    successBody: "This device will open the selected home in a moment.",
     chooseHome: "Choose home",
-    confirmHome: "Connect this wall screen to",
+    confirmHome: "Connect this device to",
+    noHomes: "No cloud homes found yet. Create a home in Settings first.",
+    homesFailed: "Could not load your homes right now. Try again.",
+    expiredHint: "The code expired. Return to the device to create a new code.",
   },
   sv: {
-    claimFailed: "Kunde inte koppla väggskärmen. Försök igen.",
-    successBody: "Väggskärmen öppnar hemmet om en liten stund.",
+    claimFailed: "Kunde inte koppla den här enheten. Försök igen.",
+    successBody: "Den här enheten öppnar valt hem om en liten stund.",
     chooseHome: "Välj hem",
-    confirmHome: "Koppla den här väggskärmen till",
+    confirmHome: "Koppla den här enheten till",
+    noHomes: "Inga molnhem hittades ännu. Skapa först ett hem i Inställningar.",
+    homesFailed: "Kunde inte ladda dina hem just nu. Försök igen.",
+    expiredHint: "Koden har gått ut. Gå tillbaka till enheten och skapa en ny kod.",
   },
 };
 
@@ -39,20 +45,38 @@ function PairDeviceContent() {
   const [claimError, setClaimError] = useState<string | null>(null);
   const [homes, setHomes] = useState<Household[]>([]);
   const [isLoadingHomes, setLoadingHomes] = useState(false);
+  const [homesError, setHomesError] = useState<string | null>(null);
   const [selectedHomeId, setSelectedHomeId] = useState<string>("");
   const isExpired = session?.status === "expired";
   const isClaimed = session?.status === "claimed";
 
   useEffect(() => {
-    if (!isSignedIn) return;
+    if (!isSignedIn || !session || session.status !== "pending") return;
+    let mounted = true;
     setLoadingHomes(true);
-    service.listHouseholds().then((next) => {
-      setHomes(next);
-      setSelectedHomeId((current) => current || next[0]?.id || "");
-    }).finally(() => setLoadingHomes(false));
-  }, [isSignedIn]);
+    setHomesError(null);
+    service
+      .listHouseholds()
+      .then((next) => {
+        if (!mounted) return;
+        setHomes(next);
+        setSelectedHomeId((current) => current || next[0]?.id || "");
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setHomes([]);
+        setHomesError(copy.homesFailed);
+      })
+      .finally(() => {
+        if (mounted) setLoadingHomes(false);
+      });
 
-  const canClaim = Boolean(selectedHomeId && session?.status === "pending" && isSignedIn);
+    return () => {
+      mounted = false;
+    };
+  }, [copy.homesFailed, isSignedIn, session]);
+
+  const canClaim = Boolean(selectedHomeId && session?.status === "pending" && isSignedIn && homes.length > 0 && !homesError);
 
   async function claimPairing() {
     if (!selectedHomeId) return;
@@ -61,7 +85,7 @@ function PairDeviceContent() {
     try {
       await claim(selectedHomeId);
     } catch (unknownError) {
-      console.warn("HomeBoard could not claim the wall pairing session.", unknownError);
+      console.warn("HomeBoard could not claim the pairing session.", unknownError);
       setClaimError("claim_failed");
     } finally {
       setClaiming(false);
@@ -78,34 +102,41 @@ function PairDeviceContent() {
         <h1 className="mt-2 text-3xl font-black tracking-tight text-stone-950">{t("pairPhoneTitle")}</h1>
 
         {isLoading ? <p className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-600">{t("loading")}</p> : null}
-        {error || !session ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeInvalid")}</p> : null}
-        {isExpired ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeExpiredPhone")}</p> : null}
+        {(error || !session) ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeInvalid")}</p> : null}
+        {isExpired ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.expiredHint}</p> : null}
         {claimError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.claimFailed}</p> : null}
 
-        {!isSignedIn ? <div className="mt-5"><ParentAuthCard compact /></div> : null}
+        {!isSignedIn && session?.status === "pending" ? <div className="mt-5"><ParentAuthCard compact /></div> : null}
 
         {isClaimed ? (
           <div className="mt-5 space-y-4">
             <StatusChip tone="emerald">{t("pairComplete")}</StatusChip>
             <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody}</p>
-            <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">
-              {t("open")}
-            </Link>
+            <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">{t("open")}</Link>
           </div>
         ) : null}
 
         {isSignedIn && !isClaimed && session?.status === "pending" ? (
           <div className="mt-5 space-y-5">
-            <label className="block">
-              <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.chooseHome}</span>
-              <select className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950" disabled={isLoadingHomes} onChange={(event) => setSelectedHomeId(event.target.value)} value={selectedHomeId}>
-                {homes.map((home) => <option key={home.id} value={home.id}>{home.name}</option>)}
-              </select>
-            </label>
-            <p className="text-lg font-bold leading-8 text-stone-700">{copy.confirmHome} <span className="font-black text-stone-950">{selectedHome?.name ?? t("home")}</span>?</p>
-            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isClaiming || !canClaim} onClick={claimPairing} type="button">
-              {isClaiming ? t("saving") : t("pairSubmit")}
-            </button>
+            {homesError ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">{homesError}</p> : null}
+            {!isLoadingHomes && !homesError && homes.length === 0 ? (
+              <div className="space-y-3">
+                <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.noHomes}</p>
+                <Link className="pressable inline-flex min-h-11 items-center rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-800" href="/settings">{t("settings")}</Link>
+              </div>
+            ) : null}
+            {homes.length > 0 ? (
+              <>
+                <label className="block">
+                  <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.chooseHome}</span>
+                  <select className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950" disabled={isLoadingHomes} onChange={(event) => setSelectedHomeId(event.target.value)} value={selectedHomeId}>
+                    {homes.map((home) => <option key={home.id} value={home.id}>{home.name}</option>)}
+                  </select>
+                </label>
+                <p className="text-lg font-bold leading-8 text-stone-700">{copy.confirmHome} <span className="font-black text-stone-950">{selectedHome?.name ?? t("home")}</span>?</p>
+                <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isClaiming || !canClaim} onClick={claimPairing} type="button">{isClaiming ? t("saving") : t("pairSubmit")}</button>
+              </>
+            ) : null}
           </div>
         ) : null}
       </section>

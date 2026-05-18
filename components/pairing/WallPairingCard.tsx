@@ -63,6 +63,7 @@ export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (household
             <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">{t("pairWallTitle")}</p>
             <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{t("pairScanTitle")}</h1>
             <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{t("pairScanBody")}</p>
+            <p className="mt-3 text-sm font-semibold text-stone-600">{language === "sv" ? "Du kan fortsätta lokalt på den här enheten nu och aktivera molnsynk senare i Inställningar." : "You can continue only on this device now and turn on cloud sync later in Settings."}</p>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -80,15 +81,9 @@ export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (household
           {session?.pairingCode ? <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-stone-400">{t("pairCodeLabel")}</p> : null}
           {session?.pairingCode ? <p className="mt-1 text-4xl font-black tracking-[0.18em] text-stone-950">{session.pairingCode}</p> : null}
           {isExpired ? (
-            <button className="pressable mt-5 min-h-12 rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" onClick={createSession} type="button">
-              {t("pairCreateNewCode")}
-            </button>
+            <button className="pressable mt-5 min-h-12 rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" onClick={createSession} type="button">{t("pairCreateNewCode")}</button>
           ) : null}
-          {showUnavailable ? (
-            <button className="pressable mt-5 min-h-12 rounded-2xl border border-stone-200 bg-white px-5 py-3 font-black text-stone-800 shadow-sm" onClick={onUseLocal} type="button">
-              {t("pairOpenLocal")}
-            </button>
-          ) : null}
+          <button className="pressable mt-3 min-h-12 rounded-2xl border border-stone-200 bg-white px-5 py-3 font-black text-stone-800 shadow-sm" onClick={onUseLocal} type="button">{t("pairOpenLocal")}</button>
         </div>
       </section>
     </main>
