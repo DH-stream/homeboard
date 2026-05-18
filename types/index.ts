@@ -1,6 +1,7 @@
 export type Household = {
   id: string;
   name: string;
+  ownerUserId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -10,6 +11,7 @@ export type HouseholdMemberRole = "adult" | "child" | "guest";
 export type HouseholdMember = {
   id: string;
   householdId: string;
+  userId?: string;
   displayName: string;
   color: string;
   avatarUrl?: string;

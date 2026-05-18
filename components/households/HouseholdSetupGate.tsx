@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { saveSelectedHouseholdId } from "@/lib/households/selection";
+import { enableLocalOnlyMode, isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
+import { useParentAuth } from "@/lib/hooks/useParentAuth";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useLanguage, type Language } from "@/lib/i18n";
 import { householdRepository } from "@/lib/repositories/householdRepository";
@@ -18,6 +20,13 @@ const setupCopy: Record<
     add: string;
     body: string;
     chooseHome: string;
+    cloudBenefitBackup: string;
+    cloudBenefitDevices: string;
+    cloudBenefitGrownUp: string;
+    cloudChoiceBody: string;
+    cloudChoiceTitle: string;
+    continueLocal: string;
+    continueLocalBody: string;
     continueWithHome: string;
     create: string;
     createNewHome: string;
@@ -30,7 +39,12 @@ const setupCopy: Record<
     initialMembersCopy: string;
     listError: string;
     loadingHomes: string;
+    localBenefitNoAccount: string;
+    localBenefitPrivate: string;
+    localBenefitUpgrade: string;
+    localChoiceTitle: string;
     member: string;
+    parentRequired: string;
     remembersChoice: string;
     thisHome: string;
     title: string;
@@ -38,11 +52,18 @@ const setupCopy: Record<
 > = {
   en: {
     add: "Add",
-    body: "Choose an existing home or create a new one. HomeBoard remembers this choice on this device.",
-    chooseHome: "Choose home",
+    body: "Choose the mode that fits this screen. You can start locally now and turn on cloud sync later.",
+    chooseHome: "Choose cloud home",
+    cloudBenefitBackup: "Safer if the device is replaced or reset.",
+    cloudBenefitDevices: "Syncs tasks and calendar between phone and wall screens.",
+    cloudBenefitGrownUp: "Lets a grown-up manage the home and pair more devices.",
+    cloudChoiceBody: "Best when you want mobile sync, several screens, and shared family data. Requires grown-up sign-in.",
+    cloudChoiceTitle: "Use cloud sync",
+    continueLocal: "Continue locally",
+    continueLocalBody: "No sign-in needed. Everything stays on this device until you choose cloud sync later.",
     continueWithHome: "Continue with this home",
-    create: "Create home",
-    createNewHome: "Create new home",
+    create: "Create cloud home",
+    createNewHome: "Create cloud home",
     creating: "Creating…",
     defaultName: "Our Home",
     error: "Could not create home. Try again in a moment.",
@@ -50,20 +71,32 @@ const setupCopy: Record<
     householdName: "Home name",
     initialMembers: "Initial members",
     initialMembersCopy: "Optional. Add the people who should appear first.",
-    listError: "We could not load existing homes right now. You can still create a new home.",
+    listError: "We could not load existing homes right now. You can still continue locally or create a new cloud home.",
     loadingHomes: "Loading homes…",
+    localBenefitNoAccount: "Works immediately without account or email code.",
+    localBenefitPrivate: "Tasks and settings are stored only on this device.",
+    localBenefitUpgrade: "You can turn on cloud sync later when you want mobile sync.",
+    localChoiceTitle: "Use this device only",
     member: "Member",
+    parentRequired: "Sign in as a grown-up before creating a cloud home.",
     remembersChoice: "HomeBoard remembers this choice on this device.",
-    thisHome: "This home",
-    title: "Choose your HomeBoard home.",
+    thisHome: "Cloud home",
+    title: "How should this device use HomeBoard?",
   },
   sv: {
     add: "Lägg till",
-    body: "Välj ett hem som redan finns eller skapa ett nytt. HomeBoard kommer ihåg valet på den här enheten.",
-    chooseHome: "Välj hem",
+    body: "Välj det läge som passar den här skärmen. Du kan börja lokalt nu och aktivera molnsynk senare.",
+    chooseHome: "Välj molnhem",
+    cloudBenefitBackup: "Tryggare om enheten byts ut eller nollställs.",
+    cloudBenefitDevices: "Synkar uppgifter och kalender mellan mobil och väggskärmar.",
+    cloudBenefitGrownUp: "Låter en vuxen hantera hemmet och koppla fler enheter.",
+    cloudChoiceBody: "Bäst när du vill ha mobilsynk, flera skärmar och delad familjedata. Kräver vuxeninloggning.",
+    cloudChoiceTitle: "Använd molnsynk",
+    continueLocal: "Fortsätt lokalt",
+    continueLocalBody: "Ingen inloggning behövs. Allt stannar på den här enheten tills du väljer molnsynk senare.",
     continueWithHome: "Fortsätt med det här hemmet",
-    create: "Skapa hem",
-    createNewHome: "Skapa nytt hem",
+    create: "Skapa molnhem",
+    createNewHome: "Skapa molnhem",
     creating: "Skapar…",
     defaultName: "Vårt hem",
     error: "Kunde inte skapa hem. Försök igen om en stund.",
@@ -71,12 +104,17 @@ const setupCopy: Record<
     householdName: "Namn på hemmet",
     initialMembers: "Första medlemmarna",
     initialMembersCopy: "Valfritt. Lägg till personerna som ska visas först.",
-    listError: "Vi kunde inte ladda befintliga hem just nu. Du kan fortfarande skapa ett nytt hem.",
+    listError: "Vi kunde inte ladda befintliga hem just nu. Du kan fortfarande fortsätta lokalt eller skapa ett nytt molnhem.",
     loadingHomes: "Laddar hem…",
+    localBenefitNoAccount: "Fungerar direkt utan konto eller e-postkod.",
+    localBenefitPrivate: "Uppgifter och inställningar sparas bara på den här enheten.",
+    localBenefitUpgrade: "Du kan aktivera molnsynk senare när du vill synka med mobilen.",
+    localChoiceTitle: "Använd bara den här enheten",
     member: "Medlem",
+    parentRequired: "Logga in som vuxen innan du skapar ett molnhem.",
     remembersChoice: "HomeBoard kommer ihåg valet på den här enheten.",
-    thisHome: "Det här hemmet",
-    title: "Välj ditt HomeBoard-hem.",
+    thisHome: "Molnhem",
+    title: "Hur vill du använda HomeBoard på den här enheten?",
   },
 };
 
@@ -84,10 +122,12 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const { language } = useLanguage();
   const copy = setupCopy[language];
   const { householdId } = useResolvedHouseholdId();
+  const { isLoading: isParentAuthLoading, isSignedIn: isParentSignedIn, user: parentUser } = useParentAuth();
   const [householdName, setHouseholdName] = useState(copy.defaultName);
   const [memberNames, setMemberNames] = useState(["", ""]);
   const [households, setHouseholds] = useState<Household[]>([]);
   const [isLoadingHouseholds, setLoadingHouseholds] = useState(true);
+  const [isLocalOnly, setLocalOnly] = useState(() => isLocalOnlyModeEnabled());
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
@@ -95,13 +135,28 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const initialMembers = useMemo(
     () =>
       memberNames
-        .map((name, index) => ({ displayName: name.trim(), color: memberColors[index % memberColors.length], role: "adult" as const }))
+        .map((name, index) => ({
+          displayName: name.trim(),
+          color: memberColors[index % memberColors.length],
+          role: "adult" as const,
+          userId: index === 0 ? parentUser?.id : undefined,
+        }))
         .filter((member) => member.displayName),
-    [memberNames],
+    [memberNames, parentUser?.id],
   );
 
   useEffect(() => {
-    if (!isCloudConfigured() || householdId) return;
+    const refreshLocalOnly = () => setLocalOnly(isLocalOnlyModeEnabled());
+    window.addEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, refreshLocalOnly);
+    window.addEventListener("storage", refreshLocalOnly);
+    return () => {
+      window.removeEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, refreshLocalOnly);
+      window.removeEventListener("storage", refreshLocalOnly);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isCloudConfigured() || householdId || isLocalOnly) return;
 
     let isMounted = true;
     setLoadingHouseholds(true);
@@ -126,25 +181,32 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [copy.listError, householdId]);
+  }, [copy.listError, householdId, isLocalOnly]);
 
-  if (!isCloudConfigured() || householdId) return <>{children}</>;
+  if (!isCloudConfigured() || householdId || isLocalOnly) return <>{children}</>;
 
   function selectHousehold(nextHouseholdId: string) {
     saveSelectedHouseholdId(nextHouseholdId);
   }
 
+  function continueLocalOnly() {
+    enableLocalOnlyMode();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = householdName.trim();
-    if (!name) return;
+    if (!name || !isParentSignedIn || !parentUser) return;
 
     setSaving(true);
     setError(null);
 
     try {
-      const household = await service.createHousehold({ name });
-      await service.createHouseholdMembers(household.id, initialMembers);
+      const household = await service.createHousehold({ name, ownerUserId: parentUser.id });
+      const members = initialMembers.length
+        ? initialMembers
+        : [{ displayName: parentUser.email ?? copy.member, color: memberColors[0], role: "adult" as const, userId: parentUser.id }];
+      await service.createHouseholdMembers(household.id, members);
       saveSelectedHouseholdId(household.id);
     } catch (nextError) {
       console.warn("HomeBoard could not create a cloud home during setup.", nextError);
@@ -157,13 +219,41 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
   const showHouseholdList = households.length > 0;
 
   return (
-    <section className="surface-card mx-auto mt-4 max-w-xl rounded-[2rem] p-5 shadow-xl shadow-amber-900/5 sm:p-6" aria-labelledby="household-setup-title">
+    <section className="surface-card mx-auto mt-4 max-w-2xl rounded-[2rem] p-5 shadow-xl shadow-amber-900/5 sm:p-6" aria-labelledby="household-setup-title">
       <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
       <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">{copy.eyebrow}</p>
       <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950" id="household-setup-title">
         {copy.title}
       </h2>
       <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.body}</p>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <button
+          className="pressable rounded-[1.7rem] border border-amber-200 bg-amber-50 px-4 py-4 text-left shadow-sm transition-[border-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] hover:border-amber-300"
+          onClick={continueLocalOnly}
+          type="button"
+        >
+          <span className="block text-xs font-black uppercase tracking-[0.16em] text-amber-700">{copy.localChoiceTitle}</span>
+          <span className="mt-2 block text-lg font-black text-stone-950">{copy.continueLocal}</span>
+          <span className="mt-1 block text-sm font-bold leading-6 text-stone-600">{copy.continueLocalBody}</span>
+          <span className="mt-3 block space-y-1 text-xs font-bold leading-5 text-stone-500">
+            <span className="block">✓ {copy.localBenefitNoAccount}</span>
+            <span className="block">✓ {copy.localBenefitPrivate}</span>
+            <span className="block">✓ {copy.localBenefitUpgrade}</span>
+          </span>
+        </button>
+
+        <div className="rounded-[1.7rem] border border-stone-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">{copy.cloudChoiceTitle}</p>
+          <p className="mt-2 text-lg font-black text-stone-950">{copy.createNewHome}</p>
+          <p className="mt-1 text-sm font-bold leading-6 text-stone-600">{copy.cloudChoiceBody}</p>
+          <div className="mt-3 space-y-1 text-xs font-bold leading-5 text-stone-500">
+            <p>✓ {copy.cloudBenefitDevices}</p>
+            <p>✓ {copy.cloudBenefitBackup}</p>
+            <p>✓ {copy.cloudBenefitGrownUp}</p>
+          </div>
+        </div>
+      </div>
 
       {isLoadingHouseholds ? <p className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-600">{copy.loadingHomes}</p> : null}
       {listError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{listError}</p> : null}
@@ -192,53 +282,60 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
       ) : null}
 
       {!isLoadingHouseholds ? (
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          <h3 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">{copy.createNewHome}</h3>
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.householdName}</span>
-            <input
-              className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
-              onChange={(event) => setHouseholdName(event.target.value)}
-              required
-              value={householdName}
-            />
-          </label>
+        <div className="mt-5 space-y-4 rounded-[1.7rem] border border-stone-200 bg-stone-50 p-4">
+          <ParentAuthCard compact />
+          {!isParentSignedIn ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.parentRequired}</p> : null}
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <h3 className="text-sm font-black uppercase tracking-[0.16em] text-stone-500">{copy.createNewHome}</h3>
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.householdName}</span>
+              <input
+                className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400"
+                disabled={!isParentSignedIn}
+                onChange={(event) => setHouseholdName(event.target.value)}
+                required
+                value={householdName}
+              />
+            </label>
 
-          <div className="rounded-[1.5rem] border border-stone-200/80 bg-stone-50 p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.initialMembers}</p>
-                <p className="text-sm font-semibold text-stone-600">{copy.initialMembersCopy}</p>
+            <div className="rounded-[1.5rem] border border-stone-200/80 bg-white p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.initialMembers}</p>
+                  <p className="text-sm font-semibold text-stone-600">{copy.initialMembersCopy}</p>
+                </div>
+                <button
+                  className="pressable min-h-10 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm font-black text-stone-800 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={!isParentSignedIn}
+                  onClick={() => setMemberNames((current) => [...current, ""])}
+                  type="button"
+                >
+                  {copy.add}
+                </button>
               </div>
-              <button
-                className="pressable min-h-10 rounded-2xl border border-stone-200 bg-white px-3 py-2 text-sm font-black text-stone-800 shadow-sm"
-                onClick={() => setMemberNames((current) => [...current, ""])}
-                type="button"
-              >
-                {copy.add}
-              </button>
+              <div className="space-y-2">
+                {memberNames.map((memberName, index) => (
+                  <label className="flex items-center gap-2" key={index}>
+                    <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white" style={{ backgroundColor: memberColors[index % memberColors.length] }} />
+                    <input
+                      className="min-h-11 flex-1 rounded-2xl border border-stone-200 bg-white px-3 py-2 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400"
+                      disabled={!isParentSignedIn}
+                      onChange={(event) => setMemberNames((current) => current.map((value, nextIndex) => (nextIndex === index ? event.target.value : value)))}
+                      placeholder={`${copy.member} ${index + 1}`}
+                      value={memberName}
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              {memberNames.map((memberName, index) => (
-                <label className="flex items-center gap-2" key={index}>
-                  <span className="h-3 w-3 shrink-0 rounded-full ring-2 ring-white" style={{ backgroundColor: memberColors[index % memberColors.length] }} />
-                  <input
-                    className="min-h-11 flex-1 rounded-2xl border border-stone-200 bg-white px-3 py-2 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
-                    onChange={(event) => setMemberNames((current) => current.map((value, nextIndex) => (nextIndex === index ? event.target.value : value)))}
-                    placeholder={`${copy.member} ${index + 1}`}
-                    value={memberName}
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
 
-          {error ? <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</p> : null}
+            {error ? <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</p> : null}
 
-          <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isSaving || !householdName.trim()} type="submit">
-            {isSaving ? copy.creating : copy.create}
-          </button>
-        </form>
+            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isSaving || isParentAuthLoading || !isParentSignedIn || !householdName.trim()} type="submit">
+              {isSaving ? copy.creating : copy.create}
+            </button>
+          </form>
+        </div>
       ) : null}
     </section>
   );
