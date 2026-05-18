@@ -205,7 +205,7 @@ export function HouseholdSetupGate({ children }: { children: ReactNode }) {
       const household = await service.createHousehold({ name, ownerUserId: parentUser.id });
       const members = initialMembers.length
         ? initialMembers
-        : [{ displayName: parentUser.email ?? copy.member, color: memberColors[0], role: "adult" as const, userId: parentUser.id }];
+        : [{ displayName: copy.member, color: memberColors[0], role: "adult" as const, userId: parentUser.id }];
       await service.createHouseholdMembers(household.id, members);
       saveSelectedHouseholdId(household.id);
     } catch (nextError) {
