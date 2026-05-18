@@ -83,27 +83,34 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
           const isToday = key === today;
           const isSelected = isWall && selectedDayKey === key;
           const visibleEventCount = isWall ? 1 : 2;
+          const dayToneClassName = isSelected
+            ? "bg-amber-100 text-stone-950 ring-2 ring-amber-400 shadow-xl shadow-amber-900/10"
+            : isToday
+              ? "bg-stone-950 text-white shadow-xl shadow-stone-950/15"
+              : "bg-white text-stone-800";
+          const labelToneClassName = isSelected ? "text-amber-800" : isToday ? "text-amber-200" : "text-stone-400";
+          const eventPreviewClassName = isSelected ? "bg-amber-200/75 text-stone-950" : isToday ? "bg-white/15" : "bg-stone-100";
 
           const dayButton = isWall ? (
             <button
               aria-pressed={isSelected}
-              className={`pressable min-h-28 rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] ${isSelected ? "bg-stone-950 text-white shadow-xl shadow-stone-950/15" : isToday ? "bg-stone-950 text-white" : "bg-white/80 text-stone-800"}`}
+              className={`pressable min-h-28 rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] ${dayToneClassName}`}
               onClick={(event) => {
                 event.stopPropagation();
                 setSelectedDayKey((current) => (current === key ? null : key));
               }}
               type="button"
             >
-              <p className={`text-xs font-black uppercase tracking-[0.12em] ${isToday || isSelected ? "text-amber-200" : "text-stone-400"}`}>
+              <p className={`text-xs font-black uppercase tracking-[0.12em] ${labelToneClassName}`}>
                 {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(day)}
               </p>
               <div className="mt-1 flex items-baseline justify-between gap-1">
                 <p className="text-3xl font-black">{day.getDate()}</p>
-                {isToday ? <span className="text-[0.65rem] font-black uppercase tracking-[0.12em] text-amber-200">{copy.today}</span> : null}
+                {isToday ? <span className={`text-[0.65rem] font-black uppercase tracking-[0.12em] ${isSelected ? "text-amber-800" : "text-amber-200"}`}>{copy.today}</span> : null}
               </div>
               <div className="mt-2 space-y-1">
                 {dayEvents.slice(0, visibleEventCount).map((event) => (
-                  <p key={event.id} className={`truncate rounded-full px-2 py-1 text-xs font-black ${isToday || isSelected ? "bg-white/15" : "bg-stone-100"}`}>
+                  <p key={event.id} className={`truncate rounded-full px-2 py-1 text-xs font-black ${eventPreviewClassName}`}>
                     {event.title}
                   </p>
                 ))}
@@ -137,10 +144,10 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
               {dayButton}
               {detailsOpen ? (
                 <div
-                  className="max-h-32 min-h-28 overflow-y-auto rounded-2xl border border-stone-200 bg-white p-3 text-stone-950 shadow-lg shadow-stone-950/10"
+                  className="max-h-32 min-h-28 overflow-y-auto rounded-2xl border border-stone-300 bg-white p-3 text-stone-950 shadow-xl shadow-stone-950/20 ring-1 ring-white"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-stone-500">
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-stone-600">
                     {new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric" }).format(day)}
                   </p>
                   <div className="mt-2 grid gap-2">
@@ -148,14 +155,14 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
                       selectedEvents.map((event) => {
                         const time = formatEventTime(event, locale);
                         return (
-                          <div className="rounded-xl bg-stone-100 px-3 py-2" key={event.id}>
+                          <div className="rounded-xl bg-stone-100 px-3 py-2 ring-1 ring-stone-200" key={event.id}>
                             <p className="text-sm font-black leading-snug text-stone-950">{event.title}</p>
-                            {time ? <p className="mt-0.5 text-xs font-bold text-stone-600">{time}</p> : null}
+                            {time ? <p className="mt-0.5 text-xs font-black text-stone-700">{time}</p> : null}
                           </div>
                         );
                       })
                     ) : (
-                      <p className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-bold text-stone-600">{copy.noEvents}</p>
+                      <p className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-black text-stone-700 ring-1 ring-stone-200">{copy.noEvents}</p>
                     )}
                   </div>
                 </div>
