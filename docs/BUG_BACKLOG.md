@@ -119,3 +119,18 @@ Expected behavior:
 
 - Technical ids, repository modes, env-var references, and backend implementation notes stay in collapsed diagnostics or docs.
 - Family-facing settings focus on home, members, cloud sync, and device behavior.
+
+### P0 — Pairing security hardening before public release
+
+Status: open
+
+Context:
+
+The first wall QR pairing flow is a temporary pre-auth foundation. It uses short-lived random pairing codes and does not expose service credentials, but it is not a final public security model.
+
+Required follow-up:
+
+- Add RLS policies that protect `devices`, `device_pairing_sessions`, households, and household members.
+- Tie pairing claims to an authenticated adult member or signed invite token.
+- Add rate limiting and attempt limiting for pairing-code lookups and claims.
+- Review pairing-code entropy, expiry, replay behavior, and audit logging before public release.

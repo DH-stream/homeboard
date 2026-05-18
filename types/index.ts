@@ -119,6 +119,26 @@ export type Device = {
   defaultView?: string;
 };
 
+
+export type DevicePairingSessionStatus = "pending" | "claimed" | "expired";
+
+export type DevicePairingSession = {
+  id: string;
+  deviceId: string;
+  pairingCode: string;
+  status: DevicePairingSessionStatus;
+  expiresAt: string;
+  householdId?: string;
+  claimedByMemberId?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateDevicePairingSessionInput = {
+  deviceName: string;
+  mode: Device["mode"];
+};
+
 export type CreateTaskScheduleInput = {
   type: TaskSchedule["type"];
   timesOfDay?: string[];

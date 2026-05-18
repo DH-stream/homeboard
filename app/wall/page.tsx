@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { WeekPreview } from "@/components/calendar/WeekPreview";
+import { WallPairingCard } from "@/components/pairing/WallPairingCard";
 import { WallShell } from "@/components/layout/WallShell";
 import { MemberBadge } from "@/components/members/MemberBadge";
 import { TaskList } from "@/components/tasks/TaskList";
@@ -11,7 +12,10 @@ import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
 import { ActionToast } from "@/components/ui/ActionToast";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { isCloudConfigured } from "@/lib/cloud/config";
+import { saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
+import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { useTasks } from "@/lib/hooks/useTasks";
@@ -41,6 +45,7 @@ function shouldShowTodayTask(task: TaskInstance, now: Date) {
 export default function WallPage() {
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
+  const { householdId } = useResolvedHouseholdId();
   const { household } = useHousehold();
   const { members } = useMembers();
   const { events, todayEvents } = useCalendarEvents();
@@ -53,6 +58,7 @@ export default function WallPage() {
   const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
   const [isQuickCreatorMounted, setQuickCreatorMounted] = useState(false);
+  const [useLocalWall, setUseLocalWall] = useState(false);
   const quickCreatorTimerRef = useRef<number | null>(null);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
@@ -67,8 +73,8 @@ export default function WallPage() {
   }, []);
 
   useEffect(() => {
-    consumePendingFirstRunReveal("wall");
-  }, []);
+    if (householdId || useLocalWall) consumePendingFirstRunReveal("wall");
+  }, [householdId, useLocalWall]);
   const closeQuickCreator = useCallback(() => {
     if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
 
@@ -123,6 +129,15 @@ export default function WallPage() {
       setRecentlyCreatedTaskId((current) => (current === createdTaskId ? null : current));
     }, 1800);
   }, [setCreateSuccessMessage, setRecentlyCreatedTaskId, t]);
+
+
+  const finishPairing = useCallback((nextHouseholdId: string) => {
+    saveSelectedHouseholdId(nextHouseholdId);
+  }, []);
+
+  if (!householdId && !useLocalWall && isCloudConfigured()) {
+    return <WallPairingCard onPaired={finishPairing} onUseLocal={() => setUseLocalWall(true)} />;
+  }
 
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
