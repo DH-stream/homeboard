@@ -17,7 +17,7 @@ export function useCalendarSettings() {
   const [sources, setSources] = useState<CalendarSource[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [isSyncing, setSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<"calendarAdultLoginRequired" | null>(null);
+  const [syncError, setSyncError] = useState<"calendarAdultLoginRequired" | "calendarSavedNeedsAdultSync" | null>(null);
   const { householdId } = useResolvedHouseholdId();
   const setupState = useMemo<CalendarSetupState>(() => (!isCloudConfigured() ? "missing_cloud_config" : !householdId ? "missing_household" : "ready"), [householdId]);
 
@@ -81,7 +81,12 @@ export function useCalendarSettings() {
   }, [householdId, refresh]);
 
   const addSourceAndSync = useCallback(async (name: string, syncUrl: string, color: string, enabled: boolean) => {
+    const token = await getParentAccessToken();
     const newSourceId = await addIcsSource(name, syncUrl, color, enabled);
+    if (!token) {
+      setSyncError("calendarSavedNeedsAdultSync");
+      return;
+    }
     if (newSourceId) await syncSource(newSourceId);
   }, [addIcsSource, syncSource]);
 

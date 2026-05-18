@@ -29,3 +29,6 @@ Calendar data belongs to the selected household. Wall/shared devices read the ho
 
 ## Future background sync
 - Later we can run scheduled sync via Vercel Cron or Supabase Edge Functions calling `/api/calendar/sync-all` for active households.
+
+## UX backlog
+- Add step-by-step provider instructions (Apple/iCloud, Google, Microsoft) for non-technical households, including where to find share/public iCal links and privacy caveats.
