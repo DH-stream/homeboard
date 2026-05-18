@@ -1,92 +1,62 @@
 "use client";
 
+import { useState } from "react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
-import { StatusChip } from "@/components/ui/StatusChip";
 import { useCalendarSettings } from "@/lib/hooks/useCalendarSettings";
 import { useLanguage } from "@/lib/i18n";
-import type { CalendarConnection, CalendarProvider, CalendarSource } from "@/types";
+import type { CalendarSource } from "@/types";
 
-const providerLabels: Record<CalendarProvider, string> = {
-  google: "Google",
-  microsoft: "Microsoft",
-  icloud_caldav: "iCloud",
-  ics: "ICS",
-  manual: "Manual",
-};
-
-function groupSources(connections: CalendarConnection[], sources: CalendarSource[]) {
-  return connections.map((connection) => ({
-    connection,
-    sources: sources.filter((source) => source.connectionId === connection.id),
-  }));
-}
+const maskUrl = (url?: string) => (url ? `${url.slice(0, 18)}••••` : "");
+type ProviderChoice = "apple" | "google" | "microsoft" | "link";
 
 export function CalendarSourcesSettings() {
   const { t } = useLanguage();
-  const { connections, sources, isLoading, setupState, updateSourceEnabled } = useCalendarSettings();
-  const groupedSources = groupSources(connections, sources);
-  const needsSetup = setupState !== "ready";
+  const { sources, setupState, isLoading, isSyncing, syncError, addSourceAndSync, updateSourceEnabled, syncSource, syncAll } = useCalendarSettings();
+  const [showAdd, setShowAdd] = useState(false);
+  const [provider, setProvider] = useState<ProviderChoice>("link");
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [color, setColor] = useState("#f59e0b");
 
-  return (
-    <SettingsCard status={needsSetup ? t("planned") : t("cloudReady")} title={t("calendarSources")}>
-      <div className="space-y-4">
-        <p>{t("calendarSourcesCopy")}</p>
+  const providerHelpByChoice = {
+    apple: t("calendarProviderAppleHelp"),
+    google: t("calendarProviderGoogleHelp"),
+    microsoft: t("calendarProviderMicrosoftHelp"),
+    link: t("calendarLinkTitle"),
+  } as const;
 
-        {needsSetup ? (
-          <div className="rounded-[1.5rem] border border-amber-200/80 bg-amber-50 px-4 py-4 text-amber-950">
-            <h3 className="text-base font-black text-stone-950">{t("calendarSetupTitle")}</h3>
-            <p className="mt-2 font-semibold leading-6">{setupState === "missing_household" ? t("calendarSetupHouseholdBody") : t("calendarSetupBody")}</p>
-          </div>
-        ) : null}
+  return <SettingsCard status={setupState !== "ready" ? t("planned") : t("cloudReady")} title={t("calendarSources")}>
+    <div className="space-y-3">
+      {setupState === "ready" && !sources.length ? <p>{t("calendarEmptyState")}</p> : null}
+      {setupState === "ready" ? <button className="rounded-xl border px-3 py-2" disabled={isSyncing} onClick={() => setShowAdd((prev) => !prev)} type="button">{t("calendarAdd")}</button> : null}
+      {setupState === "ready" && sources.length > 1 ? <button className="rounded-xl border px-3 py-2" disabled={isSyncing} onClick={() => syncAll()} type="button">{isSyncing ? t("calendarSyncing") : t("calendarSyncAll")}</button> : null}
+      {syncError ? <p className="text-xs text-amber-700">{t(syncError)}</p> : null}
 
-        {!needsSetup && !connections.length ? (
-          <div className="rounded-[1.5rem] border border-stone-200/80 bg-white/78 px-4 py-4 shadow-sm">
-            <h3 className="text-base font-black text-stone-950">{t("calendarNoConnectionsTitle")}</h3>
-            <p className="mt-2 font-semibold leading-6 text-stone-600">{t("calendarNoConnectionsBody")}</p>
-          </div>
-        ) : null}
+      {sources.map((source: CalendarSource) => <div className="rounded-2xl border p-3" key={source.id}>
+        <div className="flex items-center justify-between gap-2"><div className="font-bold">{source.name}</div><span className="text-xs">{source.enabled ? t("calendarOn") : t("calendarOff")}</span></div>
+        <div className="text-xs text-stone-500">{t("calendarConnected")} · {t("calendarLastSynced")}: {source.lastSyncedAt ? new Date(source.lastSyncedAt).toLocaleString() : "—"}</div>
+        <div className="text-xs text-stone-500">{t("calendarAutoUpdating")}</div>
+        {source.lastError ? <div className="text-xs text-amber-700">{t("calendarCouldNotSync")} · {source.lastError}</div> : null}
+        <div className="text-xs text-stone-400">{maskUrl(source.syncUrl)}</div>
+        <div className="mt-2 flex gap-2"><button className="rounded-lg border px-2 py-1 text-xs" disabled={isSyncing} onClick={() => syncSource(source.id)} type="button">{isSyncing ? t("calendarSyncing") : t("calendarSyncNow")}</button><button className="rounded-lg border px-2 py-1 text-xs" disabled={isSyncing} onClick={() => updateSourceEnabled(source.id, !source.enabled)} type="button">{source.enabled ? t("calendarDisable") : t("calendarEnable")}</button></div>
+      </div>)}
 
-        {!needsSetup && connections.length ? (
-          <div className="space-y-3">
-            {groupedSources.map(({ connection, sources: connectionSources }) => (
-              <section className="rounded-[1.5rem] border border-stone-200/80 bg-white/78 p-3 shadow-sm" key={connection.id}>
-                <div className="mb-3 flex min-w-0 flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-base font-black text-stone-950">{connection.accountLabel}</h3>
-                    <p className="truncate text-xs font-bold text-stone-500">
-                      {providerLabels[connection.provider]}{connection.accountEmail ? ` · ${connection.accountEmail}` : ""}
-                    </p>
-                  </div>
-                  <StatusChip tone="emerald">{providerLabels[connection.provider]}</StatusChip>
-                </div>
-
-                <div className="space-y-2">
-                  {connectionSources.map((source) => (
-                    <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border border-stone-100 bg-stone-50/80 px-3 py-2 transition-[background-color,box-shadow,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.99]" key={source.id}>
-                      <input
-                        checked={source.enabled}
-                        className="peer sr-only"
-                        disabled={isLoading}
-                        onChange={(event) => updateSourceEnabled(source.id, event.target.checked)}
-                        type="checkbox"
-                      />
-                      <span aria-hidden="true" className="h-3.5 w-3.5 shrink-0 rounded-full shadow-sm ring-2 ring-white" style={{ backgroundColor: source.color ?? "#f59e0b" }} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-black text-stone-900">{source.name}</span>
-                        <span className="block truncate text-xs font-bold uppercase tracking-[0.12em] text-stone-400">{t("readOnly")}</span>
-                      </span>
-                      <span className={`relative h-8 w-14 shrink-0 rounded-full p-1 shadow-inner transition-colors duration-150 ease-[var(--ease-out)] peer-focus-visible:outline peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-amber-500 ${source.enabled ? "bg-emerald-500" : "bg-stone-300"}`}>
-                        <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-150 ease-[var(--ease-out)] ${source.enabled ? "translate-x-6" : "translate-x-0"}`} />
-                      </span>
-                      <span className="w-10 shrink-0 text-right text-xs font-black text-stone-500">{source.enabled ? t("on") : t("off")}</span>
-                    </label>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </SettingsCard>
-  );
+      {setupState === "ready" && showAdd ? <div className="rounded-2xl border p-3">
+        <div className="font-bold">{t("calendarAdd")}</div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <button className="rounded-lg border px-2 py-1 text-left text-sm" onClick={() => setProvider("apple")} type="button">{t("calendarProviderApple")}</button>
+          <button className="rounded-lg border px-2 py-1 text-left text-sm" onClick={() => setProvider("google")} type="button">{t("calendarProviderGoogle")}</button>
+          <button className="rounded-lg border px-2 py-1 text-left text-sm" onClick={() => setProvider("microsoft")} type="button">{t("calendarProviderMicrosoft")}</button>
+          <button className="rounded-lg border px-2 py-1 text-left text-sm" onClick={() => setProvider("link")} type="button">{t("calendarProviderLink")}</button>
+        </div>
+        <form className="mt-3" onSubmit={async (event) => { event.preventDefault(); await addSourceAndSync(name, url, color, true); setName(""); setUrl(""); setShowAdd(false); }}>
+          <div className="text-xs text-stone-600">{providerHelpByChoice[provider]}</div>
+          <input className="mt-2 w-full rounded border px-2 py-1" onChange={(e) => setName(e.target.value)} placeholder={t("calendarSourceName")} value={name} />
+          <input className="mt-2 w-full rounded border px-2 py-1" onChange={(e) => setUrl(e.target.value)} placeholder={t("calendarLinkUrl")} value={url} />
+          <div className="mt-2"><input onChange={(e) => setColor(e.target.value)} type="color" value={color} /></div>
+          <button className="mt-2 rounded-xl border px-3 py-1" disabled={isLoading || isSyncing || !name || !url} type="submit">{isSyncing ? t("calendarSyncing") : t("calendarSaveAndSync")}</button>
+        </form>
+      </div> : null}
+    </div>
+  </SettingsCard>;
 }

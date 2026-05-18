@@ -24,6 +24,9 @@ type CalendarSourceRow = {
   enabled: boolean;
   visibility: CalendarSource["visibility"];
   sync_mode: CalendarSource["syncMode"];
+  sync_url: string | null;
+  last_synced_at: string | null;
+  last_error: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -68,6 +71,9 @@ function mapSource(row: CalendarSourceRow): CalendarSource {
     enabled: row.enabled,
     visibility: row.visibility,
     syncMode: row.sync_mode,
+    syncUrl: row.sync_url ?? undefined,
+    lastSyncedAt: row.last_synced_at ?? undefined,
+    lastError: row.last_error ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -117,7 +123,7 @@ export class SupabaseCalendarRepository implements CalendarRepository {
 
     const { data, error } = await this.client
       .from("calendar_sources")
-      .select("id, household_id, connection_id, provider_calendar_id, name, color, enabled, visibility, sync_mode, created_at, updated_at")
+      .select("id, household_id, connection_id, provider_calendar_id, name, color, enabled, visibility, sync_mode, sync_url, last_synced_at, last_error, created_at, updated_at")
       .eq("household_id", householdId)
       .order("name", { ascending: true });
 
@@ -132,7 +138,7 @@ export class SupabaseCalendarRepository implements CalendarRepository {
       .from("calendar_sources")
       .update({ enabled, updated_at: new Date().toISOString() })
       .eq("id", sourceId)
-      .select("id, household_id, connection_id, provider_calendar_id, name, color, enabled, visibility, sync_mode, created_at, updated_at")
+      .select("id, household_id, connection_id, provider_calendar_id, name, color, enabled, visibility, sync_mode, sync_url, last_synced_at, last_error, created_at, updated_at")
       .single();
 
     if (error) throw error;
@@ -143,6 +149,7 @@ export class SupabaseCalendarRepository implements CalendarRepository {
     if (!this.client || !householdId) return [];
 
     const sources = await this.listSources(householdId);
+    if (sources.length > 0 && !sources.some((source) => source.enabled)) return [];
     const enabledSourceIds = sources.filter((source) => source.enabled).map((source) => source.id);
 
     let query = this.client
