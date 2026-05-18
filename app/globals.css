@@ -101,6 +101,103 @@ button:disabled {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
+.save-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  opacity: 0.82;
+  animation: save-spinner-turn 700ms linear infinite;
+}
+
+.action-toast {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem 0.65rem 0.75rem;
+  color: rgb(20, 83, 45);
+  font-size: 0.95rem;
+  font-weight: 950;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 18px 55px rgba(84, 59, 34, 0.18);
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 260ms var(--ease-out);
+}
+
+.action-toast--visible {
+  opacity: 1;
+}
+
+.action-toast--fixed {
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  max-width: min(calc(100vw - 2rem), 26rem);
+  transform: translateX(-50%) translateY(0.5rem) scale(0.96);
+}
+
+.action-toast--fixed.action-toast--visible {
+  transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.action-toast--inline {
+  position: static;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  max-height: 0;
+  min-height: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  border-width: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+  transform: translateY(0.35rem) scale(0.98);
+  transform-origin: 0% 50%;
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 260ms var(--ease-out),
+    margin-bottom 260ms var(--ease-out),
+    max-height 260ms var(--ease-out),
+    min-height 260ms var(--ease-out),
+    padding-bottom 260ms var(--ease-out),
+    padding-top 260ms var(--ease-out);
+}
+
+.action-toast--inline.action-toast--visible {
+  max-height: 4rem;
+  min-height: 3rem;
+  margin-bottom: 1rem;
+  border-width: 1px;
+  padding-bottom: 0.65rem;
+  padding-top: 0.65rem;
+  transform: translateY(0) scale(1);
+}
+
+.action-toast--success {
+  background: linear-gradient(135deg, rgba(236, 253, 245, 0.96), rgba(255, 251, 235, 0.94));
+}
+
+.action-toast__check {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(16, 185, 129);
+  color: white;
+  box-shadow: 0 10px 26px rgba(16, 185, 129, 0.24);
+}
+
 .task-waterfall-item {
   animation: task-waterfall-in 420ms var(--ease-out) both;
   animation-delay: var(--task-waterfall-delay, 0ms);
@@ -148,6 +245,10 @@ button:disabled {
   animation: task-card-settle 240ms var(--ease-out), task-card-glow 900ms var(--ease-out);
 }
 
+.task-card--created {
+  animation: task-card-settle 240ms var(--ease-out), task-card-created-glow 1500ms var(--ease-out);
+}
+
 .task-card--celebrate::after {
   position: absolute;
   inset: 0.7rem;
@@ -177,6 +278,12 @@ button:disabled {
 
 .task-card--celebrate .task-check--done .task-check-mark {
   animation: task-check-pop 240ms var(--ease-out);
+}
+
+@keyframes save-spinner-turn {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes task-waterfall-in {
@@ -211,6 +318,19 @@ button:disabled {
   }
 }
 
+@keyframes task-card-created-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+  }
+  22% {
+    border-color: rgba(16, 185, 129, 0.42);
+    box-shadow: 0 18px 58px rgba(16, 185, 129, 0.22);
+  }
+  100% {
+    box-shadow: 0 14px 40px rgba(87, 64, 38, 0.08);
+  }
+}
+
 @keyframes task-check-pop {
   0% {
     transform: scale(0.9) translateY(0.1rem);
@@ -238,8 +358,11 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .save-spinner,
+  .action-toast,
   .task-waterfall-item,
   .task-card--celebrate,
+  .task-card--created,
   .task-card--celebrate::after,
   .task-card--celebrate .task-check--done .task-check-mark {
     animation: none !important;

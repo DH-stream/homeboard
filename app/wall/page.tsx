@@ -8,6 +8,7 @@ import { MemberBadge } from "@/components/members/MemberBadge";
 import { TaskList } from "@/components/tasks/TaskList";
 import { WallQuickTaskButton } from "@/components/wall/WallQuickTaskButton";
 import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
+import { ActionToast } from "@/components/ui/ActionToast";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
@@ -22,6 +23,12 @@ import type { TaskInstance } from "@/types";
 const DAILY_RECURRING_REVEAL_MINUTES = 90;
 const QUICK_CREATOR_CLOSE_MS = 240;
 const QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS = 20;
+
+function getFirstCreatedTaskId(created: unknown) {
+  if (!Array.isArray(created)) return null;
+  const firstTask = created.find((task): task is TaskInstance => Boolean(task && typeof task === "object" && "id" in task));
+  return firstTask?.id ?? null;
+}
 
 function shouldShowTodayTask(task: TaskInstance, now: Date) {
   if (!isSameLocalDay(task.dueDate, now)) return false;
@@ -40,6 +47,8 @@ export default function WallPage() {
   const { tasks, createTask, setTaskCompleted } = useTasks();
   const [now, setNow] = useState(new Date());
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
+  const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
+  const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("wall"));
   const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
@@ -106,6 +115,15 @@ export default function WallPage() {
     };
   }, []);
 
+  const handleTaskCreated = useCallback((created: unknown) => {
+    const createdTaskId = getFirstCreatedTaskId(created);
+    setCreateSuccessMessage(t("taskAdded"));
+    setRecentlyCreatedTaskId(createdTaskId);
+    window.setTimeout(() => {
+      setRecentlyCreatedTaskId((current) => (current === createdTaskId ? null : current));
+    }, 1800);
+  }, [setCreateSuccessMessage, setRecentlyCreatedTaskId, t]);
+
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
     try {
@@ -158,15 +176,16 @@ export default function WallPage() {
           />
           {wallTaskCreatorMode === "docked" && isQuickCreatorMounted ? (
             <div className={`wall-quick-add-panel w-full min-w-0 ${isQuickCreatorOpen ? "wall-quick-add-panel--open" : "wall-quick-add-panel--closing"}`}>
-              <WallQuickTaskCreator members={members} onCancel={closeQuickCreator} onCreateTask={createTask} variant="popover" />
+              <WallQuickTaskCreator members={members} onCancel={closeQuickCreator} onCreated={handleTaskCreated} onCreateTask={createTask} variant="popover" />
             </div>
           ) : null}
           {wallTaskCreatorMode === "panel" ? (
             <div className="mb-4">
-              <WallQuickTaskCreator members={members} onCreateTask={createTask} />
+              <WallQuickTaskCreator members={members} onCreated={handleTaskCreated} onCreateTask={createTask} />
             </div>
           ) : null}
-          <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
+          <ActionToast message={createSuccessMessage} onDismiss={() => setCreateSuccessMessage(null)} placement="inline" />
+          <TaskList grouped members={members} onToggle={toggleTask} recentlyCompletedId={completionFeedback?.taskId ?? null} recentlyCreatedId={recentlyCreatedTaskId} completionMessage={completionFeedback?.message} roomy tasks={todayTasks} />
         </section>
         <aside className={`grid content-start gap-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
           <TodayAgenda events={todayEvents} />

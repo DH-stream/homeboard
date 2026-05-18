@@ -19,6 +19,7 @@ export function TaskList({
   grouped = false,
   roomy = false,
   recentlyCompletedId,
+  recentlyCreatedId,
   completionMessage,
   animationKey,
 }: {
@@ -29,6 +30,7 @@ export function TaskList({
   grouped?: boolean;
   roomy?: boolean;
   recentlyCompletedId?: string | null;
+  recentlyCreatedId?: string | null;
   completionMessage?: string;
   animationKey?: string;
 }) {
@@ -48,12 +50,12 @@ export function TaskList({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {groups.map((group, index) => (
           <div className="task-waterfall-item" key={`${animationKey ?? "grouped"}-${group.member.id}`} style={{ "--task-waterfall-delay": `${index * 80}ms` } as TaskWaterfallStyle}>
-            <MemberTaskGroup member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={group.tasks} />
+            <MemberTaskGroup member={group.member} onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} recentlyCreatedId={recentlyCreatedId} completionMessage={completionMessage} roomy={roomy} tasks={group.tasks} />
           </div>
         ))}
         {unassigned.length ? (
           <div className="task-waterfall-item" key={`${animationKey ?? "grouped"}-unassigned`} style={{ "--task-waterfall-delay": `${groups.length * 80}ms` } as TaskWaterfallStyle}>
-            <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} completionMessage={completionMessage} roomy={roomy} tasks={unassigned} />
+            <MemberTaskGroup onToggle={onToggle} recentlyCompletedId={recentlyCompletedId} recentlyCreatedId={recentlyCreatedId} completionMessage={completionMessage} roomy={roomy} tasks={unassigned} />
           </div>
         ) : null}
       </div>
@@ -66,6 +68,7 @@ export function TaskList({
         <div className="task-waterfall-item" key={`${animationKey ?? "list"}-${task.id}`} style={{ "--task-waterfall-delay": `${index * 70}ms` } as TaskWaterfallStyle}>
           <TaskCard
             celebrated={recentlyCompletedId === task.id}
+            recentlyCreated={recentlyCreatedId === task.id}
             completionMessage={recentlyCompletedId === task.id ? completionMessage : undefined}
             member={members.find((member) => member.id === task.assignedToMemberId)}
             onEdit={onEdit}
