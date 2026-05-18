@@ -5,7 +5,7 @@ import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
+import { enableLocalOnlyMode, isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { useCloudDiagnostics } from "@/lib/hooks/useCloudDiagnostics";
 import { useParentAuth } from "@/lib/hooks/useParentAuth";
@@ -146,6 +146,7 @@ export function CloudStatusSettings() {
     not_configured: t("cloudSyncNotConfigured"),
     unreachable: t("cloudSyncUnreachable"),
   };
+  const cloudSyncLabel = isConfigured && !hasCloudHousehold ? (isLocalOnly ? copy.localTitle : copy.availableTitle) : statusLabels[status];
   const checkedAt = diagnostics?.checkedAt ? new Intl.DateTimeFormat(getLocale(language), { dateStyle: "short", timeStyle: "short" }).format(new Date(diagnostics.checkedAt)) : "—";
 
   const mode = useMemo<{ title: string; body: string; tone: "amber" | "emerald" | "rose" | "stone" | "dark" }>(() => {
@@ -203,6 +204,15 @@ export function CloudStatusSettings() {
   function cancelActivation() {
     setActivating(false);
     setFlowError(null);
+  }
+
+  function continueLocalOnly() {
+    enableLocalOnlyMode();
+    refreshHouseholdId();
+    setLocalOnly(true);
+    setActivating(false);
+    setFlowError(null);
+    setSuccessMessage(null);
   }
 
   function finishWithHousehold(nextHouseholdId: string, message = copy.createSuccess) {
@@ -335,7 +345,7 @@ export function CloudStatusSettings() {
                   </div>
                 </section>
 
-                <button className="pressable min-h-11 justify-self-start rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800 shadow-sm" onClick={cancelActivation} type="button">
+                <button className="pressable min-h-11 justify-self-start rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800 shadow-sm" onClick={continueLocalOnly} type="button">
                   {copy.stayLocal}
                 </button>
               </div>
@@ -349,7 +359,7 @@ export function CloudStatusSettings() {
           <div className="flex items-center justify-between gap-3">
             <dt className="font-bold text-stone-500">{t("cloudSync")}</dt>
             <dd className="text-right font-black text-stone-900">
-              <StatusChip tone={tone}>{isLoading ? t("loading") : statusLabels[status]}</StatusChip>
+              <StatusChip tone={tone}>{isLoading ? t("loading") : cloudSyncLabel}</StatusChip>
             </dd>
           </div>
           <div className="flex justify-between gap-3">
