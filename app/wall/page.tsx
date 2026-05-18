@@ -200,7 +200,7 @@ export default function WallPage() {
         </section>
         <aside className={`grid content-start gap-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
           <TodayAgenda events={todayEvents} />
-          <WeekPreview events={events} />
+          <WeekPreview events={events} variant="wall" />
         </aside>
       </div>
     </WallShell>
