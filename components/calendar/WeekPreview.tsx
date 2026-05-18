@@ -61,6 +61,11 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
     changeWeek(deltaX > 0 ? -1 : 1);
   }
 
+  function closeDetailsOnBackground(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
+    setSelectedDayKey(null);
+  }
+
   return (
     <section className={`surface-card rounded-[2rem] ${isWall ? "p-5" : "p-4"}`} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -68,7 +73,10 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
         {isWall ? <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-400">Swipe</p> : null}
       </div>
 
-      <div className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? "grid grid-flow-col auto-cols-[minmax(5.2rem,1fr)] gap-2 overflow-hidden" : "grid grid-cols-7 gap-2"}`}>
+      <div
+        className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? "grid grid-flow-col auto-cols-[minmax(5.2rem,1fr)] gap-2 overflow-hidden" : "grid grid-cols-7 gap-2"}`}
+        onClick={isWall ? closeDetailsOnBackground : undefined}
+      >
         {days.map((day) => {
           const key = toLocalDateKey(day);
           const dayEvents = events.filter((event) => toLocalDateKey(event.startAt) === key);
@@ -80,8 +88,10 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
             <button
               aria-pressed={isSelected}
               className={`pressable min-h-28 rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] ${isSelected ? "bg-stone-950 text-white shadow-xl shadow-stone-950/15" : isToday ? "bg-stone-950 text-white" : "bg-white/80 text-stone-800"}`}
-              key={key}
-              onClick={() => setSelectedDayKey((current) => (current === key ? null : key))}
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelectedDayKey((current) => (current === key ? null : key));
+              }}
               type="button"
             >
               <p className={`text-xs font-black uppercase tracking-[0.12em] ${isToday || isSelected ? "text-amber-200" : "text-stone-400"}`}>
@@ -123,11 +133,14 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
           const selectedEvents = dayEvents;
 
           return (
-            <div className={`grid gap-2 transition-[grid-template-columns] duration-300 ease-[var(--ease-out)] ${detailsOpen ? "grid-cols-[minmax(5.2rem,0.85fr)_minmax(11rem,1.45fr)]" : "grid-cols-[minmax(5.2rem,1fr)]"}`} key={key}>
+            <div className={`grid gap-2 transition-[grid-template-columns] duration-300 ease-[var(--ease-out)] ${detailsOpen ? "grid-cols-[minmax(5.2rem,1fr)_minmax(11rem,1.4fr)]" : "grid-cols-[minmax(5.2rem,1fr)]"}`} key={key}>
               {dayButton}
               {detailsOpen ? (
-                <div className="min-h-28 rounded-2xl border border-stone-200 bg-white/90 p-3 shadow-sm">
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-stone-400">
+                <div
+                  className="min-h-28 rounded-2xl border border-stone-200 bg-white p-3 text-stone-950 shadow-lg shadow-stone-950/10"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-stone-500">
                     {new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric" }).format(day)}
                   </p>
                   <div className="mt-2 space-y-2">
@@ -137,12 +150,12 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
                         return (
                           <div className="rounded-xl bg-stone-100 px-3 py-2" key={event.id}>
                             <p className="text-sm font-black leading-snug text-stone-950">{event.title}</p>
-                            {time ? <p className="mt-0.5 text-xs font-bold text-stone-500">{time}</p> : null}
+                            {time ? <p className="mt-0.5 text-xs font-bold text-stone-600">{time}</p> : null}
                           </div>
                         );
                       })
                     ) : (
-                      <p className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-bold text-stone-500">{copy.noEvents}</p>
+                      <p className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-bold text-stone-600">{copy.noEvents}</p>
                     )}
                   </div>
                 </div>
