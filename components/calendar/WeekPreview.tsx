@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { getLocale, useLanguage, type Language } from "@/lib/i18n";
-import { getWeekDays, toLocalDateKey } from "@/lib/utils/date";
+import { toLocalDateKey } from "@/lib/utils/date";
 import type { CalendarEvent } from "@/types";
 
 const wallCopy: Record<Language, { noEvents: string; today: string }> = {
@@ -16,10 +16,18 @@ const wallCopy: Record<Language, { noEvents: string; today: string }> = {
   },
 };
 
-function getWeekDaysFromOffset(weekOffset: number) {
-  return getWeekDays().map((day) => {
-    const next = new Date(day);
-    next.setDate(day.getDate() + weekOffset * 7);
+function getMondayFirstWeekDays(weekOffset = 0) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const day = today.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diffToMonday + weekOffset * 7);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const next = new Date(monday);
+    next.setDate(monday.getDate() + index);
     return next;
   });
 }
@@ -49,7 +57,7 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
   const [weekAnimationDirection, setWeekAnimationDirection] = useState<-1 | 0 | 1>(0);
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
   const pointerStartX = useRef<number | null>(null);
-  const days = useMemo(() => (isWall ? getWeekDaysFromOffset(weekOffset) : getWeekDays()), [isWall, weekOffset]);
+  const days = useMemo(() => getMondayFirstWeekDays(isWall ? weekOffset : 0), [isWall, weekOffset]);
   const today = toLocalDateKey();
 
   function changeWeek(direction: -1 | 1) {
@@ -73,8 +81,7 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
     changeWeek(deltaX > 0 ? -1 : 1);
   }
 
-  function closeDetailsOnBackground(event: React.MouseEvent<HTMLDivElement>) {
-    if (event.target !== event.currentTarget) return;
+  function closeDetailsOnBackground() {
     setSelectedDayKey(null);
   }
 
@@ -95,12 +102,10 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
       </div>
 
       <div className="relative">
-        {isWall ? <span className="pointer-events-none absolute -left-3 top-1/2 z-20 -translate-y-1/2 text-xl font-black text-stone-300">‹</span> : null}
-        {isWall ? <span className="pointer-events-none absolute -right-3 top-1/2 z-20 -translate-y-1/2 text-xl font-black text-stone-300">›</span> : null}
-        <div
-          className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? `relative grid grid-cols-7 gap-2 overflow-visible py-1 ${getWeekAnimationClassName(weekAnimationDirection)}` : "grid grid-cols-7 gap-2"}`}
-          onClick={isWall ? closeDetailsOnBackground : undefined}
-        >
+        {isWall && selectedDayKey ? <button aria-label="Close calendar details" className="absolute inset-0 z-20 cursor-default bg-transparent" onClick={closeDetailsOnBackground} type="button" /> : null}
+        {isWall ? <span className="pointer-events-none absolute -left-3 top-1/2 z-10 -translate-y-1/2 text-xl font-black text-stone-300">‹</span> : null}
+        {isWall ? <span className="pointer-events-none absolute -right-3 top-1/2 z-10 -translate-y-1/2 text-xl font-black text-stone-300">›</span> : null}
+        <div className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? `relative z-10 grid grid-cols-7 gap-2 overflow-visible py-1 ${getWeekAnimationClassName(weekAnimationDirection)}` : "grid grid-cols-7 gap-2"}`}>
           {days.map((day, dayIndex) => {
             const key = toLocalDateKey(day);
             const dayEvents = events.filter((event) => toLocalDateKey(event.startAt) === key);
@@ -115,7 +120,7 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
             const labelToneClassName = isSelected ? "text-amber-800" : isToday ? "text-amber-200" : "text-stone-400";
             const eventPreviewClassName = isSelected ? "bg-amber-200/75 text-stone-950" : isToday ? "bg-white/15" : "bg-stone-100";
 
-            const dayButton = isWall ? (
+            return isWall ? (
               <div className="relative" key={key}>
                 <button
                   aria-pressed={isSelected}
@@ -184,8 +189,6 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
                 </div>
               </div>
             );
-
-            return dayButton;
           })}
         </div>
       </div>
