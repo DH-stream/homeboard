@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { mockHousehold } from "@/data/mockHousehold";
 import { householdRepository } from "@/lib/repositories/householdRepository";
 import { createHouseholdService } from "@/lib/services/householdService";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
@@ -15,8 +16,14 @@ export function useActiveHousehold() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    setHousehold(await service.getHousehold(householdId));
-    setLoading(false);
+    try {
+      setHousehold(await service.getHousehold(householdId));
+    } catch (error) {
+      console.warn("HomeBoard household settings could not be loaded from cloud; using device data.", error);
+      setHousehold(mockHousehold);
+    } finally {
+      setLoading(false);
+    }
   }, [householdId]);
 
   useEffect(() => {

@@ -60,7 +60,7 @@ export function HouseholdSettings() {
   const selectionSource = isDevOverride ? copy.developmentOverride : householdId ? copy.thisDevice : copy.none;
 
   return (
-    <SettingsCard status={householdId ? t("supabaseReady") : t("localPreview")} title={t("household")}>
+    <SettingsCard status={householdId ? t("cloudReady") : t("localPreview")} title={t("household")}>
       <div className="space-y-4">
         <p>{t("householdCopy")}</p>
         <dl className="grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">

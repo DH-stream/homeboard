@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
+import { CloudStatusSettings } from "@/components/settings/CloudStatusSettings";
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
@@ -42,7 +43,8 @@ export default function SettingsPage() {
         <DeviceStartViewSettings />
         <WallTaskCreatorSettings />
         <HouseholdSettings />
-        <SettingsCard status={t("mock")} title={t("members")}>
+        <CloudStatusSettings />
+        <SettingsCard title={t("members")}>
           <p>{t("membersCopy")}</p>
         </SettingsCard>
         <CalendarSourcesSettings />
@@ -57,30 +59,6 @@ export default function SettingsPage() {
         </SettingsCard>
         <SettingsCard status={t("planned")} title={t("runaiApiTokens")}>
           <p>{t("runaiApiTokensCopy")}</p>
-        </SettingsCard>
-        <SettingsCard status={t("previewMode")} title={t("dataBackendStatus")}>
-          <div className="space-y-3">
-            <p className="font-bold text-stone-800">{t("noCloudSync")}</p>
-            <dl className="grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
-              <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">{t("uiTaskState")}</dt>
-                <dd className="text-right font-black text-stone-900">{t("browserLocalStorage")}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">{t("apiTaskState")}</dt>
-                <dd className="text-right font-black text-stone-900">{t("temporaryInMemory")}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">{t("multiDeviceSync")}</dt>
-                <dd className="text-right font-black text-amber-700">{t("notConnectedYet")}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="font-bold text-stone-500">{t("nextBackendTarget")}</dt>
-                <dd className="text-right font-black text-stone-900">Supabase/Postgres</dd>
-              </div>
-            </dl>
-            <p>{t("storageClarification")}</p>
-          </div>
         </SettingsCard>
       </div>
     </AppShell>
