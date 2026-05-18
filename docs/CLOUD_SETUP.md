@@ -52,14 +52,34 @@ Then HomeBoard behaves as local/device-only unless you also provide a complete s
 
 After configuring an override or using the built-in cloud, open HomeBoard and create or select a home in the in-app setup screen. Then open `/settings` and check **Cloud status** / **Molnstatus**. It should show the home name, member count, task count, and calendar-event count. `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID` remains available only for development shortcuts.
 
+## Supabase Auth email code setup
+
+HomeBoard's parent/grown-up auth is a **code-first flow**. The app asks the parent to enter the 6-digit code from the email. It should not depend on the parent clicking a magic-link email.
+
+Supabase email OTP and magic links share the same underlying implementation. To make the email match HomeBoard's UI, configure the Supabase email template to show the 6-digit OTP variable instead of making the confirmation link the primary action.
+
+In Supabase, open **Authentication → Email Templates** and update the relevant sign-in / magic-link template so it includes:
+
+```html
+<h2>Your HomeBoard code</h2>
+<p>Enter this code in HomeBoard:</p>
+<p>{{ .Token }}</p>
+```
+
+Avoid making `{{ .ConfirmationURL }}` the primary user action for HomeBoard parent auth. It can exist as a fallback only if needed, but the product flow should be: send email → copy 6-digit code → enter code in HomeBoard.
+
 ## Supabase Auth redirect URLs
 
-Parent/grown-up auth sends email OTP and magic-link redirects back to the current app origin at `/settings`, for example:
+Even though HomeBoard is code-first, parent/grown-up auth still sends an explicit redirect target so any fallback email link returns to the app that requested the code.
+
+The redirect target is the current app origin at `/settings`, for example:
 
 ```text
 https://your-homeboard-domain.vercel.app/settings
 http://localhost:3000/settings
 ```
+
+`localhost` only matters for local development. It is not used when the user requests a code from a Vercel deployment.
 
 The Supabase project must allow those redirect targets. In Supabase, open **Authentication → URL Configuration** and configure:
 
@@ -74,7 +94,7 @@ https://your-homeboard-domain.vercel.app/**
 https://*.vercel.app/**
 ```
 
-If a redirect URL is not allow-listed, Supabase can fall back to the configured Site URL. That often causes preview/production verification links to open `localhost` or another stale deployment URL.
+If a redirect URL is not allow-listed, Supabase can fall back to the configured Site URL. That can cause fallback verification links to open `localhost` or another stale deployment URL.
 
 ## Calendar events today
 
