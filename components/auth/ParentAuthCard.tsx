@@ -8,12 +8,14 @@ const copy: Record<
   Language,
   {
     body: string;
+    changeEmail: string;
     code: string;
     codeSent: string;
     email: string;
     eyebrow: string;
     requestCode: string;
     requestFailed: string;
+    resendCode: string;
     signedInAs: string;
     signingIn: string;
     signOut: string;
@@ -24,12 +26,14 @@ const copy: Record<
 > = {
   en: {
     body: "Use a parent email to create homes, pair wall screens, and manage grown-up settings.",
+    changeEmail: "Change email",
     code: "Code",
     codeSent: "Code sent. Check your email.",
     email: "Email",
     eyebrow: "Grown-up access",
     requestCode: "Send code",
     requestFailed: "Could not send the code. Try again.",
+    resendCode: "Send a new code",
     signedInAs: "Signed in as",
     signingIn: "Signing in…",
     signOut: "Sign out",
@@ -39,12 +43,14 @@ const copy: Record<
   },
   sv: {
     body: "Använd en förälders e-post för att skapa hem, koppla väggskärmar och hantera vuxeninställningar.",
+    changeEmail: "Byt e-post",
     code: "Kod",
     codeSent: "Koden är skickad. Kolla din e-post.",
     email: "E-post",
     eyebrow: "Vuxenåtkomst",
     requestCode: "Skicka kod",
     requestFailed: "Kunde inte skicka koden. Försök igen.",
+    resendCode: "Skicka ny kod",
     signedInAs: "Inloggad som",
     signingIn: "Loggar in…",
     signOut: "Logga ut",
@@ -65,14 +71,15 @@ export function ParentAuthCard({ compact = false, onSignedIn }: { compact?: bool
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function requestEmailCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function requestEmailCode(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
     setSubmitting(true);
     setError(null);
     setMessage(null);
     try {
       await requestCode(email);
       setHasRequestedCode(true);
+      setToken("");
       setMessage(text.codeSent);
     } catch (unknownError) {
       console.warn("HomeBoard could not request parent auth code.", unknownError);
@@ -95,6 +102,13 @@ export function ParentAuthCard({ compact = false, onSignedIn }: { compact?: bool
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function changeEmail() {
+    setHasRequestedCode(false);
+    setToken("");
+    setMessage(null);
+    setError(null);
   }
 
   if (isSignedIn && user) {
@@ -121,7 +135,8 @@ export function ParentAuthCard({ compact = false, onSignedIn }: { compact?: bool
           <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{text.email}</span>
           <input
             autoComplete="email"
-            className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
+            className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 font-bold text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500"
+            disabled={hasRequestedCode || isSubmitting}
             inputMode="email"
             onChange={(event) => setEmail(event.target.value)}
             required
@@ -146,6 +161,17 @@ export function ParentAuthCard({ compact = false, onSignedIn }: { compact?: bool
 
         {message ? <p className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{message}</p> : null}
         {error ? <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</p> : null}
+
+        {hasRequestedCode ? (
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-60" disabled={isLoading || isSubmitting || !email.trim()} onClick={() => void requestEmailCode()} type="button">
+              {text.resendCode}
+            </button>
+            <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-60" disabled={isSubmitting} onClick={changeEmail} type="button">
+              {text.changeEmail}
+            </button>
+          </div>
+        ) : null}
 
         <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isLoading || isSubmitting || !email.trim() || (hasRequestedCode && !token.trim())} type="submit">
           {isSubmitting ? text.signingIn : hasRequestedCode ? text.verify : text.requestCode}
