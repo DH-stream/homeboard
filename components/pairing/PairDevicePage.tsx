@@ -8,12 +8,22 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { usePairingCode } from "@/lib/hooks/useDevicePairing";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type Language } from "@/lib/i18n";
+
+const pairingCopy: Record<Language, { claimFailed: string }> = {
+  en: {
+    claimFailed: "Could not connect the wall screen. Try again.",
+  },
+  sv: {
+    claimFailed: "Kunde inte koppla väggskärmen. Försök igen.",
+  },
+};
 
 function PairDeviceContent() {
   const params = useSearchParams();
   const pairingCode = params.get("code");
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const copy = pairingCopy[language];
   const { household, householdId } = useActiveHousehold();
   const { claim, error, isLoading, session } = usePairingCode(pairingCode);
   const [isClaiming, setClaiming] = useState(false);
@@ -46,7 +56,7 @@ function PairDeviceContent() {
         {isLoading ? <p className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-600">{t("loading")}</p> : null}
         {error || !session ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeInvalid")}</p> : null}
         {isExpired ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeExpiredPhone")}</p> : null}
-        {claimError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeExpiredPhone")}</p> : null}
+        {claimError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.claimFailed}</p> : null}
 
         {isClaimed ? (
           <div className="mt-5 space-y-4">
