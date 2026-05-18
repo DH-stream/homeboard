@@ -5,7 +5,7 @@ import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { enableLocalOnlyMode, isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
+import { enableLocalOnlyMode, forgetSelectedCloudHouseholdOnThisDevice, isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { useCloudDiagnostics } from "@/lib/hooks/useCloudDiagnostics";
 import { useParentAuth } from "@/lib/hooks/useParentAuth";
@@ -34,6 +34,10 @@ const activationCopy: Record<
     devOverrideBody: string;
     devOverrideTitle: string;
     existingError: string;
+    forgetCloudHome: string;
+    forgetCloudHomeBody: string;
+    forgetCloudHomeConfirm: string;
+    forgetCloudHomeTitle: string;
     homeName: string;
     listLoading: string;
     localBody: string;
@@ -66,6 +70,10 @@ const activationCopy: Record<
     devOverrideBody: "A development override is active. Normal device selection cannot change the active home until the override is removed.",
     devOverrideTitle: "Development override active",
     existingError: "We could not load your cloud homes right now. You can stay local or try again later.",
+    forgetCloudHome: "Forget cloud home on this device",
+    forgetCloudHomeBody: "This only forgets the selected home on this device. The cloud home is not deleted, and cloud tasks, members, and calendar data are not removed.",
+    forgetCloudHomeConfirm: "Forget this cloud home on this device? The home is not deleted in cloud sync, and cloud tasks, members, and calendar data are not removed.",
+    forgetCloudHomeTitle: "This device can stop using the selected cloud home",
     homeName: "Home name",
     listLoading: "Loading cloud homes…",
     localBody: "Tasks and settings stay on this browser. No sign-in is required, and you can turn on cloud sync later.",
@@ -97,6 +105,10 @@ const activationCopy: Record<
     devOverrideBody: "En utvecklingsoverride är aktiv. Vanligt enhetsval kan inte ändra aktivt hem förrän overriden tas bort.",
     devOverrideTitle: "Utvecklingsoverride aktiv",
     existingError: "Vi kunde inte ladda dina molnhem just nu. Du kan fortsätta lokalt eller försöka igen senare.",
+    forgetCloudHome: "Glöm molnhem på den här enheten",
+    forgetCloudHomeBody: "Detta glömmer bara valt hem på den här enheten. Hemmet raderas inte i molnet, och uppgifter, medlemmar och kalenderdata i molnet tas inte bort.",
+    forgetCloudHomeConfirm: "Glöm det här molnhemmet på den här enheten? Hemmet raderas inte i molnsynk, och uppgifter, medlemmar och kalenderdata i molnet tas inte bort.",
+    forgetCloudHomeTitle: "Den här enheten kan sluta använda valt molnhem",
     homeName: "Namn på hemmet",
     listLoading: "Laddar molnhem…",
     localBody: "Uppgifter och inställningar stannar i den här webbläsaren. Ingen inloggning krävs, och du kan aktivera molnsynk senare.",
@@ -123,7 +135,7 @@ function maskId(id: string | null) {
 
 export function CloudStatusSettings() {
   const { diagnostics, isLoading, refresh } = useCloudDiagnostics();
-  const { household, householdId, isDevOverride, refreshHouseholdId } = useActiveHousehold();
+  const { household, householdId, isDevOverride, refreshHouseholdId, selectedHouseholdId } = useActiveHousehold();
   const { isLoading: isParentLoading, isSignedIn, user } = useParentAuth();
   const { language, t } = useLanguage();
   const copy = activationCopy[language];
@@ -135,11 +147,13 @@ export function CloudStatusSettings() {
   const [isCreatingHousehold, setCreatingHousehold] = useState(false);
   const [flowError, setFlowError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isForgetConfirming, setForgetConfirming] = useState(false);
 
   const status = diagnostics?.status ?? "not_configured";
   const isConfigured = isCloudConfigured();
   const canUseCloud = isConfigured && !isDevOverride;
   const hasCloudHousehold = Boolean(householdId);
+  const canForgetSelectedCloudHousehold = Boolean(selectedHouseholdId) && !isDevOverride;
   const tone = status === "active" ? "emerald" : status === "unreachable" ? "rose" : "amber";
   const statusLabels: Record<CloudDiagnosticsStatus, string> = {
     active: t("cloudSyncActive"),
@@ -197,6 +211,7 @@ export function CloudStatusSettings() {
 
   function startActivation() {
     setActivating(true);
+    setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(null);
   }
@@ -211,8 +226,21 @@ export function CloudStatusSettings() {
     refreshHouseholdId();
     setLocalOnly(true);
     setActivating(false);
+    setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(null);
+  }
+
+  function forgetCloudHomeOnThisDevice() {
+    forgetSelectedCloudHouseholdOnThisDevice();
+    enableLocalOnlyMode();
+    refreshHouseholdId();
+    setLocalOnly(true);
+    setActivating(false);
+    setForgetConfirming(false);
+    setFlowError(null);
+    setSuccessMessage(null);
+    void refresh();
   }
 
   function finishWithHousehold(nextHouseholdId: string, message = copy.createSuccess) {
@@ -220,6 +248,7 @@ export function CloudStatusSettings() {
     refreshHouseholdId();
     setLocalOnly(false);
     setActivating(false);
+    setForgetConfirming(false);
     setFlowError(null);
     setSuccessMessage(message);
     void refresh();
@@ -353,6 +382,31 @@ export function CloudStatusSettings() {
 
             {flowError ? <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-950">{flowError}</p> : null}
           </div>
+        ) : null}
+
+        {canForgetSelectedCloudHousehold ? (
+          <section className="rounded-[1.7rem] border border-stone-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{t("deviceStartViewTitle")}</p>
+            <h3 className="mt-1 text-lg font-black tracking-tight text-stone-950">{copy.forgetCloudHomeTitle}</h3>
+            <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.forgetCloudHomeBody}</p>
+            {isForgetConfirming ? (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-bold leading-6 text-amber-950">{copy.forgetCloudHomeConfirm}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm" onClick={forgetCloudHomeOnThisDevice} type="button">
+                    {copy.forgetCloudHome}
+                  </button>
+                  <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800 shadow-sm" onClick={() => setForgetConfirming(false)} type="button">
+                    {copy.cancel}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button className="pressable mt-4 min-h-11 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-950 shadow-sm" onClick={() => setForgetConfirming(true)} type="button">
+                {copy.forgetCloudHome}
+              </button>
+            )}
+          </section>
         ) : null}
 
         <dl className="grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
