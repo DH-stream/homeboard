@@ -122,8 +122,16 @@ button:disabled {
   color: rgb(20, 83, 45);
   font-size: 0.95rem;
   font-weight: 950;
+  opacity: 0;
   pointer-events: none;
   box-shadow: 0 18px 55px rgba(84, 59, 34, 0.18);
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 260ms var(--ease-out);
+}
+
+.action-toast--visible {
+  opacity: 1;
 }
 
 .action-toast--fixed {
@@ -132,8 +140,11 @@ button:disabled {
   left: 50%;
   bottom: max(1.25rem, env(safe-area-inset-bottom));
   max-width: min(calc(100vw - 2rem), 26rem);
-  transform: translateX(-50%);
-  animation: action-toast-in 220ms var(--ease-out) both;
+  transform: translateX(-50%) translateY(0.5rem) scale(0.96);
+}
+
+.action-toast--fixed.action-toast--visible {
+  transform: translateX(-50%) translateY(0) scale(1);
 }
 
 .action-toast--inline {
@@ -141,9 +152,33 @@ button:disabled {
   display: flex;
   width: fit-content;
   max-width: 100%;
-  margin-bottom: 1rem;
+  max-height: 0;
+  min-height: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  border-width: 0;
+  padding-bottom: 0;
+  padding-top: 0;
+  transform: translateY(0.35rem) scale(0.98);
   transform-origin: 0% 50%;
-  animation: action-toast-inline-in 220ms var(--ease-out) both;
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 260ms var(--ease-out),
+    margin-bottom 260ms var(--ease-out),
+    max-height 260ms var(--ease-out),
+    min-height 260ms var(--ease-out),
+    padding-bottom 260ms var(--ease-out),
+    padding-top 260ms var(--ease-out);
+}
+
+.action-toast--inline.action-toast--visible {
+  max-height: 4rem;
+  min-height: 3rem;
+  margin-bottom: 1rem;
+  border-width: 1px;
+  padding-bottom: 0.65rem;
+  padding-top: 0.65rem;
+  transform: translateY(0) scale(1);
 }
 
 .action-toast--success {
@@ -248,28 +283,6 @@ button:disabled {
 @keyframes save-spinner-turn {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@keyframes action-toast-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(0.5rem) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-}
-
-@keyframes action-toast-inline-in {
-  from {
-    opacity: 0;
-    transform: translateY(-0.25rem) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
