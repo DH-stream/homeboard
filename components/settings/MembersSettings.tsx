@@ -29,6 +29,7 @@ const copy: Record<Language, Record<string, string>> = {
     updateError: "Could not save member changes.",
     lastAdultError: "At least one adult must remain in this home.",
     plannedAdultInvite: "Adult account linking/invite for additional grown-ups is planned next.",
+    keepAdultHint: "This person is currently the only adult in this home.",
   },
   sv: {
     add: "Lägg till medlem",
@@ -47,6 +48,7 @@ const copy: Record<Language, Record<string, string>> = {
     updateError: "Kunde inte spara ändringen.",
     lastAdultError: "Det måste finnas minst en vuxen i hemmet.",
     plannedAdultInvite: "Koppling/inbjudan för fler vuxna konton planeras härnäst.",
+    keepAdultHint: "Den här personen är just nu den enda vuxna i hemmet.",
   },
 };
 
@@ -148,8 +150,9 @@ export function MembersSettings() {
                       <div className="grid grid-cols-2 gap-2">
                         <select className="min-h-10 rounded-xl border border-stone-200 px-3 font-semibold" onChange={(e) => setEditingRole(e.target.value as "adult" | "child")} value={editingRole}>
                           <option value="adult">{t.adult}</option>
-                          <option value="child">{t.child}</option>
+                          <option disabled={member.role === "adult" && adultCount <= 1} value="child">{t.child}</option>
                         </select>
+                        {member.role === "adult" && adultCount <= 1 ? <p className="text-xs font-bold text-stone-500">{t.keepAdultHint}</p> : null}
                         <div className="flex items-center gap-2">
                           {colors.map((swatch) => (
                             <button aria-label={swatch} className={`size-7 rounded-full border-2 ${editingColor === swatch ? "border-stone-900" : "border-transparent"}`} key={swatch} onClick={() => setEditingColor(swatch)} style={{ backgroundColor: swatch }} type="button" />
