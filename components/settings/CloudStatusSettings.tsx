@@ -175,7 +175,6 @@ export function CloudStatusSettings() {
   const [isLoadingHouseholds, setLoadingHouseholds] = useState(false);
   const [isCreatingHousehold, setCreatingHousehold] = useState(false);
   const [flowError, setFlowError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isForgetConfirming, setForgetConfirming] = useState(false);
   const [isCloudActivationCelebrating, setCloudActivationCelebrating] = useState(false);
   const [cloudActivationStage, setCloudActivationStage] = useState(0);
@@ -258,7 +257,6 @@ export function CloudStatusSettings() {
     setActivating(true);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(null);
     setCloudActivationCelebrating(false);
     setCloudActivationStage(0);
   }
@@ -275,7 +273,6 @@ export function CloudStatusSettings() {
     setActivating(false);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(null);
     setCloudActivationCelebrating(false);
     setCloudActivationStage(0);
   }
@@ -288,20 +285,18 @@ export function CloudStatusSettings() {
     setActivating(false);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(null);
     setCloudActivationCelebrating(false);
     setCloudActivationStage(0);
     void refresh();
   }
 
-  function finishWithHousehold(nextHouseholdId: string, message = copy.createSuccess) {
+  function finishWithHousehold(nextHouseholdId: string) {
     saveSelectedHouseholdId(nextHouseholdId);
     refreshHouseholdId();
     setLocalOnly(false);
     setActivating(false);
     setForgetConfirming(false);
     setFlowError(null);
-    setSuccessMessage(message);
     setCloudActivationStage(0);
     setCloudActivationCelebrating(true);
     void refresh();
@@ -347,7 +342,8 @@ export function CloudStatusSettings() {
       <div className="space-y-4">
         <p>{t("cloudStatusCopy")}</p>
 
-        <div className={`cloud-mode-card ${isCloudActivationCelebrating ? `cloud-mode-card--celebrating cloud-mode-card--stage-${cloudActivationStage}` : hasCloudHousehold ? "cloud-mode-card--active" : "cloud-mode-card--local"}`}>
+        {(!hasCloudHousehold || isCloudActivationCelebrating) ? (
+        <div className={`cloud-mode-card ${isCloudActivationCelebrating ? `cloud-mode-card--celebrating cloud-mode-card--stage-${cloudActivationStage}` : "cloud-mode-card--local"}`}>
           <div className="cloud-mode-card__shine" />
           <div className="relative flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -382,8 +378,8 @@ export function CloudStatusSettings() {
             </button>
           ) : null}
         </div>
+        ) : null}
 
-        {successMessage ? <p className={`cloud-success-copy ${isCloudActivationCelebrating ? "cloud-success-copy--celebrating" : ""}`}>{successMessage}</p> : null}
 
         {isActivating ? (
           <div className="rounded-[1.7rem] border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
@@ -457,32 +453,10 @@ export function CloudStatusSettings() {
           </div>
         ) : null}
 
-        {canForgetSelectedCloudHousehold ? (
-          <section className="rounded-[1.7rem] border border-stone-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.forgetCloudHomeEyebrow}</p>
-            <h3 className="mt-1 text-lg font-black tracking-tight text-stone-950">{copy.forgetCloudHomeTitle}</h3>
-            <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.forgetCloudHomeBody}</p>
-            {isForgetConfirming ? (
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-bold leading-6 text-amber-950">{copy.forgetCloudHomeConfirm}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm" onClick={forgetCloudHomeOnThisDevice} type="button">
-                    {copy.forgetCloudHome}
-                  </button>
-                  <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800 shadow-sm" onClick={() => setForgetConfirming(false)} type="button">
-                    {copy.cancel}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button className="pressable mt-4 min-h-11 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-950 shadow-sm" onClick={() => setForgetConfirming(true)} type="button">
-                {copy.forgetCloudHome}
-              </button>
-            )}
-          </section>
-        ) : null}
-
-        <dl className="grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
+        
+        <details className="rounded-2xl border border-stone-200/80 bg-white/75 p-4 text-sm">
+          <summary className="cursor-pointer font-black text-stone-800">{t("technicalInfo")}</summary>
+          <dl className="mt-3 grid gap-2 rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
           <div className="flex items-center justify-between gap-3">
             <dt className="font-bold text-stone-500">{t("cloudSync")}</dt>
             <dd className="text-right font-black text-stone-900">
@@ -510,27 +484,12 @@ export function CloudStatusSettings() {
             <dd className="text-right font-black text-stone-900">{checkedAt}</dd>
           </div>
         </dl>
+        </details>
         {status === "unreachable" ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-950">{t("cloudUnavailableBody")}</p> : null}
         <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-black text-stone-800 shadow-sm" disabled={isLoading} onClick={refresh} type="button">
           {t("refreshCloudStatus")}
         </button>
-        <details className="rounded-2xl border border-stone-200/80 bg-white/75 p-4 text-sm">
-          <summary className="cursor-pointer font-black text-stone-800">{t("technicalInfo")}</summary>
-          <dl className="mt-3 grid gap-2">
-            <div className="flex justify-between gap-3">
-              <dt className="font-bold text-stone-500">{t("projectConfigured")}</dt>
-              <dd className="text-right font-black text-stone-900">{diagnostics?.isProjectConfigured ? t("yes") : t("no")}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="font-bold text-stone-500">{t("householdIdMasked")}</dt>
-              <dd className="text-right font-mono text-xs font-black text-stone-900">{maskId(diagnostics?.householdId ?? householdId)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="font-bold text-stone-500">{t("repositoryMode")}</dt>
-              <dd className="text-right font-black text-stone-900">{diagnostics?.repositoryMode === "cloud" ? t("cloud") : t("local")}</dd>
-            </div>
-          </dl>
-        </details>
+        
       </div>
     </SettingsCard>
   );

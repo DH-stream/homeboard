@@ -62,6 +62,7 @@ export interface HouseholdRepository {
   getHousehold(householdId: string | null): Promise<Household | null>;
   listHouseholds(): Promise<Household[]>;
   createHouseholdMembers(householdId: string, members: CreateHouseholdMemberInput[]): Promise<HouseholdMember[]>;
+  listHouseholdMembers(householdId: string): Promise<HouseholdMember[]>;
 }
 
 export class SupabaseHouseholdRepository implements HouseholdRepository {
@@ -115,6 +116,19 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
       .from("household_members")
       .insert(rows)
       .select("id, household_id, user_id, display_name, color, avatar_url, role, created_at, updated_at");
+
+    if (error) throw error;
+    return ((data ?? []) as HouseholdMemberRow[]).map(mapHouseholdMember);
+  }
+
+  async listHouseholdMembers(householdId: string) {
+    if (!this.client || !householdId) return [];
+
+    const { data, error } = await this.client
+      .from("household_members")
+      .select("id, household_id, user_id, display_name, color, avatar_url, role, created_at, updated_at")
+      .eq("household_id", householdId)
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
     return ((data ?? []) as HouseholdMemberRow[]).map(mapHouseholdMember);

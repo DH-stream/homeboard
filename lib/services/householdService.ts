@@ -14,5 +14,8 @@ export function createHouseholdService(repository: HouseholdRepository) {
     createHouseholdMembers(householdId: string, members: CreateHouseholdMemberInput[]) {
       return repository.createHouseholdMembers(householdId, members);
     },
+    listHouseholdMembers(householdId: string) {
+      return repository.listHouseholdMembers(householdId);
+    },
   };
 }
