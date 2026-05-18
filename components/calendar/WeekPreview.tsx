@@ -1,21 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { getLocale, useLanguage, type Language } from "@/lib/i18n";
 import { getWeekDays, toLocalDateKey } from "@/lib/utils/date";
 import type { CalendarEvent } from "@/types";
 
-const wallCopy: Record<Language, { previousWeek: string; nextWeek: string; noEvents: string; today: string }> = {
+const wallCopy: Record<Language, { noEvents: string; today: string }> = {
   en: {
-    previousWeek: "Previous week",
-    nextWeek: "Next week",
-    noEvents: "No events this day.",
+    noEvents: "No events",
     today: "Today",
   },
   sv: {
-    previousWeek: "Förra veckan",
-    nextWeek: "Nästa vecka",
-    noEvents: "Inga händelser den här dagen.",
+    noEvents: "Inget",
     today: "Idag",
   },
 };
@@ -40,40 +36,39 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
   const locale = getLocale(language);
   const isWall = variant === "wall";
   const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
+  const touchStartX = useRef<number | null>(null);
   const days = useMemo(() => (isWall ? getWeekDaysFromOffset(weekOffset) : getWeekDays()), [isWall, weekOffset]);
   const today = toLocalDateKey();
-  const [selectedDayKey, setSelectedDayKey] = useState(today);
 
-  useEffect(() => {
+  function changeWeek(direction: -1 | 1) {
+    setSelectedDayKey(null);
+    setWeekOffset((current) => current + direction);
+  }
+
+  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
     if (!isWall) return;
-    const dayKeys = days.map(toLocalDateKey);
-    if (dayKeys.includes(today)) {
-      setSelectedDayKey(today);
-      return;
-    }
-    setSelectedDayKey(dayKeys[0] ?? today);
-  }, [days, isWall, today]);
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  }
 
-  const selectedEvents = events.filter((event) => toLocalDateKey(event.startAt) === selectedDayKey);
-  const selectedDay = days.find((day) => toLocalDateKey(day) === selectedDayKey) ?? days[0];
+  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    if (!isWall || touchStartX.current === null) return;
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+    const deltaX = endX - touchStartX.current;
+    touchStartX.current = null;
+
+    if (Math.abs(deltaX) < 48) return;
+    changeWeek(deltaX > 0 ? -1 : 1);
+  }
 
   return (
-    <section className={`surface-card rounded-[2rem] ${isWall ? "p-5" : "p-4"}`}>
+    <section className={`surface-card rounded-[2rem] ${isWall ? "p-5" : "p-4"}`} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className={`font-black tracking-tight text-stone-950 ${isWall ? "text-2xl" : "text-xl"}`}>{t("weekPreview")}</h2>
-        {isWall ? (
-          <div className="flex items-center gap-2">
-            <button className="pressable h-10 w-10 rounded-full bg-white text-lg font-black text-stone-700 shadow-sm ring-1 ring-black/5" onClick={() => setWeekOffset((current) => current - 1)} type="button" aria-label={copy.previousWeek}>
-              ←
-            </button>
-            <button className="pressable h-10 w-10 rounded-full bg-white text-lg font-black text-stone-700 shadow-sm ring-1 ring-black/5" onClick={() => setWeekOffset((current) => current + 1)} type="button" aria-label={copy.nextWeek}>
-              →
-            </button>
-          </div>
-        ) : null}
+        {isWall ? <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-400">Swipe</p> : null}
       </div>
 
-      <div className={`grid grid-cols-7 ${isWall ? "gap-2" : "gap-2"}`}>
+      <div className={`transition-all duration-300 ease-[var(--ease-out)] ${isWall ? "grid grid-flow-col auto-cols-[minmax(5.2rem,1fr)] gap-2 overflow-hidden" : "grid grid-cols-7 gap-2"}`}>
         {days.map((day) => {
           const key = toLocalDateKey(day);
           const dayEvents = events.filter((event) => toLocalDateKey(event.startAt) === key);
@@ -81,35 +76,31 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
           const isSelected = isWall && selectedDayKey === key;
           const visibleEventCount = isWall ? 1 : 2;
 
-          if (isWall) {
-            return (
-              <button
-                aria-pressed={isSelected}
-                className={`pressable min-h-28 rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] ${isSelected ? "bg-stone-950 text-white shadow-xl shadow-stone-950/15" : isToday ? "bg-amber-100 text-stone-950" : "bg-white/80 text-stone-800"}`}
-                key={key}
-                onClick={() => setSelectedDayKey((current) => (current === key ? key : key))}
-                type="button"
-              >
-                <p className={`text-xs font-black uppercase tracking-[0.12em] ${isSelected ? "text-amber-200" : "text-stone-400"}`}>
-                  {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(day)}
-                </p>
-                <div className="mt-1 flex items-baseline justify-between gap-1">
-                  <p className="text-3xl font-black">{day.getDate()}</p>
-                  {isToday ? <span className={`text-[0.65rem] font-black uppercase tracking-[0.12em] ${isSelected ? "text-amber-200" : "text-amber-700"}`}>{copy.today}</span> : null}
-                </div>
-                <div className="mt-2 space-y-1">
-                  {dayEvents.slice(0, visibleEventCount).map((event) => (
-                    <p key={event.id} className={`rounded-xl px-2 py-1 text-xs font-black leading-snug ${isSelected ? "bg-white/15" : "bg-stone-100"}`}>
-                      {event.title}
-                    </p>
-                  ))}
-                  {dayEvents.length > visibleEventCount ? <p className="text-xs font-black opacity-70">+{dayEvents.length - visibleEventCount} {t("more")}</p> : null}
-                </div>
-              </button>
-            );
-          }
-
-          return (
+          const dayButton = isWall ? (
+            <button
+              aria-pressed={isSelected}
+              className={`pressable min-h-28 rounded-2xl p-2 text-left transition-[background-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out)] ${isSelected ? "bg-stone-950 text-white shadow-xl shadow-stone-950/15" : isToday ? "bg-stone-950 text-white" : "bg-white/80 text-stone-800"}`}
+              key={key}
+              onClick={() => setSelectedDayKey((current) => (current === key ? null : key))}
+              type="button"
+            >
+              <p className={`text-xs font-black uppercase tracking-[0.12em] ${isToday || isSelected ? "text-amber-200" : "text-stone-400"}`}>
+                {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(day)}
+              </p>
+              <div className="mt-1 flex items-baseline justify-between gap-1">
+                <p className="text-3xl font-black">{day.getDate()}</p>
+                {isToday ? <span className="text-[0.65rem] font-black uppercase tracking-[0.12em] text-amber-200">{copy.today}</span> : null}
+              </div>
+              <div className="mt-2 space-y-1">
+                {dayEvents.slice(0, visibleEventCount).map((event) => (
+                  <p key={event.id} className={`truncate rounded-full px-2 py-1 text-xs font-black ${isToday || isSelected ? "bg-white/15" : "bg-stone-100"}`}>
+                    {event.title}
+                  </p>
+                ))}
+                {dayEvents.length > visibleEventCount ? <p className="text-xs font-black opacity-70">+{dayEvents.length - visibleEventCount} {t("more")}</p> : null}
+              </div>
+            </button>
+          ) : (
             <div key={key} className={`min-h-28 rounded-2xl p-3 transition-[background-color,color,box-shadow] duration-200 ease-[var(--ease-out)] ${isToday ? "bg-stone-950 text-white" : "bg-white/80 text-stone-800"}`}>
               <p className={`text-xs font-black uppercase tracking-[0.18em] ${isToday ? "text-amber-200" : "text-stone-400"}`}>
                 {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(day)}
@@ -125,28 +116,41 @@ export function WeekPreview({ events, variant = "compact" }: { events: CalendarE
               </div>
             </div>
           );
+
+          if (!isWall) return dayButton;
+
+          const detailsOpen = selectedDayKey === key;
+          const selectedEvents = dayEvents;
+
+          return (
+            <div className={`grid gap-2 transition-[grid-template-columns] duration-300 ease-[var(--ease-out)] ${detailsOpen ? "grid-cols-[minmax(5.2rem,0.85fr)_minmax(11rem,1.45fr)]" : "grid-cols-[minmax(5.2rem,1fr)]"}`} key={key}>
+              {dayButton}
+              {detailsOpen ? (
+                <div className="min-h-28 rounded-2xl border border-stone-200 bg-white/90 p-3 shadow-sm">
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-stone-400">
+                    {new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric" }).format(day)}
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {selectedEvents.length ? (
+                      selectedEvents.map((event) => {
+                        const time = formatEventTime(event, locale);
+                        return (
+                          <div className="rounded-xl bg-stone-100 px-3 py-2" key={event.id}>
+                            <p className="text-sm font-black leading-snug text-stone-950">{event.title}</p>
+                            {time ? <p className="mt-0.5 text-xs font-bold text-stone-500">{time}</p> : null}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="rounded-xl bg-stone-100 px-3 py-2 text-sm font-bold text-stone-500">{copy.noEvents}</p>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          );
         })}
       </div>
-
-      {isWall ? (
-        <div className="mt-4 rounded-[1.5rem] border border-stone-200 bg-white/85 p-4 shadow-sm">
-          <p className="text-sm font-black uppercase tracking-[0.14em] text-stone-400">
-            {new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long" }).format(selectedDay)}
-          </p>
-          <div className="mt-3 space-y-2">
-            {selectedEvents.length ? (
-              selectedEvents.map((event) => (
-                <div className="rounded-2xl bg-stone-100 px-4 py-3" key={event.id}>
-                  <p className="text-base font-black leading-snug text-stone-950">{event.title}</p>
-                  {formatEventTime(event, locale) ? <p className="mt-1 text-sm font-bold text-stone-500">{formatEventTime(event, locale)}</p> : null}
-                </div>
-              ))
-            ) : (
-              <p className="rounded-2xl bg-stone-100 px-4 py-3 text-sm font-bold text-stone-500">{copy.noEvents}</p>
-            )}
-          </div>
-        </div>
-      ) : null}
     </section>
   );
 }
