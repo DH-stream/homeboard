@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calendarRepository } from "@/lib/repositories/calendarRepository";
 import { createCalendarService } from "@/lib/services/calendarService";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
@@ -54,11 +54,36 @@ function createMockCalendarEvents(): CalendarEvent[] {
   }));
 }
 
+const AUTO_SYNC_KEY = "homeboard_calendar_autosync";
+
 export function useCalendarEvents() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { householdId } = useResolvedHouseholdId();
+  const isAutoSyncingRef = useRef(false);
+
+
+
+  const autoSyncStaleSources = useCallback(async () => {
+    if (!householdId || isAutoSyncingRef.current) return;
+    const now = Date.now();
+    const cacheKey = `${AUTO_SYNC_KEY}:${householdId}`;
+    const lastAttempt = Number(globalThis.localStorage?.getItem(cacheKey) ?? "0");
+    if (lastAttempt && now - lastAttempt < 5 * 60 * 1000) return;
+
+    isAutoSyncingRef.current = true;
+    try {
+      globalThis.localStorage?.setItem(cacheKey, String(now));
+      await fetch("/api/calendar/sync-stale", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ householdId }),
+      });
+    } finally {
+      isAutoSyncingRef.current = false;
+    }
+  }, [householdId]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -76,8 +101,10 @@ export function useCalendarEvents() {
   }, [householdId]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    autoSyncStaleSources().finally(() => {
+      refresh();
+    });
+  }, [autoSyncStaleSources, refresh]);
 
   const todayEvents = useMemo(() => {
     const today = toLocalDateKey();
