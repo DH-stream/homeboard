@@ -52,6 +52,30 @@ Then HomeBoard behaves as local/device-only unless you also provide a complete s
 
 After configuring an override or using the built-in cloud, open HomeBoard and create or select a home in the in-app setup screen. Then open `/settings` and check **Cloud status** / **Molnstatus**. It should show the home name, member count, task count, and calendar-event count. `NEXT_PUBLIC_HOMEBOARD_HOUSEHOLD_ID` remains available only for development shortcuts.
 
+## Supabase Auth redirect URLs
+
+Parent/grown-up auth sends email OTP and magic-link redirects back to the current app origin at `/settings`, for example:
+
+```text
+https://your-homeboard-domain.vercel.app/settings
+http://localhost:3000/settings
+```
+
+The Supabase project must allow those redirect targets. In Supabase, open **Authentication → URL Configuration** and configure:
+
+- **Site URL:** the primary production HomeBoard URL.
+- **Additional Redirect URLs:** localhost development, the production URL, and Vercel preview URLs.
+
+Recommended examples:
+
+```text
+http://localhost:3000/**
+https://your-homeboard-domain.vercel.app/**
+https://*.vercel.app/**
+```
+
+If a redirect URL is not allow-listed, Supabase can fall back to the configured Site URL. That often causes preview/production verification links to open `localhost` or another stale deployment URL.
+
 ## Calendar events today
 
 HomeBoard does **not** implement Google, Apple, Microsoft, or ICS provider login yet. Calendar provider connections and source creation are still manual/developer setup.
