@@ -9,6 +9,7 @@ import {
   type DeviceMode,
   type DeviceStartView,
 } from "@/lib/devicePreferences";
+import { setPendingFirstRunReveal, type FirstRunRevealRoute } from "@/lib/firstRunReveal";
 import { useLanguage } from "@/lib/i18n";
 
 const optionIcons: Record<DeviceMode, string> = {
@@ -21,6 +22,12 @@ const optionAccents: Record<DeviceMode, string> = {
   wall: "setup-option-card--wall",
   mobile: "setup-option-card--mobile",
   admin: "setup-option-card--admin",
+};
+
+const revealRouteByMode: Record<DeviceMode, FirstRunRevealRoute> = {
+  wall: "wall",
+  mobile: "app",
+  admin: "settings",
 };
 
 function getDeviceModeCopy(mode: DeviceMode, t: ReturnType<typeof useLanguage>["t"]) {
@@ -75,6 +82,8 @@ export default function HomePage() {
   const { t } = useLanguage();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
+  const [isSetupExiting, setIsSetupExiting] = useState(false);
+  const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -90,6 +99,7 @@ export default function HomePage() {
 
   useEffect(() => {
     return () => {
+      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
       if (navigationTimeoutRef.current) clearTimeout(navigationTimeoutRef.current);
     };
   }, []);
@@ -98,12 +108,17 @@ export default function HomePage() {
     if (selectedStartView) return;
 
     saveDeviceStartView(startView);
+    setPendingFirstRunReveal(revealRouteByMode[startView.mode]);
     setSelectedStartView(startView);
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    exitTimeoutRef.current = setTimeout(() => {
+      setIsSetupExiting(true);
+    }, prefersReducedMotion ? 60 : 520);
+
     navigationTimeoutRef.current = setTimeout(() => {
       router.push(startView.route);
-    }, prefersReducedMotion ? 180 : 1250);
+    }, prefersReducedMotion ? 180 : 1450);
   };
 
   if (isCheckingStartView) {
@@ -111,7 +126,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className={`setup-stage ${selectedStartView ? "setup-stage--leaving" : ""} relative isolate min-h-screen overflow-hidden px-3 py-4 sm:px-6 sm:py-10`}>
+    <main className={`setup-stage ${selectedStartView ? "setup-stage--leaving" : ""} ${isSetupExiting ? "setup-stage--exiting" : ""} relative isolate min-h-screen overflow-hidden px-3 py-4 sm:px-6 sm:py-10`}>
       <SetupSky />
 
       <section className="setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8">

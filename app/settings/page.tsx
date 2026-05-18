@@ -1,19 +1,26 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
+import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
   const { language, languageName, setLanguage, t } = useLanguage();
+  const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("settings"));
+
+  useEffect(() => {
+    consumePendingFirstRunReveal("settings");
+  }, []);
 
   return (
-    <AppShell eyebrow={t("settingsEyebrow")} title={t("settings")}>
-      <div className="grid gap-4 md:grid-cols-2">
+    <AppShell eyebrow={t("settingsEyebrow")} revealActive={isFirstRunRevealActive} title={t("settings")}>
+      <div className={`grid gap-4 md:grid-cols-2 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
         <SettingsCard status={t("localPreview")} title={t("language")}>
           <div className="space-y-3">
             <p>{t("languageCopy")}</p>

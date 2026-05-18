@@ -10,6 +10,7 @@ import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { TaskList } from "@/components/tasks/TaskList";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
 import { useTasks } from "@/lib/hooks/useTasks";
@@ -41,12 +42,17 @@ export default function MobileAppPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [memberFilter, setMemberFilter] = useState<string | null>(null);
   const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
+  const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("app"));
   const [pendingFutureTask, setPendingFutureTask] = useState<TaskInstance | null>(null);
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 60);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    consumePendingFirstRunReveal("app");
   }, []);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
@@ -109,9 +115,9 @@ export default function MobileAppPage() {
   };
 
   return (
-    <AppShell eyebrow={t("appEyebrow")} title={t("appTitle")}>
+    <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
       <HouseholdSetupGate>
-      <section className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+      <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
           <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-stone-400 sm:text-xs sm:tracking-[0.16em]">{t("tasksLabel")}</p>
@@ -126,11 +132,13 @@ export default function MobileAppPage() {
         </Link>
       </section>
 
-      <AddTaskForm members={members} onCreate={createTask} />
+      <div className={isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-3" : undefined}>
+        <AddTaskForm members={members} onCreate={createTask} />
+      </div>
 
       {taskError ? <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{t("tasksSyncError")}</p> : null}
 
-      <section className="surface-card mt-5 rounded-[2rem] p-4">
+      <section className={`surface-card mt-5 rounded-[2rem] p-4 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-4" : ""}`}>
         <div className="mb-3 min-w-0">
           <StatusChip tone={taskMode === "supabase" ? "emerald" : "amber"}>{taskStorageLabel}</StatusChip>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-stone-950">{t("todaysTasks")}</h2>
@@ -154,7 +162,7 @@ export default function MobileAppPage() {
         />
       </section>
 
-      <section className="surface-card mt-5 rounded-[2rem] p-4">
+      <section className={`surface-card mt-5 rounded-[2rem] p-4 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-7" : ""}`}>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-black tracking-tight text-stone-950">{t("upcoming")}</h2>
           <StatusChip tone={taskMode === "supabase" ? "emerald" : "amber"}>{taskStorageLabel}</StatusChip>
@@ -167,7 +175,7 @@ export default function MobileAppPage() {
         <p className="mt-3 text-xs font-bold leading-5 text-stone-500">{taskStorageNote}</p>
       </section>
 
-      <div className="mt-5">
+      <div className={`mt-5 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-8" : ""}`}>
         <TodayAgenda compact events={todayEvents} />
       </div>
 
