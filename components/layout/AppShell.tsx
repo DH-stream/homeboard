@@ -15,11 +15,12 @@ function getSettingsBackHref() {
 }
 
 export function AppShell({ children, title, eyebrow, revealActive = false }: { children: ReactNode; title: string; eyebrow?: string; revealActive?: boolean }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const pathname = usePathname();
   const showDebugNavigation = shouldShowDebugNavigation();
   const isSettingsPage = pathname === "/settings";
   const settingsBackHref = isSettingsPage ? getSettingsBackHref() : "/settings";
+  const backLabel = language === "sv" ? "Tillbaka" : "Back";
 
   return (
     <main className={`mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-5 safe-bottom sm:px-6 ${revealActive ? "first-run-reveal first-run-reveal--active app-first-run-reveal" : ""}`}>
@@ -39,7 +40,7 @@ export function AppShell({ children, title, eyebrow, revealActive = false }: { c
           </nav>
         ) : isSettingsPage ? (
           <Link className="pressable min-h-11 rounded-full bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-white hover:text-stone-950" href={settingsBackHref}>
-            ← {t("back")}
+            ← {backLabel}
           </Link>
         ) : (
           <Link className="pressable min-h-11 rounded-full bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-white hover:text-stone-950" href="/settings">
