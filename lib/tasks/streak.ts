@@ -15,10 +15,11 @@ export function calculateHouseholdStreak(tasks: TaskInstance[], now = new Date()
   const dayStats = new Map<string, { total: number; completed: number }>();
 
   tasks.forEach((task) => {
-    const current = dayStats.get(task.dueDate) ?? { total: 0, completed: 0 };
+    const dayKey = toLocalDateKey(new Date(task.dueDate));
+    const current = dayStats.get(dayKey) ?? { total: 0, completed: 0 };
     current.total += 1;
     if (task.completedAt) current.completed += 1;
-    dayStats.set(task.dueDate, current);
+    dayStats.set(dayKey, current);
   });
 
   let streak = 0;
