@@ -41,12 +41,51 @@ The intended setup path is:
 
 Security-sensitive pairing work should be implemented through scoped API routes and clear RLS/server-side rules. QR generation, pairing claims, session expiry, and device management should not rely on public browser writes alone.
 
-
 ## Per-device start views
 
 HomeBoard should remember how each physical screen is used. A wall-mounted iPad or tablet should behave like an appliance and open `/wall` directly, while a family phone can open `/app` and an admin laptop can open `/settings`. This start view is a per-device preference, not a household-global setting.
 
 The current implementation stores `homeboard.deviceMode.v1` and `homeboard.defaultRoute.v1` in browser `localStorage`. Until QR/device pairing exists, that local preference controls the root route. First-run setup is intentionally a special one-time HomeBoard experience, including original in-project SVG clouds inspired by a soft rounded cloud style. Later, paired wall devices may keep a local device id and resolve a durable `devices.defaultView` value from Supabase.
+
+## Unified setup and routing direction
+
+Wall, mobile, and adult/admin should not drift into three separate setup systems. HomeBoard should have one shared setup/onboarding model where device mode changes copy, permissions, and the final landing route, but not the underlying setup logic.
+
+The intended routing model is:
+
+- `/` is the device entry point. It resolves an existing per-device start view, or starts the shared first-run setup flow.
+- `/wall` is the wall appliance view for shared household display and one-touch task completion.
+- `/app` is the mobile family view for lighter task/calendar use.
+- `/settings` is the adult/admin surface. Adult view should effectively be the mobile view plus full settings/admin access, not a completely separate product path.
+- `/setup/adult` and future setup routes should participate in the same setup state machine as wall/mobile setup rather than becoming their own parallel onboarding world.
+
+The shared setup state should cover:
+
+- first-run device mode selection: wall, mobile, or adult/admin;
+- auth state: unauthenticated, authenticated, adult verified;
+- household state: no home, create home, join/select home, linked home;
+- device registration state: local device id, pending pairing, paired device, selected default route;
+- access level: wall/shared, mobile lightweight, adult/admin;
+- local-only fallback without claiming real security;
+- back/cancel/recovery paths that do not leave half-configured local/cloud state.
+
+Product rules:
+
+- A signed-in adult user should connect to their household once, then route into the correct surface based on device mode and access.
+- Adult access is based on the authenticated user being linked to the household as an adult member, not simply on having chosen the adult device card.
+- Wall and mobile should use the same household/device resolution foundation as adult/admin.
+- Resetting the device choice should only reset this device's preferred start route; it must not log the user out or delete household data.
+- Language selection in setup should be available before choosing a screen mode and should use the same i18n provider as the rest of the app.
+- The adult-lock helper text should not be shown permanently in the initial chooser. It should appear when the adult view is attempted or inside the adult locked step/panel.
+
+Acceptance for later cleanup:
+
+- New user setup feels like one coherent HomeBoard flow regardless of whether the user starts from wall, mobile, or adult.
+- Existing-home join/login uses the same household-linking logic across modes.
+- Device setup writes/resolves the same underlying device and household state for wall, mobile, and adult.
+- Adult view routes to the same core app surface as mobile, with full settings/admin enabled.
+- Wall/mobile keep lighter settings, but do not fork the core setup/auth/household state logic.
+- Local-only mode remains supported and honest about its limitations.
 
 ## Task persistence and offline sync direction
 
@@ -66,7 +105,6 @@ HomeBoard should support two operating modes with honest security expectations:
 
 - **Supabase sync mode:** durable admin permissions should eventually come from Supabase Auth plus `household_members.role`. Adult members can manage settings, members, recurring tasks, rewards, integrations, and device pairing. Child members can view tasks and complete allowed tasks, but should not manage household/admin settings. Full enforcement belongs in Auth/RLS/API policies later.
 - **Local-only mode:** there is no real account security. A local parent PIN can later act as a practical household UX guard for Settings/Admin and wall/kiosk unlock, but it must not be presented as cloud-grade security or a replacement for real auth.
-
 
 ## Device pairing and child access direction
 
