@@ -12,6 +12,7 @@ import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
 import { ActionToast } from "@/components/ui/ActionToast";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { isCloudConfigured } from "@/lib/cloud/config";
 import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
@@ -23,6 +24,7 @@ import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type Wall
 import { saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
+import { calculateHouseholdStreak, getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } from "@/lib/tasks/streak";
 import { shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
 import type { TaskInstance } from "@/types";
 
@@ -66,6 +68,26 @@ export default function WallPage() {
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
   }, [todayTasks]);
   const allVisibleTasksDone = todayTasks.length > 0 && filteredTodayTasks.length === 0;
+  const streak = useMemo(() => calculateHouseholdStreak(tasks, now), [now, tasks]);
+  const [showStreakIntro, setShowStreakIntro] = useState(false);
+
+  useEffect(() => {
+    if (!householdId || streak < 2) {
+      setShowStreakIntro(false);
+      return;
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const dateKey = getLocalDateKey(now);
+    if (hasSeenStreakFlameToday(householdId, dateKey)) return;
+
+    setShowStreakIntro(true);
+    markStreakFlameSeenToday(householdId, dateKey);
+    const timer = window.setTimeout(() => setShowStreakIntro(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [householdId, now, streak]);
+
   const allDoneTitle = language === "sv" ? "Allt är klart för idag." : "Everything is done for today.";
   const allDoneBody = language === "sv" ? "Klara uppgifter finns kvar i mobilvyn under Klart." : "Completed tasks remain available in the mobile Done view.";
 
@@ -167,7 +189,8 @@ export default function WallPage() {
           </p>
         </div>
         <div className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""} ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-4" : ""}`}>
-          <p className="min-h-5 truncate text-sm font-bold uppercase tracking-[0.18em] text-amber-200">{completionFeedback?.message ?? t("todaysProgress")}</p>
+          <p className="min-h-5 text-sm font-bold uppercase tracking-[0.18em] text-amber-200 flex items-center justify-between gap-2"><span className="truncate">{completionFeedback?.message ?? t("todaysProgress")}</span>
+            <StreakFlameIndicator streak={streak} animateIntro={showStreakIntro} /></p>
           <p className="mt-2 text-5xl font-black">{stats.completed}/{stats.total}</p>
           <p className="mt-1 min-h-6 truncate font-semibold text-white/70">{t("progressComplete")} · {stats.remaining} {t("remaining")}</p>
         </div>

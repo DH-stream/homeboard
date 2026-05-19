@@ -1680,3 +1680,21 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .adult-auth-balloon { animation: none; opacity: 0.22; }
 }
+
+@keyframes streakFlameIntro {
+  0% { transform: scale(0.92); opacity: 0.9; box-shadow: 0 0 0 rgba(251, 146, 60, 0); }
+  28% { transform: scale(1.08); opacity: 1; box-shadow: 0 0 18px rgba(251, 146, 60, 0.34); }
+  56% { transform: scale(1); box-shadow: 0 0 10px rgba(245, 158, 11, 0.24); }
+  78% { transform: scale(1.02); box-shadow: 0 0 14px rgba(251, 146, 60, 0.2); }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 rgba(251, 146, 60, 0); }
+}
+
+.streak-flame-intro {
+  animation: streakFlameIntro 1.6s var(--ease-out);
+  transform-origin: center;
+  will-change: transform, box-shadow, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-flame-intro { animation: none; }
+}

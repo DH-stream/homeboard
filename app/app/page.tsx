@@ -10,13 +10,16 @@ import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { TaskList } from "@/components/tasks/TaskList";
 import { ActionToast } from "@/components/ui/ActionToast";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
+import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { useLanguage } from "@/lib/i18n";
+import { calculateHouseholdStreak, getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } from "@/lib/tasks/streak";
 import { shouldShowInCompletedTasks, shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
 import { isFutureLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
@@ -36,6 +39,7 @@ function getFirstCreatedTaskId(created: unknown) {
 export default function MobileAppPage() {
   const { getCompletionEncouragement, language, t } = useLanguage();
   const { members } = useMembers();
+  const { householdId } = useResolvedHouseholdId();
   const { todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted, updateTask, error: taskError, mode: taskMode } = useTasks();
   const [filter, setFilter] = useState<Filter>("open");
@@ -59,6 +63,26 @@ export default function MobileAppPage() {
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const upcomingTasks = useMemo(() => tasks.filter((task) => !isRecurringTask(task) && isFutureLocalDay(task.dueDate)), [tasks]);
+  const streak = useMemo(() => calculateHouseholdStreak(tasks, now), [now, tasks]);
+  const [showStreakIntro, setShowStreakIntro] = useState(false);
+
+  useEffect(() => {
+    if (!householdId || streak < 2) {
+      setShowStreakIntro(false);
+      return;
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const dateKey = getLocalDateKey(now);
+    if (hasSeenStreakFlameToday(householdId, dateKey)) return;
+
+    setShowStreakIntro(true);
+    markStreakFlameSeenToday(householdId, dateKey);
+    const timer = window.setTimeout(() => setShowStreakIntro(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [householdId, now, streak]);
+
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
@@ -136,7 +160,8 @@ export default function MobileAppPage() {
         </div>
         <div className={`min-w-0 rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-3 text-center shadow-sm transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] sm:p-4 ${completionFeedback ? "shadow-emerald-200/80" : ""}`}>
           <p className="text-3xl font-black text-emerald-700">{stats.completed}</p>
-          <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-emerald-500 sm:text-xs sm:tracking-[0.16em]">{completionFeedback?.message ?? t("done")}</p>
+          <p className="min-h-4 text-[0.68rem] font-black uppercase tracking-[0.12em] text-emerald-500 sm:text-xs sm:tracking-[0.16em] flex items-center justify-center gap-2"><span className="truncate">{completionFeedback?.message ?? t("todaysProgress")}</span>
+            <StreakFlameIndicator streak={streak} animateIntro={showStreakIntro} /></p>
         </div>
         {showDebugNavigation ? (
           <Link className="pressable min-w-0 rounded-[1.5rem] bg-stone-950 p-3 text-center text-white shadow-sm sm:p-4" href="/wall">
