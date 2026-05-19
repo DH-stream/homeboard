@@ -11,6 +11,7 @@ type BalloonPosition = {
   top: string;
   left?: string;
   right?: string;
+  size: string;
 };
 
 const MAX_BALLOONS = 12;
@@ -18,18 +19,18 @@ const MIN_STREAK = 2;
 const STORAGE_PREFIX = "homeboard.streakBalloonsSeen.";
 
 const BALLOON_POSITIONS: BalloonPosition[] = [
-  { top: "10%", left: "10%" },
-  { top: "16%", right: "12%" },
-  { top: "30%", left: "6%" },
-  { top: "36%", right: "7%" },
-  { top: "8%", left: "38%" },
-  { top: "52%", right: "18%" },
-  { top: "58%", left: "24%" },
-  { top: "22%", left: "62%" },
-  { top: "46%", left: "44%" },
-  { top: "64%", right: "36%" },
-  { top: "70%", left: "8%" },
-  { top: "12%", right: "36%" },
+  { top: "4%", left: "-2%", size: "lg" },
+  { top: "10%", right: "-2%", size: "xl" },
+  { top: "26%", left: "-4%", size: "md" },
+  { top: "30%", right: "4%", size: "lg" },
+  { top: "2%", left: "32%", size: "sm" },
+  { top: "48%", right: "10%", size: "xl" },
+  { top: "56%", left: "18%", size: "lg" },
+  { top: "20%", left: "56%", size: "md" },
+  { top: "44%", left: "38%", size: "md" },
+  { top: "64%", right: "28%", size: "lg" },
+  { top: "68%", left: "-1%", size: "xl" },
+  { top: "10%", right: "26%", size: "sm" },
 ];
 
 const BALLOON_TONES = [
@@ -83,10 +84,12 @@ export function StreakBalloons({ householdId, streak }: StreakBalloonsProps) {
           <div
             className={`streak-balloon ${shouldEnter ? "streak-balloon--enter" : ""}`}
             key={`streak-balloon-${index}`}
+            data-size={position.size}
             style={{
               ...position,
               ["--balloon-delay" as string]: `${index * 40}ms`,
               ["--balloon-color" as string]: tone,
+              ["--balloon-size" as string]: position.size,
             }}
           >
             <span className="streak-balloon__body" />

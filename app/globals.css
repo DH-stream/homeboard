@@ -97,6 +97,7 @@ button:disabled {
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
+  opacity: 0.98;
   text-overflow: ellipsis;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
@@ -156,6 +157,7 @@ button:disabled {
   min-height: 0;
   margin-bottom: 0;
   overflow: hidden;
+  opacity: 0.98;
   border-width: 0;
   padding-bottom: 0;
   padding-top: 0;
@@ -216,6 +218,7 @@ button:disabled {
 .calendar-source-card {
   position: relative;
   overflow: hidden;
+  opacity: 0.98;
   border: 1px solid rgba(231, 229, 228, 0.82);
   border-radius: 1.75rem;
   background: rgba(255, 255, 255, 0.82);
@@ -257,8 +260,8 @@ button:disabled {
 }
 
 .calendar-source-card__visual {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   pointer-events: none;
   border-radius: inherit;
   background:
@@ -294,8 +297,8 @@ button:disabled {
 }
 
 .calendar-source-card__center {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   z-index: 1;
   display: grid;
   place-items: center;
@@ -406,6 +409,7 @@ button:disabled {
 .task-card {
   position: relative;
   overflow: hidden;
+  opacity: 0.98;
 }
 
 .task-title {
@@ -413,6 +417,7 @@ button:disabled {
   min-height: 1.55em;
   max-height: 3.1em;
   overflow: hidden;
+  opacity: 0.98;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -569,9 +574,10 @@ button:disabled {
 }
 
 .setup-sky {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   overflow: hidden;
+  opacity: 0.98;
   pointer-events: none;
   transition:
     transform 1000ms var(--ease-out),
@@ -686,8 +692,8 @@ button:disabled {
 
 .setup-card-shine,
 .setup-card-wake {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   pointer-events: none;
 }
 
@@ -726,6 +732,7 @@ button:disabled {
 .setup-option-card {
   position: relative;
   overflow: hidden;
+  opacity: 0.98;
   border: 1px solid rgba(255, 255, 255, 0.82);
   background: rgba(255, 255, 255, 0.84);
   animation: setup-card-in 560ms var(--ease-out) both;
@@ -739,8 +746,8 @@ button:disabled {
 }
 
 .setup-option-card::before {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   content: "";
   opacity: 0.82;
   transition: opacity 520ms var(--ease-out);
@@ -786,8 +793,8 @@ button:disabled {
 
 .setup-option-card--locked::after {
   content: "";
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   border-radius: inherit;
   background: radial-gradient(circle at 80% 15%, rgba(245, 158, 11, 0.2), transparent 45%);
   pointer-events: none;
@@ -1044,6 +1051,7 @@ button:disabled {
   max-height: 0;
   margin-bottom: 0;
   overflow: hidden;
+  opacity: 0.98;
   opacity: 0;
   filter: blur(3px);
   transform: translateY(-0.45rem) scale(0.982);
@@ -1218,6 +1226,7 @@ button:disabled {
 .cloud-mode-card {
   position: relative;
   overflow: hidden;
+  opacity: 0.98;
   border: 1px solid rgba(252, 211, 77, 0.52);
   border-radius: 1.7rem;
   background: rgba(254, 243, 199, 0.78);
@@ -1243,8 +1252,8 @@ button:disabled {
 }
 
 .cloud-mode-card__shine {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   pointer-events: none;
   background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.78) 42%, transparent 64%);
   opacity: 0;
@@ -1451,6 +1460,7 @@ button:disabled {
 .adult-view-lock-panel {
   position: relative;
   overflow: hidden;
+  opacity: 0.98;
 }
 
 .adult-view-lock-panel__shine,
@@ -1491,8 +1501,8 @@ button:disabled {
 
 .setup-task-hints {
   pointer-events: none;
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   z-index: 2;
 }
 
@@ -1651,8 +1661,8 @@ button:disabled {
 
 .adult-auth-celebration {
   pointer-events: none;
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   z-index: 0;
 }
 
@@ -1700,22 +1710,29 @@ button:disabled {
 }
 
 .streak-balloons-layer {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  inset: -2vh -2vw;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  opacity: 0.98;
 }
 
 .streak-balloon {
   position: absolute;
-  width: clamp(2.4rem, 2.2vw, 3.2rem);
-  height: clamp(3.4rem, 3.3vw, 4.4rem);
-  opacity: 0.38;
-  filter: saturate(0.9);
-  animation: streak-balloon-idle 13s ease-in-out infinite;
+  width: clamp(4.7rem, 6.4vw, 8.8rem);
+  height: clamp(6.6rem, 8.2vw, 12.2rem);
+  opacity: 0.54;
+  filter: saturate(0.96);
+  --balloon-scale: 1;
+  animation: streak-balloon-idle 12s ease-in-out infinite;
   animation-delay: var(--balloon-delay, 0ms);
 }
+
+.streak-balloon[data-size="sm"] { --balloon-scale: 0.82; }
+.streak-balloon[data-size="md"] { --balloon-scale: 1; }
+.streak-balloon[data-size="lg"] { --balloon-scale: 1.17; }
+.streak-balloon[data-size="xl"] { --balloon-scale: 1.34; }
 
 .streak-balloon__body {
   position: absolute;
@@ -1729,7 +1746,7 @@ button:disabled {
   box-shadow:
     inset 0 -0.8rem 1rem rgba(122, 86, 61, 0.08),
     inset 0 0.4rem 0.9rem rgba(255, 255, 255, 0.18),
-    0 0.5rem 1rem rgba(130, 102, 72, 0.08);
+    0 1.1rem 2rem rgba(130, 102, 72, 0.12);
 }
 
 .streak-balloon__knot {
@@ -1762,17 +1779,17 @@ button:disabled {
 @keyframes streak-balloon-arrive {
   0% {
     opacity: 0;
-    transform: translate3d(0, 1.1rem, 0) scale(0.92);
+    transform: translate3d(0, 1.2rem, 0) scale(calc(var(--balloon-scale) * 0.9));
   }
   100% {
-    opacity: 0.38;
-    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.54;
+    transform: translate3d(0, 0, 0) scale(var(--balloon-scale));
   }
 }
 
 @keyframes streak-balloon-idle {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -0.28rem, 0); }
+  0%, 100% { transform: translate3d(0, 0, 0) scale(var(--balloon-scale)); }
+  50% { transform: translate3d(0, -0.5rem, 0) scale(var(--balloon-scale)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
