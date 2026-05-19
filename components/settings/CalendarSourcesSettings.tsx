@@ -12,6 +12,7 @@ type ProviderChoice = "apple" | "google" | "microsoft" | "link";
 type SyncVisualPhase = "idle" | "queued" | "syncing" | "success";
 const CALENDAR_MILESTONE_DURATION_MS = 5600;
 const CALENDAR_MILESTONE_STAGE_DELAYS_MS = [1250, 2600, 3950];
+const SYNC_MIN_SPINNER_VISIBLE_MS = 1100;
 const SYNC_SUCCESS_OVERLAP_MS = 420;
 const SYNC_SUCCESS_VISIBLE_MS = 2900;
 
@@ -34,6 +35,16 @@ const COLOR_PRESETS = [
 function formatLastSynced(value: string | undefined, fallback: string) {
   if (!value) return fallback;
   return new Date(value).toLocaleString();
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function waitForMinimumSyncVisualDuration(startedAt: number) {
+  const elapsed = Date.now() - startedAt;
+  const remaining = Math.max(0, SYNC_MIN_SPINNER_VISIBLE_MS - elapsed);
+  return wait(remaining);
 }
 
 export function CalendarSourcesSettings() {
@@ -121,7 +132,9 @@ export function CalendarSourcesSettings() {
   async function handleSyncSource(sourceId: string) {
     setActiveSyncSourceId(sourceId);
     setQueuedSyncSourceIds([]);
+    const syncStartedAt = Date.now();
     const synced = await syncSource(sourceId);
+    await waitForMinimumSyncVisualDuration(syncStartedAt);
     setActiveSyncSourceId(null);
     if (synced) markSourceSuccess(sourceId);
   }
@@ -137,11 +150,13 @@ export function CalendarSourcesSettings() {
       for (const sourceId of enabledSourceIds) {
         setQueuedSyncSourceIds((ids) => ids.filter((id) => id !== sourceId));
         setActiveSyncSourceId(sourceId);
+        const syncStartedAt = Date.now();
         const synced = await syncSource(sourceId);
+        await waitForMinimumSyncVisualDuration(syncStartedAt);
         setActiveSyncSourceId(null);
         if (!synced) break;
         markSourceSuccess(sourceId);
-        await new Promise((resolve) => window.setTimeout(resolve, SYNC_SUCCESS_OVERLAP_MS));
+        await wait(SYNC_SUCCESS_OVERLAP_MS);
       }
     } finally {
       setActiveSyncSourceId(null);
