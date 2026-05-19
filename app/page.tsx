@@ -79,8 +79,6 @@ function SetupSky() {
         <Cloud className="setup-cloud setup-cloud-large" />
         <Cloud className="setup-cloud setup-cloud-large setup-cloud-copy" />
       </div>
-      <div className="setup-sky-accent setup-sky-star">✦</div>
-      <div className="setup-sky-accent setup-sky-check">✓</div>
     </div>
   );
 }
@@ -92,10 +90,15 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
   const [visibleHints, setVisibleHints] = useState(() => hints.slice(0, 3).map((text, index) => ({ text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length] })));
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setVisibleHints(hints.slice(0, 2).map((text, index) => ({ text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length] })));
+      return;
+    }
+
     let tick = 0;
     const timer = window.setInterval(() => {
       tick += 1;
-      const visibleCount = window.matchMedia("(max-width: 640px)").matches ? 2 : 3;
+      const visibleCount = window.matchMedia("(max-width: 640px)").matches ? ((tick % 2) + 1) : ((tick % 2) + 2);
       const next = Array.from({ length: visibleCount }, (_, index) => {
         const hintIndex = (tick * 3 + index * 5) % hints.length;
         const slotIndex = (tick + index * 2) % SETUP_TASK_HINT_SLOTS.length;
