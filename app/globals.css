@@ -96,7 +96,7 @@ button:disabled {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
   text-overflow: ellipsis;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
@@ -156,7 +156,7 @@ button:disabled {
   max-height: 0;
   min-height: 0;
   margin-bottom: 0;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
   border-width: 0;
   padding-bottom: 0;
@@ -217,7 +217,7 @@ button:disabled {
 
 .calendar-source-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
   border: 1px solid rgba(231, 229, 228, 0.82);
   border-radius: 1.75rem;
@@ -260,8 +260,8 @@ button:disabled {
 }
 
 .calendar-source-card__visual {
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   pointer-events: none;
   border-radius: inherit;
   background:
@@ -297,8 +297,8 @@ button:disabled {
 }
 
 .calendar-source-card__center {
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   z-index: 1;
   display: grid;
   place-items: center;
@@ -408,7 +408,7 @@ button:disabled {
 
 .task-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
 }
 
@@ -416,7 +416,7 @@ button:disabled {
   display: -webkit-box;
   min-height: 1.55em;
   max-height: 3.1em;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -574,9 +574,9 @@ button:disabled {
 }
 
 .setup-sky {
-  position: fixed;
-  inset: -2vh -2vw;
-  overflow: hidden;
+  position: absolute;
+  inset: -8vh -7vw;
+  overflow: visible;
   opacity: 0.98;
   pointer-events: none;
   transition:
@@ -692,8 +692,8 @@ button:disabled {
 
 .setup-card-shine,
 .setup-card-wake {
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   pointer-events: none;
 }
 
@@ -731,7 +731,7 @@ button:disabled {
 
 .setup-option-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
   border: 1px solid rgba(255, 255, 255, 0.82);
   background: rgba(255, 255, 255, 0.84);
@@ -746,8 +746,8 @@ button:disabled {
 }
 
 .setup-option-card::before {
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   content: "";
   opacity: 0.82;
   transition: opacity 520ms var(--ease-out);
@@ -793,8 +793,8 @@ button:disabled {
 
 .setup-option-card--locked::after {
   content: "";
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   border-radius: inherit;
   background: radial-gradient(circle at 80% 15%, rgba(245, 158, 11, 0.2), transparent 45%);
   pointer-events: none;
@@ -1050,7 +1050,7 @@ button:disabled {
 .wall-quick-add-panel {
   max-height: 0;
   margin-bottom: 0;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
   opacity: 0;
   filter: blur(3px);
@@ -1225,7 +1225,7 @@ button:disabled {
 
 .cloud-mode-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
   border: 1px solid rgba(252, 211, 77, 0.52);
   border-radius: 1.7rem;
@@ -1252,8 +1252,8 @@ button:disabled {
 }
 
 .cloud-mode-card__shine {
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   pointer-events: none;
   background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.78) 42%, transparent 64%);
   opacity: 0;
@@ -1459,7 +1459,7 @@ button:disabled {
 
 .adult-view-lock-panel {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
 }
 
@@ -1501,8 +1501,8 @@ button:disabled {
 
 .setup-task-hints {
   pointer-events: none;
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   z-index: 2;
 }
 
@@ -1661,8 +1661,8 @@ button:disabled {
 
 .adult-auth-celebration {
   pointer-events: none;
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   z-index: 0;
 }
 
@@ -1710,11 +1710,11 @@ button:disabled {
 }
 
 .streak-balloons-layer {
-  position: fixed;
-  inset: -2vh -2vw;
+  position: absolute;
+  inset: -8vh -7vw;
   z-index: 0;
   pointer-events: none;
-  overflow: hidden;
+  overflow: visible;
   opacity: 0.98;
 }
 
