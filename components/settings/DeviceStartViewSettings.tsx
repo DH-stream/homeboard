@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   canSelectAdultProfile,
-  ADULT_ACCESS_REQUIRED_REASON,
   getOrCreateDeviceId,
   DEVICE_START_VIEW_OPTIONS,
   readDeviceStartView,
@@ -81,7 +80,6 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
             <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">{t("adultViewLockedTitle")}</p>
             <p className="mt-2 text-base font-black tracking-tight text-stone-950">{t("adultViewLockedBody")}</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-stone-700">{t("adultViewLockedHelper")}</p>
-            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">Code: {ADULT_ACCESS_REQUIRED_REASON}</p>
           </div>
         ) : null}
 
