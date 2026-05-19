@@ -57,3 +57,29 @@ export function resetDeviceStartView() {
   window.localStorage.removeItem(DEVICE_MODE_STORAGE_KEY);
   window.localStorage.removeItem(DEFAULT_ROUTE_STORAGE_KEY);
 }
+
+export function getDeviceProfile() {
+  return readDeviceStartView()?.mode ?? null;
+}
+
+export function setDeviceProfile(mode: DeviceMode) {
+  const nextStartView = { mode, route: getDefaultRouteForMode(mode) };
+  saveDeviceStartView(nextStartView);
+  return nextStartView;
+}
+
+export function resetDeviceProfile() {
+  resetDeviceStartView();
+}
+
+export function canAccessFullSettings(mode: DeviceMode | null) {
+  return mode === "admin";
+}
+
+export function canAccessLightSettings(mode: DeviceMode | null) {
+  return mode === "admin" || mode === "mobile" || mode === "wall";
+}
+
+export function shouldShowDebugNavigation() {
+  return process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEBUG_NAV === "true";
+}

@@ -10,14 +10,18 @@ import { SettingsCard } from "@/components/settings/SettingsCard";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
 import { MembersSettings } from "@/components/settings/MembersSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
+import { canAccessFullSettings, getDeviceProfile } from "@/lib/devicePreferences";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
   const { language, languageName, setLanguage, t } = useLanguage();
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("settings"));
+  const [deviceProfile, setDeviceProfile] = useState<"wall" | "mobile" | "admin" | null>(null);
+  const hasFullSettings = canAccessFullSettings(deviceProfile);
 
   useEffect(() => {
     consumePendingFirstRunReveal("settings");
+    setDeviceProfile(getDeviceProfile());
   }, []);
 
   return (
@@ -42,23 +46,27 @@ export default function SettingsPage() {
           </div>
         </SettingsCard>
         <DeviceStartViewSettings />
-        <HouseholdSettings />
-        <MembersSettings />
-        <WallTaskCreatorSettings />
-        <CalendarSourcesSettings />
         <CloudStatusSettings />
-        <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
-          <p>{t("homeAssistantIntegrationCopy")}</p>
-        </SettingsCard>
-        <SettingsCard status={t("localPreview")} title={t("dueDate")}>
-          <div className="space-y-2">
-            <p>{t("dueDatePreview")}</p>
-            <p>{t("futureSchedulingPreview")}</p>
-          </div>
-        </SettingsCard>
-        <SettingsCard status={t("planned")} title={t("runaiApiTokens")}>
-          <p>{t("runaiApiTokensCopy")}</p>
-        </SettingsCard>
+        {hasFullSettings ? (
+          <>
+            <HouseholdSettings />
+            <MembersSettings />
+            <WallTaskCreatorSettings />
+            <CalendarSourcesSettings />
+            <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
+              <p>{t("homeAssistantIntegrationCopy")}</p>
+            </SettingsCard>
+            <SettingsCard status={t("localPreview")} title={t("dueDate")}>
+              <div className="space-y-2">
+                <p>{t("dueDatePreview")}</p>
+                <p>{t("futureSchedulingPreview")}</p>
+              </div>
+            </SettingsCard>
+            <SettingsCard status={t("planned")} title={t("runaiApiTokens")}>
+              <p>{t("runaiApiTokensCopy")}</p>
+            </SettingsCard>
+          </>
+        ) : null}
       </div>
     </AppShell>
   );

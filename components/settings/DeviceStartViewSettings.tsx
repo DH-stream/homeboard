@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   DEVICE_START_VIEW_OPTIONS,
-  getDefaultRouteForMode,
   readDeviceStartView,
-  resetDeviceStartView,
-  saveDeviceStartView,
+  resetDeviceProfile,
+  setDeviceProfile,
   type DeviceMode,
   type DeviceStartView,
 } from "@/lib/devicePreferences";
@@ -28,13 +27,12 @@ export function DeviceStartViewSettings() {
   }, []);
 
   const updateMode = (mode: DeviceMode) => {
-    const nextStartView = { mode, route: getDefaultRouteForMode(mode) };
-    saveDeviceStartView(nextStartView);
+    const nextStartView = setDeviceProfile(mode);
     setStartView(nextStartView);
   };
 
   const resetStartView = () => {
-    resetDeviceStartView();
+    resetDeviceProfile();
     setStartView(null);
   };
 
