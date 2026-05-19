@@ -91,10 +91,19 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
   const [hintPhase, setHintPhase] = useState<"enter" | "visible" | "exit">("enter");
 
   useEffect(() => {
+    const timerIds: number[] = [];
+
+    const trackTimer = (id: number) => {
+      timerIds.push(id);
+      return id;
+    };
+
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setVisibleHints(hints.slice(0, 2).map((text, index) => ({ text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length] })));
       setHintPhase("visible");
-      return;
+      return () => {
+        timerIds.forEach((id) => window.clearTimeout(id));
+      };
     }
 
     let tick = 0;
@@ -102,7 +111,7 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
 
     const cycle = () => {
       setHintPhase("exit");
-      cycleTimer = window.setTimeout(() => {
+      cycleTimer = trackTimer(window.setTimeout(() => {
       tick += 1;
       const visibleCount = window.matchMedia("(max-width: 640px)").matches ? ((tick % 2) + 1) : ((tick % 2) + 2);
       const next = Array.from({ length: visibleCount }, (_, index) => {
@@ -113,15 +122,16 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
       });
       setVisibleHints(next);
       setHintPhase("enter");
-      window.setTimeout(() => setHintPhase("visible"), 700);
-      cycleTimer = window.setTimeout(cycle, 4300);
-      }, 750);
+      trackTimer(window.setTimeout(() => setHintPhase("visible"), 700));
+      cycleTimer = trackTimer(window.setTimeout(cycle, 4300));
+      }, 750));
     };
 
-    window.setTimeout(() => setHintPhase("visible"), 700);
-    cycleTimer = window.setTimeout(cycle, 4300);
+    trackTimer(window.setTimeout(() => setHintPhase("visible"), 700));
+    cycleTimer = trackTimer(window.setTimeout(cycle, 4300));
     return () => {
       if (cycleTimer) window.clearTimeout(cycleTimer);
+      timerIds.forEach((id) => window.clearTimeout(id));
     };
   }, [hints]);
 
