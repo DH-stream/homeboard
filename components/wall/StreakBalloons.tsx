@@ -48,7 +48,7 @@ function getStorageKey(householdId: string | null) {
 export function StreakBalloons({ householdId, streak }: StreakBalloonsProps) {
   const visibleBalloons = useMemo(() => {
     if (streak < MIN_STREAK) return 0;
-    return Math.min(streak, MAX_BALLOONS);
+    return Math.min(streak - 1, MAX_BALLOONS);
   }, [streak]);
 
   const [seenCount, setSeenCount] = useState(visibleBalloons);
