@@ -169,7 +169,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     const { error: deviceError } = await this.client
       .from("devices")
-      .update({ household_id: householdId, paired_at: now, paired_by_user_id: memberId ?? null, last_seen_at: now, updated_at: now })
+      .update({ household_id: householdId, paired_at: now, last_seen_at: now, updated_at: now })
       .eq("id", session.deviceId);
 
     if (deviceError) throw deviceError;
