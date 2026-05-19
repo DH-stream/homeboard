@@ -309,7 +309,8 @@ export default function HomePage() {
             <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950 sm:text-4xl">{t("adultViewLockedBody")}</h2>
             <p className="mt-3 text-sm font-semibold leading-6 text-stone-700 sm:text-base">{t("adultViewLockedHelper")}</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => continueWithProfile("mobile")} type="button">{t("continueWithMobileView")}</button>
+              <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => router.push("/setup/adult")} type="button">{t("loginOrCreateHome")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("mobile")} type="button">{t("continueWithMobileView")}</button>
               <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("wall")} type="button">{t("chooseWallView")}</button>
               <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700" onClick={() => setActiveSetupState("chooser")} type="button">{t("backToScreenChoice")}</button>
             </div>
