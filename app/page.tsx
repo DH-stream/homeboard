@@ -86,6 +86,7 @@ export default function HomePage() {
   const { hasAdultAccess } = useAdultAccess();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
+  const [showAdultLockedMessage, setShowAdultLockedMessage] = useState(false);
   const [isSetupExiting, setIsSetupExiting] = useState(false);
   const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,7 +112,11 @@ export default function HomePage() {
 
   const chooseStartView = (startView: DeviceStartView) => {
     if (selectedStartView) return;
-    if (startView.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) return;
+    if (startView.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) {
+      setShowAdultLockedMessage(true);
+      window.setTimeout(() => setShowAdultLockedMessage(false), 1800);
+      return;
+    }
 
     saveDeviceStartView(startView);
     setPendingFirstRunReveal(revealRouteByMode[startView.mode]);
@@ -167,7 +172,7 @@ export default function HomePage() {
               >
                 <span className="flex items-start justify-between gap-4">
                   <span className="setup-option-icon flex size-14 items-center justify-center rounded-[1.35rem] bg-white/86 text-3xl shadow-sm ring-1 ring-black/5 sm:size-20 sm:rounded-[1.6rem] sm:text-5xl">
-                    {optionIcons[option.mode]}
+                    {isLockedAdmin ? "🔐" : optionIcons[option.mode]}
                   </span>
                   <span className="setup-option-check mt-1 flex size-8 items-center justify-center rounded-full bg-white/78 text-base font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95 sm:size-9 sm:text-lg">
                     ✓
@@ -186,7 +191,7 @@ export default function HomePage() {
           })}
         </div>
 
-        {!canSelectAdultProfile(hasAdultAccess) ? <p className="mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 sm:text-sm">{t("adultViewLockedHelper")}</p> : null}
+        {!canSelectAdultProfile(hasAdultAccess) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
 
         <p className="setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 sm:mt-7 sm:text-base sm:leading-6">{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">

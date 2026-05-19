@@ -53,6 +53,9 @@ export default function SettingsPage() {
         <CloudStatusSettings />
         {deviceProfile === "admin" && !hasAdultAccess ? (
           <div className="adult-view-lock-panel md:col-span-2 rounded-[2rem] p-5">
+            <div className="adult-view-lock-panel__shine" aria-hidden="true" />
+            <div className="adult-view-lock-panel__wake" aria-hidden="true" />
+            <div className="adult-view-lock-panel__icon" aria-hidden="true">🔐</div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-800">{t("adultViewLockedTitle")}</p>
             <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950">{t("adultViewLockedBody")}</h2>
             <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-stone-700">{t("adultViewLockedHelper")}</p>
