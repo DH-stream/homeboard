@@ -12,6 +12,7 @@ import { ActionToast } from "@/components/ui/ActionToast";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
+import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
 import { useTasks } from "@/lib/hooks/useTasks";
@@ -45,6 +46,7 @@ export default function MobileAppPage() {
   const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
   const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const showDebugNavigation = shouldShowDebugNavigation();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 60);
@@ -136,10 +138,17 @@ export default function MobileAppPage() {
           <p className="text-3xl font-black text-emerald-700">{stats.completed}</p>
           <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-emerald-500 sm:text-xs sm:tracking-[0.16em]">{completionFeedback?.message ?? t("done")}</p>
         </div>
-        <Link className="pressable min-w-0 rounded-[1.5rem] bg-stone-950 p-3 text-center text-white shadow-sm sm:p-4" href="/wall">
-          <p className="text-3xl font-black">{t("wall")}</p>
-          <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-white/50 sm:text-xs sm:tracking-[0.16em]">{t("open")}</p>
-        </Link>
+        {showDebugNavigation ? (
+          <Link className="pressable min-w-0 rounded-[1.5rem] bg-stone-950 p-3 text-center text-white shadow-sm sm:p-4" href="/wall">
+            <p className="text-3xl font-black">{t("wall")}</p>
+            <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-white/50 sm:text-xs sm:tracking-[0.16em]">{t("open")}</p>
+          </Link>
+        ) : (
+          <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
+            <p className="text-3xl font-black text-stone-950">{stats.remaining}</p>
+            <p className="min-h-4 truncate text-[0.68rem] font-black uppercase tracking-[0.12em] text-stone-400 sm:text-xs sm:tracking-[0.16em]">{t("remaining")}</p>
+          </div>
+        )}
       </section>
 
       <div className={isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-3" : undefined}>

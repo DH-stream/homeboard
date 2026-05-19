@@ -41,10 +41,8 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function waitForMinimumSyncVisualDuration(startedAt: number) {
-  const elapsed = Date.now() - startedAt;
-  const remaining = Math.max(0, SYNC_MIN_SPINNER_VISIBLE_MS - elapsed);
-  return wait(remaining);
+function waitForMinimumSyncVisualDuration() {
+  return wait(SYNC_MIN_SPINNER_VISIBLE_MS);
 }
 
 export function CalendarSourcesSettings() {
@@ -132,9 +130,8 @@ export function CalendarSourcesSettings() {
   async function handleSyncSource(sourceId: string) {
     setActiveSyncSourceId(sourceId);
     setQueuedSyncSourceIds([]);
-    const syncStartedAt = Date.now();
     const synced = await syncSource(sourceId);
-    await waitForMinimumSyncVisualDuration(syncStartedAt);
+    await waitForMinimumSyncVisualDuration();
     setActiveSyncSourceId(null);
     if (synced) markSourceSuccess(sourceId);
   }
@@ -150,9 +147,8 @@ export function CalendarSourcesSettings() {
       for (const sourceId of enabledSourceIds) {
         setQueuedSyncSourceIds((ids) => ids.filter((id) => id !== sourceId));
         setActiveSyncSourceId(sourceId);
-        const syncStartedAt = Date.now();
         const synced = await syncSource(sourceId);
-        await waitForMinimumSyncVisualDuration(syncStartedAt);
+        await waitForMinimumSyncVisualDuration();
         setActiveSyncSourceId(null);
         if (!synced) break;
         markSourceSuccess(sourceId);

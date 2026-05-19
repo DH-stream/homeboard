@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from "react";
 import {
+  canSelectAdultProfile,
+  getOrCreateDeviceId,
   DEVICE_START_VIEW_OPTIONS,
-  getDefaultRouteForMode,
   readDeviceStartView,
-  resetDeviceStartView,
-  saveDeviceStartView,
+  resetDeviceProfile,
+  setDeviceProfile,
   type DeviceMode,
   type DeviceStartView,
 } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
+import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { SettingsCard } from "./SettingsCard";
 
 function getDeviceModeLabel(mode: DeviceMode, t: ReturnType<typeof useLanguage>["t"]) {
@@ -19,23 +21,27 @@ function getDeviceModeLabel(mode: DeviceMode, t: ReturnType<typeof useLanguage>[
   return t("deviceModeMobile");
 }
 
-export function DeviceStartViewSettings() {
+export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?: (profile: DeviceMode | null) => void }) {
   const { t } = useLanguage();
+  const { hasAdultAccess } = useAdultAccess();
   const [startView, setStartView] = useState<DeviceStartView | null>(null);
 
   useEffect(() => {
+    getOrCreateDeviceId();
     setStartView(readDeviceStartView());
   }, []);
 
   const updateMode = (mode: DeviceMode) => {
-    const nextStartView = { mode, route: getDefaultRouteForMode(mode) };
-    saveDeviceStartView(nextStartView);
+    if (mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) return;
+    const nextStartView = setDeviceProfile(mode);
     setStartView(nextStartView);
+    onProfileChange?.(nextStartView.mode);
   };
 
   const resetStartView = () => {
-    resetDeviceStartView();
+    resetDeviceProfile();
     setStartView(null);
+    onProfileChange?.(null);
   };
 
   return (
@@ -63,11 +69,19 @@ export function DeviceStartViewSettings() {
             {t("deviceModeUnset")}
           </option>
           {DEVICE_START_VIEW_OPTIONS.map((option) => (
-            <option key={option.mode} value={option.mode}>
+            <option disabled={option.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)} key={option.mode} value={option.mode}>
               {getDeviceModeLabel(option.mode, t)}
             </option>
           ))}
         </select>
+
+        {!canSelectAdultProfile(hasAdultAccess) ? (
+          <div className="adult-view-lock-panel rounded-[1.4rem] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">{t("adultViewLockedTitle")}</p>
+            <p className="mt-2 text-base font-black tracking-tight text-stone-950">{t("adultViewLockedBody")}</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-stone-700">{t("adultViewLockedHelper")}</p>
+          </div>
+        ) : null}
 
         <div className="rounded-2xl bg-amber-50 p-4 text-amber-950 ring-1 ring-amber-100">
           <p className="font-black">{t("deviceStartViewSaved")}</p>

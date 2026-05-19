@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
+  canSelectAdultProfile,
+  getOrCreateDeviceId,
   DEVICE_START_VIEW_OPTIONS,
   readDeviceStartView,
   saveDeviceStartView,
+  setDeviceProfile,
   type DeviceMode,
   type DeviceStartView,
 } from "@/lib/devicePreferences";
 import { setPendingFirstRunReveal, type FirstRunRevealRoute } from "@/lib/firstRunReveal";
+import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { useLanguage } from "@/lib/i18n";
 
 const optionIcons: Record<DeviceMode, string> = {
@@ -29,6 +33,20 @@ const revealRouteByMode: Record<DeviceMode, FirstRunRevealRoute> = {
   mobile: "app",
   admin: "settings",
 };
+
+const SETUP_TASK_HINT_SLOTS = [
+  { id: "a", style: { top: "14%", left: "7%" } },
+  { id: "b", style: { top: "20%", right: "8%" } },
+  { id: "c", style: { top: "38%", left: "13%" } },
+  { id: "d", style: { top: "42%", right: "13%" } },
+  { id: "e", style: { bottom: "26%", left: "18%" } },
+  { id: "f", style: { bottom: "18%", right: "10%" } },
+  { id: "g", style: { top: "31%", left: "33%" } },
+  { id: "h", style: { bottom: "34%", right: "29%" } },
+  { id: "i", style: { top: "58%", right: "18%" } },
+  { id: "j", style: { bottom: "15%", left: "36%" } },
+] satisfies Array<{ id: string; style: CSSProperties }>;
+const SETUP_TASK_HINT_TONES = ["amber", "emerald", "sky", "rose", "stone"] as const;
 
 function getDeviceModeCopy(mode: DeviceMode, t: ReturnType<typeof useLanguage>["t"]) {
   if (mode === "wall") return { title: t("deviceModeWall"), description: t("deviceModeWallDescription") };
@@ -55,8 +73,7 @@ function Cloud({ className }: { className: string }) {
 
 function SetupSky() {
   return (
-    <div className="setup-sky" aria-hidden="true">
-      <div className="setup-sun" />
+    <div className="setup-sky z-0" aria-hidden="true">
       <Cloud className="setup-cloud setup-cloud-anchor setup-cloud-anchor-left" />
       <Cloud className="setup-cloud setup-cloud-anchor setup-cloud-anchor-right" />
       <div className="setup-cloud-track setup-cloud-track-far">
@@ -71,22 +88,116 @@ function SetupSky() {
         <Cloud className="setup-cloud setup-cloud-large" />
         <Cloud className="setup-cloud setup-cloud-large setup-cloud-copy" />
       </div>
-      <div className="setup-sky-accent setup-sky-star">✦</div>
-      <div className="setup-sky-accent setup-sky-check">✓</div>
+    </div>
+  );
+}
+
+type HintSlot = typeof SETUP_TASK_HINT_SLOTS[number];
+type HintTone = typeof SETUP_TASK_HINT_TONES[number];
+type VisibleHint = { id: string; text: string; slot: HintSlot; tone: HintTone; phase: "enter" | "visible" | "exit" };
+
+function pickNextSlot(usedSlots: Set<string>, tick: number, replaceIndex: number, previousSlotId?: string) {
+  const availableSlots = SETUP_TASK_HINT_SLOTS.filter((slot) => !usedSlots.has(slot.id) && slot.id !== previousSlotId);
+  const pool = availableSlots.length ? availableSlots : SETUP_TASK_HINT_SLOTS.filter((slot) => !usedSlots.has(slot.id));
+  if (!pool.length) return SETUP_TASK_HINT_SLOTS[(tick * 7 + replaceIndex * 3 + 2) % SETUP_TASK_HINT_SLOTS.length];
+  return pool[(tick * 7 + replaceIndex * 5 + 3) % pool.length];
+}
+
+function SetupTaskHints({ language }: { language: "en" | "sv" }) {
+  const hints = useMemo(() => language === "sv"
+    ? ["Packa förskoleväskan", "Ta ut soporna", "Gympapåse på torsdag", "Kolla kalendern", "Hämta paket", "Vattna växterna", "Lägg fram regnkläder", "Kom ihåg BVC", "Handla mjölk", "Ladda surfplattan", "Mormor kommer 15:00", "Glöm inte regnjackan", "Fredagsmys", "Byt lakan", "Ställ ut återvinningen"]
+    : ["Pack daycare bag", "Take out trash", "Gym bag on Thursday", "Check calendar", "Pick up package", "Water the plants", "Put out rain clothes", "Remember appointment", "Buy milk", "Charge tablet", "Grandma visits at 3", "Don't forget rain jacket", "Friday cozy time", "Change sheets", "Take out recycling"], [language]);
+  const [visibleHints, setVisibleHints] = useState<VisibleHint[]>(() => hints.slice(0, 3).map((text, index) => ({ id: `hint-${index}`, text, slot: SETUP_TASK_HINT_SLOTS[index * 3], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length], phase: "enter" })));
+
+  useEffect(() => {
+    const timerIds: number[] = [];
+
+    const trackTimer = (id: number) => {
+      timerIds.push(id);
+      return id;
+    };
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setVisibleHints(hints.slice(0, 2).map((text, index) => ({ id: `hint-reduced-${index}`, text, slot: SETUP_TASK_HINT_SLOTS[index * 4], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length], phase: "visible" })));
+      return () => {
+        timerIds.forEach((id) => window.clearTimeout(id));
+      };
+    }
+
+    let tick = 0;
+    let idCounter = 100;
+
+    const cycle = () => {
+      let exitingHint: VisibleHint | undefined;
+      setVisibleHints((current) => {
+        if (!current.length) return current;
+        const replaceIndex = tick % current.length;
+        exitingHint = current[replaceIndex];
+        return current.map((hint, index) => (index === replaceIndex ? { ...hint, phase: "exit" } : hint));
+      });
+
+      trackTimer(window.setTimeout(() => {
+      tick += 1;
+      setVisibleHints((current) => {
+        const visibleCount = window.matchMedia("(max-width: 640px)").matches ? 2 : 3;
+        const base = current.slice(0, visibleCount);
+        const replaceIndex = (tick - 1) % Math.max(1, base.length);
+        const usedTexts = new Set(base.map((hint, index) => (index === replaceIndex ? null : hint.text)).filter(Boolean) as string[]);
+        const usedSlots = new Set(base.map((hint, index) => (index === replaceIndex ? null : hint.slot.id)).filter(Boolean) as string[]);
+
+        const hintIndex = (tick * 5 + replaceIndex * 7) % hints.length;
+        const nextText = hints.find((text, idx) => idx >= hintIndex && !usedTexts.has(text)) ?? hints.find((text) => !usedTexts.has(text)) ?? hints[hintIndex];
+        const nextSlot = pickNextSlot(usedSlots, tick, replaceIndex, exitingHint?.slot.id);
+        const nextTone = SETUP_TASK_HINT_TONES[(tick * 2 + replaceIndex) % SETUP_TASK_HINT_TONES.length];
+        const replacement: VisibleHint = { id: `hint-${idCounter++}`, text: nextText, slot: nextSlot, tone: nextTone, phase: "enter" };
+
+        const next = [...base];
+        next[replaceIndex] = replacement;
+        return next;
+      });
+
+      trackTimer(window.setTimeout(() => {
+        setVisibleHints((current) => current.map((hint) => (hint.phase === "enter" ? { ...hint, phase: "visible" } : hint)));
+      }, 700));
+
+      trackTimer(window.setTimeout(cycle, 2250));
+      }, 750));
+    };
+
+    trackTimer(window.setTimeout(() => {
+      setVisibleHints((current) => current.map((hint) => ({ ...hint, phase: "visible" })));
+    }, 700));
+    trackTimer(window.setTimeout(cycle, 2250));
+    return () => {
+      timerIds.forEach((id) => window.clearTimeout(id));
+    };
+  }, [hints]);
+
+  return (
+    <div aria-hidden="true" className="setup-task-hints">
+      {visibleHints.map((hint) => (
+        <span className={`setup-task-hint setup-task-hint--${hint.phase} setup-task-hint--tone-${hint.tone}`} key={hint.id} style={hint.slot.style}>
+          {hint.text}
+        </span>
+      ))}
     </div>
   );
 }
 
 export default function HomePage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { hasAdultAccess } = useAdultAccess();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
+  const [showAdultLockedMessage, setShowAdultLockedMessage] = useState(false);
+  const [activeSetupState, setActiveSetupState] = useState<"chooser" | "adult_locked">("chooser");
   const [isSetupExiting, setIsSetupExiting] = useState(false);
   const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    getOrCreateDeviceId();
     const startView = readDeviceStartView();
 
     if (startView) {
@@ -106,6 +217,12 @@ export default function HomePage() {
 
   const chooseStartView = (startView: DeviceStartView) => {
     if (selectedStartView) return;
+    if (startView.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) {
+      setActiveSetupState("adult_locked");
+      setShowAdultLockedMessage(true);
+      window.setTimeout(() => setShowAdultLockedMessage(false), 1800);
+      return;
+    }
 
     saveDeviceStartView(startView);
     setPendingFirstRunReveal(revealRouteByMode[startView.mode]);
@@ -121,6 +238,12 @@ export default function HomePage() {
     }, prefersReducedMotion ? 180 : 1450);
   };
 
+  const continueWithProfile = (nextProfile: "mobile" | "wall") => {
+    const next = setDeviceProfile(nextProfile);
+    setPendingFirstRunReveal(revealRouteByMode[next.mode]);
+    router.push(next.route);
+  };
+
   if (isCheckingStartView) {
     return <main className="min-h-screen" aria-hidden="true" />;
   }
@@ -128,6 +251,7 @@ export default function HomePage() {
   return (
     <main className={`setup-stage ${selectedStartView ? "setup-stage--leaving" : ""} ${isSetupExiting ? "setup-stage--exiting" : ""} relative isolate min-h-screen overflow-hidden px-3 py-4 sm:px-6 sm:py-10`}>
       <SetupSky />
+      <SetupTaskHints language={language} />
 
       <section className="setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8">
         <div className="surface-card setup-hero-card relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] px-3 py-4 backdrop-blur-xl sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12">
@@ -143,35 +267,56 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="setup-options mt-4 grid gap-3 sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3">
+        {activeSetupState === "chooser" ? <div className="setup-options mt-4 grid gap-3 sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3">
           {DEVICE_START_VIEW_OPTIONS.map((option, index) => {
             const copy = getDeviceModeCopy(option.mode, t);
             const isSelected = selectedStartView?.mode === option.mode;
             const isSoftened = selectedStartView !== null && !isSelected;
+            const isLockedAdmin = option.mode === "admin" && !canSelectAdultProfile(hasAdultAccess);
 
             return (
               <button
                 aria-pressed={isSelected}
-                className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
-                aria-disabled={selectedStartView !== null}
+                className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} ${isLockedAdmin ? "setup-option-card--locked" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
+                aria-disabled={selectedStartView !== null || isLockedAdmin}
                 key={option.mode}
                 onClick={() => chooseStartView(option)}
                 type="button"
               >
                 <span className="flex items-start justify-between gap-4">
                   <span className="setup-option-icon flex size-14 items-center justify-center rounded-[1.35rem] bg-white/86 text-3xl shadow-sm ring-1 ring-black/5 sm:size-20 sm:rounded-[1.6rem] sm:text-5xl">
-                    {optionIcons[option.mode]}
+                    {isLockedAdmin ? "🔐" : optionIcons[option.mode]}
                   </span>
-                  <span className="setup-option-check mt-1 flex size-8 items-center justify-center rounded-full bg-white/78 text-base font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95 sm:size-9 sm:text-lg">
-                    ✓
-                  </span>
+                  {!isLockedAdmin ? <span className="setup-option-check mt-1 flex size-8 items-center justify-center rounded-full bg-white/78 text-base font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95 sm:size-9 sm:text-lg">✓</span> : null}
                 </span>
                 <span className="mt-4 text-2xl font-black tracking-[-0.035em] text-stone-950 sm:mt-6 sm:text-4xl">{copy.title}</span>
                 <span className="mt-2 max-w-sm text-sm font-semibold leading-6 text-stone-600 sm:mt-3 sm:text-lg sm:leading-8">{copy.description}</span>
+                {isLockedAdmin ? (
+                  <span className="setup-locked-chip mt-3 inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-amber-900">
+                    <span aria-hidden="true">🔒</span>
+                    {t("adultViewLockedTitle")}
+                  </span>
+                ) : null}
               </button>
             );
           })}
-        </div>
+        </div> : (
+          <section className="adult-view-lock-panel setup-locked-state-panel mx-auto mt-5 w-full max-w-3xl rounded-[2rem] p-5 sm:p-8">
+            <div className="adult-view-lock-panel__shine" aria-hidden="true" />
+            <div className="adult-view-lock-panel__wake" aria-hidden="true" />
+            <div className="adult-view-lock-panel__icon" aria-hidden="true">🔐</div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-800">{t("adultViewLockedTitle")}</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950 sm:text-4xl">{t("adultViewLockedBody")}</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-stone-700 sm:text-base">{t("adultViewLockedHelper")}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => continueWithProfile("mobile")} type="button">{t("continueWithMobileView")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("wall")} type="button">{t("chooseWallView")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700" onClick={() => setActiveSetupState("chooser")} type="button">{t("backToScreenChoice")}</button>
+            </div>
+          </section>
+        )}
+
+        {!canSelectAdultProfile(hasAdultAccess) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
 
         <p className="setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 sm:mt-7 sm:text-base sm:leading-6">{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">
