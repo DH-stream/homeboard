@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  canSelectAdultProfile,
   DEVICE_START_VIEW_OPTIONS,
   readDeviceStartView,
   saveDeviceStartView,
@@ -10,6 +11,7 @@ import {
   type DeviceStartView,
 } from "@/lib/devicePreferences";
 import { setPendingFirstRunReveal, type FirstRunRevealRoute } from "@/lib/firstRunReveal";
+import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { useLanguage } from "@/lib/i18n";
 
 const optionIcons: Record<DeviceMode, string> = {
@@ -80,6 +82,7 @@ function SetupSky() {
 export default function HomePage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { hasAdultAccess } = useAdultAccess();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
   const [isSetupExiting, setIsSetupExiting] = useState(false);
@@ -106,6 +109,7 @@ export default function HomePage() {
 
   const chooseStartView = (startView: DeviceStartView) => {
     if (selectedStartView) return;
+    if (startView.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) return;
 
     saveDeviceStartView(startView);
     setPendingFirstRunReveal(revealRouteByMode[startView.mode]);
@@ -148,12 +152,13 @@ export default function HomePage() {
             const copy = getDeviceModeCopy(option.mode, t);
             const isSelected = selectedStartView?.mode === option.mode;
             const isSoftened = selectedStartView !== null && !isSelected;
+            const isLockedAdmin = option.mode === "admin" && !canSelectAdultProfile(hasAdultAccess);
 
             return (
               <button
                 aria-pressed={isSelected}
                 className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
-                aria-disabled={selectedStartView !== null}
+                aria-disabled={selectedStartView !== null || isLockedAdmin}
                 key={option.mode}
                 onClick={() => chooseStartView(option)}
                 type="button"
@@ -168,10 +173,13 @@ export default function HomePage() {
                 </span>
                 <span className="mt-4 text-2xl font-black tracking-[-0.035em] text-stone-950 sm:mt-6 sm:text-4xl">{copy.title}</span>
                 <span className="mt-2 max-w-sm text-sm font-semibold leading-6 text-stone-600 sm:mt-3 sm:text-lg sm:leading-8">{copy.description}</span>
+                {isLockedAdmin ? <span className="mt-2 text-xs font-bold text-amber-800">{t("adultViewLockedTitle")}</span> : null}
               </button>
             );
           })}
         </div>
+
+        {!canSelectAdultProfile(hasAdultAccess) ? <p className="mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 sm:text-sm">{t("adultViewLockedBody")}</p> : null}
 
         <p className="setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 sm:mt-7 sm:text-base sm:leading-6">{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">

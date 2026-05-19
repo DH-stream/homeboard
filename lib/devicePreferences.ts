@@ -99,8 +99,12 @@ export function getOrCreateDeviceId() {
   return nextId;
 }
 
-export function canAccessFullSettings(mode: DeviceMode | null) {
-  return mode === "admin";
+export function canAccessFullSettings(mode: DeviceMode | null, hasAdultAccess: boolean) {
+  return mode === "admin" && hasAdultAccess;
+}
+
+export function canSelectAdultProfile(hasAdultAccess: boolean) {
+  return hasAdultAccess;
 }
 
 export function canAccessLightSettings(mode: DeviceMode | null) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  canSelectAdultProfile,
   DEVICE_START_VIEW_OPTIONS,
   readDeviceStartView,
   resetDeviceProfile,
@@ -10,6 +11,7 @@ import {
   type DeviceStartView,
 } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
+import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { SettingsCard } from "./SettingsCard";
 
 function getDeviceModeLabel(mode: DeviceMode, t: ReturnType<typeof useLanguage>["t"]) {
@@ -20,6 +22,7 @@ function getDeviceModeLabel(mode: DeviceMode, t: ReturnType<typeof useLanguage>[
 
 export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?: (profile: DeviceMode | null) => void }) {
   const { t } = useLanguage();
+  const { hasAdultAccess } = useAdultAccess();
   const [startView, setStartView] = useState<DeviceStartView | null>(null);
 
   useEffect(() => {
@@ -27,6 +30,7 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
   }, []);
 
   const updateMode = (mode: DeviceMode) => {
+    if (mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) return;
     const nextStartView = setDeviceProfile(mode);
     setStartView(nextStartView);
     onProfileChange?.(nextStartView.mode);
@@ -63,11 +67,17 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
             {t("deviceModeUnset")}
           </option>
           {DEVICE_START_VIEW_OPTIONS.map((option) => (
-            <option key={option.mode} value={option.mode}>
+            <option disabled={option.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)} key={option.mode} value={option.mode}>
               {getDeviceModeLabel(option.mode, t)}
             </option>
           ))}
         </select>
+
+        {!canSelectAdultProfile(hasAdultAccess) ? (
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
+            {t("adultViewLockedTitle")} {t("adultViewLockedBody")}
+          </p>
+        ) : null}
 
         <div className="rounded-2xl bg-amber-50 p-4 text-amber-950 ring-1 ring-amber-100">
           <p className="font-black">{t("deviceStartViewSaved")}</p>

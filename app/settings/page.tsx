@@ -11,13 +11,15 @@ import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSe
 import { MembersSettings } from "@/components/settings/MembersSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { canAccessFullSettings, getDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
+import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
   const { language, languageName, setLanguage, t } = useLanguage();
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("settings"));
   const [deviceProfile, setDeviceProfile] = useState<DeviceMode | null>(null);
-  const hasFullSettings = canAccessFullSettings(deviceProfile);
+  const { hasAdultAccess } = useAdultAccess();
+  const hasFullSettings = canAccessFullSettings(deviceProfile, hasAdultAccess);
 
   useEffect(() => {
     consumePendingFirstRunReveal("settings");
@@ -47,6 +49,11 @@ export default function SettingsPage() {
         </SettingsCard>
         <DeviceStartViewSettings onProfileChange={setDeviceProfile} />
         <CloudStatusSettings />
+        {deviceProfile === "admin" && !hasAdultAccess ? (
+          <SettingsCard status={t("planned")} title={t("adultViewLockedTitle")}>
+            <p>{t("adultViewLockedBody")}</p>
+          </SettingsCard>
+        ) : null}
         {hasFullSettings ? (
           <>
             <HouseholdSettings />
