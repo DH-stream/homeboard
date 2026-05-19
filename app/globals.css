@@ -551,6 +551,7 @@ button:disabled {
 }
 .setup-stage {
   background:
+    radial-gradient(circle at 74% 9%, rgba(255, 255, 255, 0.96) 0 5.5rem, rgba(254, 240, 138, 0.54) 5.6rem 13rem, rgba(251, 191, 36, 0) 23rem),
     radial-gradient(circle at 18% 2%, rgba(255, 255, 255, 0.58), transparent 18rem),
     radial-gradient(circle at 12% 86%, rgba(254, 243, 199, 0.36), transparent 22rem),
     linear-gradient(180deg, #8fd3ff 0%, #b7e4ff 32%, #e4f6ff 68%, #fff6df 100%);
@@ -575,21 +576,6 @@ button:disabled {
   transition:
     transform 1000ms var(--ease-out),
     opacity 700ms var(--ease-out);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
-}
-
-.setup-sun {
-  position: absolute;
-  right: clamp(1rem, 12vw, 10rem);
-  top: clamp(2rem, 9vw, 6rem);
-  width: clamp(8rem, 18vw, 16rem);
-  height: clamp(8rem, 18vw, 16rem);
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 24%, rgba(253, 224, 71, 0.34) 25% 54%, rgba(251, 191, 36, 0) 72%);
-  filter: blur(0.2px);
-  opacity: 0.85;
-  animation: setup-sun-breathe 5.8s var(--ease-in-out) infinite alternate;
 }
 
 .setup-cloud-anchor {
@@ -620,6 +606,8 @@ button:disabled {
   transform: translateZ(0);
   will-change: transform;
   animation: setup-cloud-drift 28s linear infinite;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
 }
 
 .setup-cloud-track-far {
@@ -922,17 +910,6 @@ button:disabled {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes setup-sun-breathe {
-  from {
-    opacity: 0.68;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 0.9;
-    transform: scale(1.04);
   }
 }
 
