@@ -1698,3 +1698,95 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .streak-flame-intro { animation: none; }
 }
+
+.streak-balloons-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.streak-balloon {
+  position: absolute;
+  width: clamp(2.4rem, 2.2vw, 3.2rem);
+  height: clamp(3.4rem, 3.3vw, 4.4rem);
+  opacity: 0.38;
+  filter: saturate(0.9);
+  animation: streak-balloon-idle 13s ease-in-out infinite;
+  animation-delay: var(--balloon-delay, 0ms);
+}
+
+.streak-balloon__body {
+  position: absolute;
+  inset: 0.1rem 0.1rem 0.5rem;
+  border-radius: 52% 48% 47% 53% / 56% 57% 43% 44%;
+  background:
+    radial-gradient(circle at 34% 27%, rgba(255, 255, 255, 0.5), transparent 30%),
+    radial-gradient(circle at 68% 72%, rgba(255, 255, 255, 0.14), transparent 36%),
+    linear-gradient(160deg, color-mix(in srgb, var(--balloon-color) 88%, white), color-mix(in srgb, var(--balloon-color) 70%, #8b7a62));
+  border: 1px solid color-mix(in srgb, var(--balloon-color) 72%, #ffffff);
+  box-shadow:
+    inset 0 -0.8rem 1rem rgba(122, 86, 61, 0.08),
+    inset 0 0.4rem 0.9rem rgba(255, 255, 255, 0.18),
+    0 0.5rem 1rem rgba(130, 102, 72, 0.08);
+}
+
+.streak-balloon__knot {
+  position: absolute;
+  left: 50%;
+  bottom: 0.36rem;
+  width: 0.42rem;
+  height: 0.32rem;
+  background: color-mix(in srgb, var(--balloon-color) 78%, #8b7a62);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  transform: translateX(-50%);
+}
+
+.streak-balloon__string {
+  position: absolute;
+  left: 50%;
+  top: calc(100% - 0.14rem);
+  width: 1px;
+  height: clamp(1.2rem, 1.8vw, 1.9rem);
+  background: linear-gradient(to bottom, rgba(146, 124, 106, 0.3), rgba(146, 124, 106, 0));
+  transform: translateX(-50%);
+}
+
+.streak-balloon--enter {
+  animation:
+    streak-balloon-arrive 720ms var(--ease-out) both,
+    streak-balloon-idle 13s ease-in-out 760ms infinite;
+}
+
+@keyframes streak-balloon-arrive {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 1.1rem, 0) scale(0.92);
+  }
+  100% {
+    opacity: 0.38;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes streak-balloon-idle {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -0.28rem, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-balloon,
+  .streak-balloon--enter {
+    animation: none;
+  }
+}
+
+:root {
+  --balloon-amber: rgba(237, 180, 102, 0.86);
+  --balloon-coral: rgba(224, 151, 133, 0.86);
+  --balloon-cream: rgba(242, 224, 193, 0.85);
+  --balloon-blue: rgba(174, 205, 224, 0.86);
+  --balloon-sage: rgba(172, 195, 165, 0.86);
+  --balloon-peach: rgba(239, 196, 170, 0.84);
+}

@@ -9,6 +9,7 @@ import { MemberBadge } from "@/components/members/MemberBadge";
 import { TaskList } from "@/components/tasks/TaskList";
 import { WallQuickTaskButton } from "@/components/wall/WallQuickTaskButton";
 import { WallQuickTaskCreator } from "@/components/wall/WallQuickTaskCreator";
+import { StreakBalloons } from "@/components/wall/StreakBalloons";
 import { ActionToast } from "@/components/ui/ActionToast";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -208,6 +209,9 @@ export default function WallPage() {
 
   return (
     <WallShell revealActive={isFirstRunRevealActive}>
+      <div className="relative flex flex-1 flex-col">
+        <StreakBalloons householdId={householdId} streak={streak} />
+        <div className="relative z-10 flex flex-1 flex-col">
       <header className={`grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${isFirstRunRevealActive ? "reveal-item reveal-item--header reveal-stagger-3" : ""}`}>
         <div className="min-w-0">
           <p className="text-lg font-black uppercase tracking-[0.24em] text-amber-700">{household?.name ?? "HomeBoard"}</p>
@@ -263,6 +267,8 @@ export default function WallPage() {
           <TodayAgenda events={todayEvents} />
           <WeekPreview events={events} variant="wall" />
         </aside>
+      </div>
+      </div>
       </div>
     </WallShell>
   );
