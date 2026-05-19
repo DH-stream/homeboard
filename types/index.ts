@@ -125,6 +125,10 @@ export type Device = {
   audience?: DeviceAudience;
   linkedMemberId?: string;
   lastSeenAt?: string;
+  pairedAt?: string;
+  pairedByUserId?: string;
+  createdAt?: string;
+  updatedAt?: string;
   defaultView?: string;
 };
 

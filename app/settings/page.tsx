@@ -10,6 +10,7 @@ import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
 import { MembersSettings } from "@/components/settings/MembersSettings";
+import { DevicesSettings } from "@/components/settings/DevicesSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { canAccessFullSettings, getDeviceProfile, getOrCreateDeviceId, resetDeviceProfile, setDeviceProfile as persistDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
@@ -83,6 +84,7 @@ export default function SettingsPage() {
           <>
             <HouseholdSettings />
             <MembersSettings />
+            <DevicesSettings />
             <WallTaskCreatorSettings />
             <CalendarSourcesSettings />
             <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
