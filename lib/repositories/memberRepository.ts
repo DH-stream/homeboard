@@ -17,6 +17,7 @@ type HouseholdMemberRow = {
   color: string;
   avatar_url: string | null;
   role: HouseholdMemberRole;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -38,6 +39,7 @@ function mapHouseholdMember(row: HouseholdMemberRow): HouseholdMember {
     color: row.color,
     avatarUrl: row.avatar_url ?? undefined,
     role: row.role,
+    userId: row.user_id ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -74,7 +76,7 @@ export class SupabaseMemberRepository implements MemberRepository {
 
     const { data, error } = await this.client
       .from("household_members")
-      .select("id, household_id, display_name, color, avatar_url, role, created_at, updated_at")
+      .select("id, household_id, display_name, color, avatar_url, role, user_id, created_at, updated_at")
       .eq("household_id", householdId)
       .order("created_at", { ascending: true });
 
