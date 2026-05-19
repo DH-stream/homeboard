@@ -342,6 +342,7 @@ export default function WallPage() {
                 <StreakFlameIndicator
                   streak={displayStreak}
                   animateIntro={showStreakIntro}
+                  showLabel
                 />
               </p>
               <p className="mt-2 text-5xl font-black">
