@@ -90,12 +90,6 @@ export default function SettingsPage() {
             <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
               <p>{t("homeAssistantIntegrationCopy")}</p>
             </SettingsCard>
-            <SettingsCard status={t("localPreview")} title={t("dueDate")}>
-              <div className="space-y-2">
-                <p>{t("dueDatePreview")}</p>
-                <p>{t("futureSchedulingPreview")}</p>
-              </div>
-            </SettingsCard>
             <SettingsCard status={t("planned")} title={t("runaiApiTokens")}>
               <p>{t("runaiApiTokensCopy")}</p>
             </SettingsCard>

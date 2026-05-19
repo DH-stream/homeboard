@@ -17,11 +17,8 @@ const copy: Record<Language, Record<string, string>> = {
     helper: "Name the screens and phones connected to this home.",
     unnamed: "Unnamed device",
     needsHome: "Choose a cloud home first to view connected devices.",
-    mode: "Mode",
-    lastSeen: "Last seen",
-    paired: "Paired",
+    lastOnline: "Last online",
     never: "Never",
-    unknown: "Unknown",
     edit: "Edit",
     save: "Save",
     cancel: "Cancel",
@@ -33,11 +30,8 @@ const copy: Record<Language, Record<string, string>> = {
     helper: "Namnge skärmar och mobiler som är kopplade till hemmet.",
     unnamed: "Namnlös enhet",
     needsHome: "Välj ett molnhem först för att se anslutna enheter.",
-    mode: "Läge",
-    lastSeen: "Senast sedd",
-    paired: "Parades",
+    lastOnline: "Senast online",
     never: "Aldrig",
-    unknown: "Okänt",
     edit: "Redigera",
     save: "Spara",
     cancel: "Avbryt",
@@ -94,18 +88,18 @@ export function DevicesSettings() {
         {!householdId ? <p>{t.needsHome}</p> : null}
         {householdId && isLoading ? <p className="text-sm font-bold text-stone-500">…</p> : null}
         {householdId && error ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">{t.loadError}</p> : null}
+        {householdId && !isLoading && devices.length === 0 ? <p className="text-sm font-bold text-stone-500">{language === "sv" ? "Inga enheter är kopplade ännu." : "No devices connected yet."}</p> : null}
         {householdId ? (
           <ul className="space-y-2">
             {devices.map((device) => {
               const fallbackName = device.name.trim() || t.unnamed;
               const lastSeen = formatDateTime(device.lastSeenAt, language);
-              const pairedAt = formatDateTime(device.pairedAt, language);
               const isEditing = editingId === device.id;
 
               return (
                 <li className="rounded-2xl border border-stone-200 bg-stone-50 p-3" key={device.id}>
                   {isEditing ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <input className="min-h-10 w-full rounded-xl border border-stone-200 px-3 font-semibold" onChange={(event) => setEditingName(event.target.value)} value={editingName} />
                       <div className="flex gap-2">
                         <button className="pressable min-h-10 rounded-xl bg-stone-950 px-3 text-sm font-black text-white" disabled={isSaving || !editingName.trim()} onClick={() => void saveName(device.id)} type="button">{t.save}</button>
@@ -115,14 +109,10 @@ export function DevicesSettings() {
                   ) : (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-black text-stone-900">{fallbackName}</p>
+                        <p className="text-base font-black text-stone-900">{fallbackName}</p>
                         <button className="pressable min-h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-black text-stone-700" onClick={() => startEdit(device)} type="button">{t.edit}</button>
                       </div>
-                      <dl className="grid gap-1 text-xs font-bold text-stone-600">
-                        <div className="flex justify-between gap-2"><dt>{t.mode}</dt><dd className="text-stone-900">{device.mode}</dd></div>
-                        <div className="flex justify-between gap-2"><dt>{t.lastSeen}</dt><dd className="text-right text-stone-900">{lastSeen ?? t.never}</dd></div>
-                        <div className="flex justify-between gap-2"><dt>{t.paired}</dt><dd className="text-right text-stone-900">{pairedAt ?? t.unknown}</dd></div>
-                      </dl>
+                      <p className="text-xs font-bold text-stone-600">{t.lastOnline}: <span className="text-stone-900">{lastSeen ?? t.never}</span></p>
                     </div>
                   )}
                 </li>
