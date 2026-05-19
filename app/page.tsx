@@ -199,6 +199,7 @@ export default function HomePage() {
   const adultLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextLanguage = language === "sv" ? "en" : "sv";
   const languageToggleLabel = language === "sv" ? "English" : "Svenska";
+  const languageToggleFlag = language === "sv" ? "🇬🇧" : "🇸🇪";
   const languageToggleAriaLabel = language === "sv" ? "Switch language to English" : "Byt språk till svenska";
 
   useEffect(() => {
@@ -266,11 +267,14 @@ export default function HomePage() {
       <SetupTaskHints language={language} />
       <button
         aria-label={languageToggleAriaLabel}
-        className="pressable hover-lift absolute right-4 top-4 z-30 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-stone-700 shadow-[0_14px_40px_rgba(84,59,34,0.12)] backdrop-blur-xl transition-[transform,background,box-shadow] duration-200 ease-[var(--ease-out)] hover:bg-white/95 sm:right-6 sm:top-6"
+        className="pressable hover-lift absolute right-4 top-4 z-30 inline-flex items-center gap-2 rounded-full border border-white/75 bg-white/76 py-1.5 pl-2 pr-3 text-xs font-black text-stone-700 shadow-[0_14px_40px_rgba(84,59,34,0.12)] ring-1 ring-black/5 backdrop-blur-xl transition-[transform,background,box-shadow] duration-200 ease-[var(--ease-out)] hover:bg-white/94 sm:right-6 sm:top-6 sm:py-2 sm:pl-2.5 sm:pr-4 sm:text-sm"
         onClick={() => setLanguage(nextLanguage)}
         type="button"
       >
-        {languageToggleLabel}
+        <span className="grid size-7 place-items-center rounded-full bg-white/85 text-base shadow-sm ring-1 ring-black/5 sm:size-8 sm:text-lg" aria-hidden="true">
+          {languageToggleFlag}
+        </span>
+        <span>{languageToggleLabel}</span>
       </button>
 
       <section className={`setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 transition-[opacity,filter,transform] duration-500 ease-[var(--ease-out)] sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8 ${isAdultLockOpening ? "scale-[0.998]" : ""}`}>
@@ -338,8 +342,6 @@ export default function HomePage() {
             </div>
           </section>
         )}
-
-        {!canSelectAdultProfile(hasAdultAccess) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 transition-opacity duration-300 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""} ${isAdultLockOpening ? "opacity-0" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
 
         <p className={`setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 transition-opacity duration-300 sm:mt-7 sm:text-base sm:leading-6 ${isAdultLockOpening ? "opacity-0" : ""}`}>{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">
