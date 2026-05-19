@@ -14,9 +14,10 @@ function broadcastParentAuthChanged() {
   window.dispatchEvent(new CustomEvent(PARENT_AUTH_CHANGED_EVENT));
 }
 
-function getParentAuthRedirectUrl() {
+function getParentAuthRedirectUrl(redirectTo?: string) {
   if (typeof window === "undefined") return undefined;
-  return `${window.location.origin}/settings`;
+  const safePath = typeof redirectTo === "string" && redirectTo.startsWith("/") ? redirectTo : "/settings";
+  return `${window.location.origin}${safePath}`;
 }
 
 function mapSupabaseUser(user: { id: string; email?: string | null } | null | undefined): ParentAuthUser | null {
@@ -36,7 +37,7 @@ export async function getCurrentParentUser(): Promise<ParentAuthUser | null> {
   return mapSupabaseUser(data.user);
 }
 
-export async function requestParentEmailCode(email: string) {
+export async function requestParentEmailCode(email: string, options?: { redirectTo?: string }) {
   const client = createBrowserSupabaseClient();
   if (!client) throw new Error("Cloud is not configured.");
 
@@ -46,7 +47,7 @@ export async function requestParentEmailCode(email: string) {
   const { error } = await client.auth.signInWithOtp({
     email: normalizedEmail,
     options: {
-      emailRedirectTo: getParentAuthRedirectUrl(),
+      emailRedirectTo: getParentAuthRedirectUrl(options?.redirectTo),
       shouldCreateUser: true,
     },
   });

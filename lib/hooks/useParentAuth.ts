@@ -66,9 +66,9 @@ export function useParentAuth() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const requestCode = useCallback(async (email: string) => {
+  const requestCode = useCallback(async (email: string, options?: { redirectTo?: string }) => {
     setError(null);
-    await requestParentEmailCode(email);
+    await requestParentEmailCode(email, options);
   }, []);
 
   const verifyCode = useCallback(async (email: string, token: string) => {
