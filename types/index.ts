@@ -150,6 +150,8 @@ export type DevicePairingSession = {
 export type CreateDevicePairingSessionInput = {
   deviceName: string;
   mode: "wall" | "mobile";
+  localDeviceId: string;
+  persistedDeviceId?: string;
 };
 
 export type CreateTaskScheduleInput = {

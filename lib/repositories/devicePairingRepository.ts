@@ -1,3 +1,4 @@
+import { getPersistedCloudDeviceId, setPersistedCloudDeviceId } from "@/lib/devices/deviceIdentity";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { CreateDevicePairingSessionInput, Device, DevicePairingSession, DevicePairingSessionStatus } from "@/types";
 
@@ -10,6 +11,8 @@ type DeviceRow = {
   paired_at: string | null;
   created_at: string;
   updated_at: string;
+  paired_by_user_id: string | null;
+  local_device_id: string | null;
 };
 
 type DevicePairingSessionRow = {
@@ -71,19 +74,55 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + PAIRING_TTL_MINUTES * 60 * 1000).toISOString();
-    const { data: device, error: deviceError } = await this.client
-      .from("devices")
-      .insert({ name: input.deviceName, mode: input.mode, last_seen_at: now })
-      .select("id, household_id, name, mode, last_seen_at, paired_at, created_at, updated_at")
-      .single();
+    const selectDeviceColumns = "id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, local_device_id, created_at, updated_at";
 
-    if (deviceError) throw deviceError;
+    const resolvedPersistedId = input.persistedDeviceId ?? getPersistedCloudDeviceId();
+    let device: DeviceRow | null = null;
+
+    if (resolvedPersistedId) {
+      const { data: existingByPersisted } = await this.client
+        .from("devices")
+        .select(selectDeviceColumns)
+        .eq("id", resolvedPersistedId)
+        .maybeSingle();
+      device = (existingByPersisted as DeviceRow | null) ?? null;
+    }
+
+    if (!device) {
+      const { data: existingByLocal } = await this.client
+        .from("devices")
+        .select(selectDeviceColumns)
+        .eq("local_device_id", input.localDeviceId)
+        .maybeSingle();
+      device = (existingByLocal as DeviceRow | null) ?? null;
+    }
+
+    if (device) {
+      const { data: updatedDevice, error: updateError } = await this.client
+        .from("devices")
+        .update({ last_seen_at: now, updated_at: now })
+        .eq("id", device.id)
+        .select(selectDeviceColumns)
+        .single();
+      if (updateError) throw updateError;
+      device = updatedDevice as DeviceRow;
+    } else {
+      const { data: createdDevice, error: deviceError } = await this.client
+        .from("devices")
+        .insert({ name: input.deviceName, mode: input.mode, last_seen_at: now, local_device_id: input.localDeviceId })
+        .select(selectDeviceColumns)
+        .single();
+      if (deviceError) throw deviceError;
+      device = createdDevice as DeviceRow;
+    }
+
+    setPersistedCloudDeviceId(device.id);
 
     let lastError: unknown = null;
     for (let attempt = 0; attempt < PAIRING_CODE_CREATE_ATTEMPTS; attempt += 1) {
       const { data: session, error: sessionError } = await this.client
         .from("device_pairing_sessions")
-        .insert({ device_id: (device as DeviceRow).id, pairing_code: createPairingCode(), status: "pending", expires_at: expiresAt })
+        .insert({ device_id: device.id, pairing_code: createPairingCode(), status: "pending", expires_at: expiresAt })
         .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
         .single();
 
@@ -130,7 +169,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     const { error: deviceError } = await this.client
       .from("devices")
-      .update({ household_id: householdId, paired_at: now, last_seen_at: now, updated_at: now })
+      .update({ household_id: householdId, paired_at: now, paired_by_user_id: memberId ?? null, last_seen_at: now, updated_at: now })
       .eq("id", session.deviceId);
 
     if (deviceError) throw deviceError;

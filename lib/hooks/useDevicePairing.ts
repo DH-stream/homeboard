@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isCloudConfigured } from "@/lib/cloud/config";
+import { getOrCreateLocalDeviceIdentity, getPersistedCloudDeviceId } from "@/lib/devices/deviceIdentity";
 import { devicePairingRepository } from "@/lib/repositories/devicePairingRepository";
 import { createDevicePairingService } from "@/lib/services/devicePairingService";
 import type { DevicePairingSession } from "@/types";
@@ -20,7 +21,14 @@ export function useWallDevicePairing(enabled: boolean) {
     setLoading(true);
     setError(null);
     try {
-      const nextSession = await service.createWallPairingSession({ deviceName: "Väggskärm", mode: "wall" });
+      const localIdentity = getOrCreateLocalDeviceIdentity();
+      if (!localIdentity) throw new Error("Device identity unavailable.");
+      const nextSession = await service.createWallPairingSession({
+        deviceName: "Väggskärm",
+        mode: "wall",
+        localDeviceId: localIdentity.id,
+        persistedDeviceId: getPersistedCloudDeviceId() ?? undefined,
+      });
       setSession(nextSession);
       return nextSession;
     } catch (unknownError) {
