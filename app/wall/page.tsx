@@ -394,11 +394,13 @@ export default function WallPage() {
                   <EmptyState title={allDoneTitle}>{allDoneBody}</EmptyState>
                 ) : (
                   <TaskList
-                    filter="open"
-                    highlightTaskId={recentlyCreatedTaskId}
+                    animationKey="wall-tasks"
+                    grouped
+                    members={members}
                     onToggle={toggleTask}
+                    recentlyCreatedId={recentlyCreatedTaskId}
+                    roomy
                     tasks={filteredTodayTasks}
-                    variant="wall"
                   />
                 )}
               </div>
