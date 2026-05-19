@@ -10,13 +10,13 @@ import { SettingsCard } from "@/components/settings/SettingsCard";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
 import { MembersSettings } from "@/components/settings/MembersSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
-import { canAccessFullSettings, getDeviceProfile } from "@/lib/devicePreferences";
+import { canAccessFullSettings, getDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
   const { language, languageName, setLanguage, t } = useLanguage();
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("settings"));
-  const [deviceProfile, setDeviceProfile] = useState<"wall" | "mobile" | "admin" | null>(null);
+  const [deviceProfile, setDeviceProfile] = useState<DeviceMode | null>(null);
   const hasFullSettings = canAccessFullSettings(deviceProfile);
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function SettingsPage() {
             <p className="font-bold text-stone-800">{languageName}</p>
           </div>
         </SettingsCard>
-        <DeviceStartViewSettings />
+        <DeviceStartViewSettings onProfileChange={setDeviceProfile} />
         <CloudStatusSettings />
         {hasFullSettings ? (
           <>

@@ -25,7 +25,11 @@ export function AppShell({ children, title, eyebrow, revealActive = false }: { c
               {t("settings")}
             </Link>
           </nav>
-        ) : null}
+        ) : (
+          <Link className="pressable min-h-11 rounded-full bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-white hover:text-stone-950" href="/settings">
+            {t("settings")}
+          </Link>
+        )}
       </header>
       {children}
     </main>

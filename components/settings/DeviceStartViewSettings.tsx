@@ -18,7 +18,7 @@ function getDeviceModeLabel(mode: DeviceMode, t: ReturnType<typeof useLanguage>[
   return t("deviceModeMobile");
 }
 
-export function DeviceStartViewSettings() {
+export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?: (profile: DeviceMode | null) => void }) {
   const { t } = useLanguage();
   const [startView, setStartView] = useState<DeviceStartView | null>(null);
 
@@ -29,11 +29,13 @@ export function DeviceStartViewSettings() {
   const updateMode = (mode: DeviceMode) => {
     const nextStartView = setDeviceProfile(mode);
     setStartView(nextStartView);
+    onProfileChange?.(nextStartView.mode);
   };
 
   const resetStartView = () => {
     resetDeviceProfile();
     setStartView(null);
+    onProfileChange?.(null);
   };
 
   return (

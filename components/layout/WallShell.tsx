@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
 
 export function WallShell({ children, revealActive = false }: { children: ReactNode; revealActive?: boolean }) {
   const { t } = useLanguage();
+  const showDebugNavigation = shouldShowDebugNavigation();
 
   return (
     <main className={`min-h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_10%,rgba(251,191,36,0.25),transparent_30rem),linear-gradient(135deg,#fff8ed,#eefdf8_55%,#f7f2ff)] p-5 text-stone-950 lg:p-8 ${revealActive ? "first-run-reveal first-run-reveal--active wall-first-run-reveal" : ""}`}>
@@ -14,9 +16,15 @@ export function WallShell({ children, revealActive = false }: { children: ReactN
           <Link className="pressable min-h-11 rounded-full bg-white/70 px-4 py-2 text-stone-700 shadow-sm" href="/">
             HomeBoard
           </Link>
-          <Link className="pressable min-h-11 rounded-full bg-stone-950 px-4 py-2 text-white shadow-sm" href="/app">
-            {t("manageTasks")}
-          </Link>
+          {showDebugNavigation ? (
+            <Link className="pressable min-h-11 rounded-full bg-stone-950 px-4 py-2 text-white shadow-sm" href="/app">
+              {t("manageTasks")}
+            </Link>
+          ) : (
+            <Link className="pressable min-h-11 rounded-full bg-stone-950 px-4 py-2 text-white shadow-sm" href="/settings">
+              {t("settings")}
+            </Link>
+          )}
         </div>
         {children}
       </div>
