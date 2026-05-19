@@ -75,7 +75,7 @@ export default function SettingsPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => continueWithProfile("mobile", "/app")} type="button">{t("continueWithMobileView")}</button>
               <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("wall", "/wall")} type="button">{t("chooseWallView")}</button>
-              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700" onClick={chooseScreenAgain} type="button">{t("chooseScreenAgain")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700" onClick={chooseScreenAgain} type="button">{t("backToScreenChoice")}</button>
             </div>
             <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">Code: {ADULT_ACCESS_REQUIRED_REASON}</p>
           </div>

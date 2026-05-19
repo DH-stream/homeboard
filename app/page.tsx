@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ADULT_ACCESS_REQUIRED_REASON,
   canSelectAdultProfile,
   getOrCreateDeviceId,
   DEVICE_START_VIEW_OPTIONS,
   readDeviceStartView,
   saveDeviceStartView,
+  setDeviceProfile,
   type DeviceMode,
   type DeviceStartView,
 } from "@/lib/devicePreferences";
@@ -80,13 +82,28 @@ function SetupSky() {
   );
 }
 
+function SetupTaskHints({ language }: { language: "en" | "sv" }) {
+  const hints = language === "sv"
+    ? ["Packa förskoleväskan", "Ta ut soporna", "Gympapåse på torsdag", "Kolla kalendern", "Handla mjölk", "Ladda surfplattan"]
+    : ["Pack daycare bag", "Take out trash", "Gym bag on Thursday", "Check calendar", "Buy milk", "Charge tablet"];
+
+  return (
+    <div aria-hidden="true" className="setup-task-hints">
+      {hints.map((hint, index) => (
+        <span className={`setup-task-hint setup-task-hint--${index + 1}`} key={hint}>{hint}</span>
+      ))}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { hasAdultAccess } = useAdultAccess();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
   const [showAdultLockedMessage, setShowAdultLockedMessage] = useState(false);
+  const [activeSetupState, setActiveSetupState] = useState<"chooser" | "adult_locked">("chooser");
   const [isSetupExiting, setIsSetupExiting] = useState(false);
   const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,6 +130,7 @@ export default function HomePage() {
   const chooseStartView = (startView: DeviceStartView) => {
     if (selectedStartView) return;
     if (startView.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) {
+      setActiveSetupState("adult_locked");
       setShowAdultLockedMessage(true);
       window.setTimeout(() => setShowAdultLockedMessage(false), 1800);
       return;
@@ -132,6 +150,12 @@ export default function HomePage() {
     }, prefersReducedMotion ? 180 : 1450);
   };
 
+  const continueWithProfile = (nextProfile: "mobile" | "wall") => {
+    const next = setDeviceProfile(nextProfile);
+    setPendingFirstRunReveal(revealRouteByMode[next.mode]);
+    router.push(next.route);
+  };
+
   if (isCheckingStartView) {
     return <main className="min-h-screen" aria-hidden="true" />;
   }
@@ -139,6 +163,7 @@ export default function HomePage() {
   return (
     <main className={`setup-stage ${selectedStartView ? "setup-stage--leaving" : ""} ${isSetupExiting ? "setup-stage--exiting" : ""} relative isolate min-h-screen overflow-hidden px-3 py-4 sm:px-6 sm:py-10`}>
       <SetupSky />
+      <SetupTaskHints language={language} />
 
       <section className="setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8">
         <div className="surface-card setup-hero-card relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] px-3 py-4 backdrop-blur-xl sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12">
@@ -154,7 +179,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="setup-options mt-4 grid gap-3 sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3">
+        {activeSetupState === "chooser" ? <div className="setup-options mt-4 grid gap-3 sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3">
           {DEVICE_START_VIEW_OPTIONS.map((option, index) => {
             const copy = getDeviceModeCopy(option.mode, t);
             const isSelected = selectedStartView?.mode === option.mode;
@@ -189,7 +214,22 @@ export default function HomePage() {
               </button>
             );
           })}
-        </div>
+        </div> : (
+          <section className="adult-view-lock-panel setup-locked-state-panel mx-auto mt-5 w-full max-w-3xl rounded-[2rem] p-5 sm:p-8">
+            <div className="adult-view-lock-panel__shine" aria-hidden="true" />
+            <div className="adult-view-lock-panel__wake" aria-hidden="true" />
+            <div className="adult-view-lock-panel__icon" aria-hidden="true">🔐</div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-800">{t("adultViewLockedTitle")}</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950 sm:text-4xl">{t("adultViewLockedBody")}</h2>
+            <p className="mt-3 text-sm font-semibold leading-6 text-stone-700 sm:text-base">{t("adultViewLockedHelper")}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => continueWithProfile("mobile")} type="button">{t("continueWithMobileView")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("wall")} type="button">{t("chooseWallView")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700" onClick={() => setActiveSetupState("chooser")} type="button">{t("backToScreenChoice")}</button>
+            </div>
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">Code: {ADULT_ACCESS_REQUIRED_REASON}</p>
+          </section>
+        )}
 
         {!canSelectAdultProfile(hasAdultAccess) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
 
