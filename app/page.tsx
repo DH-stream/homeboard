@@ -14,7 +14,7 @@ import {
 } from "@/lib/devicePreferences";
 import { setPendingFirstRunReveal, type FirstRunRevealRoute } from "@/lib/firstRunReveal";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type Language } from "@/lib/i18n";
 
 const optionIcons: Record<DeviceMode, string> = {
   wall: "🏠",
@@ -184,6 +184,30 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
   );
 }
 
+function LanguageFlag({ language }: { language: Language }) {
+  if (language === "sv") {
+    return (
+      <span className="relative block size-5 overflow-hidden rounded-full bg-[#006aa7] shadow-inner ring-1 ring-black/10" aria-hidden="true">
+        <span className="absolute left-[34%] top-0 h-full w-[14%] bg-[#fecc00]" />
+        <span className="absolute left-0 top-[43%] h-[14%] w-full bg-[#fecc00]" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="relative block size-5 overflow-hidden rounded-full bg-[#012169] shadow-inner ring-1 ring-black/10" aria-hidden="true">
+      <span className="absolute left-1/2 top-1/2 h-[160%] w-[18%] -translate-x-1/2 -translate-y-1/2 rotate-45 bg-white" />
+      <span className="absolute left-1/2 top-1/2 h-[160%] w-[18%] -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-white" />
+      <span className="absolute left-1/2 top-1/2 h-[160%] w-[8%] -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#c8102e]" />
+      <span className="absolute left-1/2 top-1/2 h-[160%] w-[8%] -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-[#c8102e]" />
+      <span className="absolute left-0 top-[40%] h-[20%] w-full bg-white" />
+      <span className="absolute left-[40%] top-0 h-full w-[20%] bg-white" />
+      <span className="absolute left-0 top-[45%] h-[10%] w-full bg-[#c8102e]" />
+      <span className="absolute left-[45%] top-0 h-full w-[10%] bg-[#c8102e]" />
+    </span>
+  );
+}
+
 export default function HomePage() {
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
@@ -199,7 +223,6 @@ export default function HomePage() {
   const adultLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextLanguage = language === "sv" ? "en" : "sv";
   const languageToggleLabel = language === "sv" ? "English" : "Svenska";
-  const languageToggleFlag = language === "sv" ? "🇬🇧" : "🇸🇪";
   const languageToggleAriaLabel = language === "sv" ? "Switch language to English" : "Byt språk till svenska";
 
   useEffect(() => {
@@ -271,8 +294,8 @@ export default function HomePage() {
         onClick={() => setLanguage(nextLanguage)}
         type="button"
       >
-        <span className="grid size-7 place-items-center rounded-full bg-white/85 text-base shadow-sm ring-1 ring-black/5 sm:size-8 sm:text-lg" aria-hidden="true">
-          {languageToggleFlag}
+        <span className="grid size-7 place-items-center rounded-full bg-white/88 shadow-sm ring-1 ring-black/5 sm:size-8" aria-hidden="true">
+          <LanguageFlag language={nextLanguage} />
         </span>
         <span>{languageToggleLabel}</span>
       </button>
@@ -342,6 +365,8 @@ export default function HomePage() {
             </div>
           </section>
         )}
+
+        {!canSelectAdultProfile(hasAdultAccess) && (isAdultLockOpening || showAdultLockedMessage) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 transition-opacity duration-300 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
 
         <p className={`setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 transition-opacity duration-300 sm:mt-7 sm:text-base sm:leading-6 ${isAdultLockOpening ? "opacity-0" : ""}`}>{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">
