@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
   canSelectAdultProfile,
@@ -34,7 +34,18 @@ const revealRouteByMode: Record<DeviceMode, FirstRunRevealRoute> = {
   admin: "settings",
 };
 
-const SETUP_TASK_HINT_SLOTS = ["a", "b", "c", "d", "e", "f"] as const;
+const SETUP_TASK_HINT_SLOTS = [
+  { id: "a", style: { top: "14%", left: "7%" } },
+  { id: "b", style: { top: "20%", right: "8%" } },
+  { id: "c", style: { top: "38%", left: "13%" } },
+  { id: "d", style: { top: "42%", right: "13%" } },
+  { id: "e", style: { bottom: "26%", left: "18%" } },
+  { id: "f", style: { bottom: "18%", right: "10%" } },
+  { id: "g", style: { top: "31%", left: "33%" } },
+  { id: "h", style: { bottom: "34%", right: "29%" } },
+  { id: "i", style: { top: "58%", right: "18%" } },
+  { id: "j", style: { bottom: "15%", left: "36%" } },
+] satisfies Array<{ id: string; style: CSSProperties }>;
 const SETUP_TASK_HINT_TONES = ["amber", "emerald", "sky", "rose", "stone"] as const;
 
 function getDeviceModeCopy(mode: DeviceMode, t: ReturnType<typeof useLanguage>["t"]) {
@@ -62,7 +73,7 @@ function Cloud({ className }: { className: string }) {
 
 function SetupSky() {
   return (
-    <div className="setup-sky" aria-hidden="true">
+    <div className="setup-sky z-0" aria-hidden="true">
       <Cloud className="setup-cloud setup-cloud-anchor setup-cloud-anchor-left" />
       <Cloud className="setup-cloud setup-cloud-anchor setup-cloud-anchor-right" />
       <div className="setup-cloud-track setup-cloud-track-far">
@@ -85,11 +96,18 @@ type HintSlot = typeof SETUP_TASK_HINT_SLOTS[number];
 type HintTone = typeof SETUP_TASK_HINT_TONES[number];
 type VisibleHint = { id: string; text: string; slot: HintSlot; tone: HintTone; phase: "enter" | "visible" | "exit" };
 
+function pickNextSlot(usedSlots: Set<string>, tick: number, replaceIndex: number, previousSlotId?: string) {
+  const availableSlots = SETUP_TASK_HINT_SLOTS.filter((slot) => !usedSlots.has(slot.id) && slot.id !== previousSlotId);
+  const pool = availableSlots.length ? availableSlots : SETUP_TASK_HINT_SLOTS.filter((slot) => !usedSlots.has(slot.id));
+  if (!pool.length) return SETUP_TASK_HINT_SLOTS[(tick * 7 + replaceIndex * 3 + 2) % SETUP_TASK_HINT_SLOTS.length];
+  return pool[(tick * 7 + replaceIndex * 5 + 3) % pool.length];
+}
+
 function SetupTaskHints({ language }: { language: "en" | "sv" }) {
   const hints = useMemo(() => language === "sv"
     ? ["Packa förskoleväskan", "Ta ut soporna", "Gympapåse på torsdag", "Kolla kalendern", "Hämta paket", "Vattna växterna", "Lägg fram regnkläder", "Kom ihåg BVC", "Handla mjölk", "Ladda surfplattan", "Mormor kommer 15:00", "Glöm inte regnjackan", "Fredagsmys", "Byt lakan", "Ställ ut återvinningen"]
     : ["Pack daycare bag", "Take out trash", "Gym bag on Thursday", "Check calendar", "Pick up package", "Water the plants", "Put out rain clothes", "Remember appointment", "Buy milk", "Charge tablet", "Grandma visits at 3", "Don't forget rain jacket", "Friday cozy time", "Change sheets", "Take out recycling"], [language]);
-  const [visibleHints, setVisibleHints] = useState<VisibleHint[]>(() => hints.slice(0, 3).map((text, index) => ({ id: `hint-${index}`, text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length], phase: "enter" })));
+  const [visibleHints, setVisibleHints] = useState<VisibleHint[]>(() => hints.slice(0, 3).map((text, index) => ({ id: `hint-${index}`, text, slot: SETUP_TASK_HINT_SLOTS[index * 3], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length], phase: "enter" })));
 
   useEffect(() => {
     const timerIds: number[] = [];
@@ -100,39 +118,37 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
     };
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisibleHints(hints.slice(0, 2).map((text, index) => ({ id: `hint-reduced-${index}`, text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length], phase: "visible" })));
+      setVisibleHints(hints.slice(0, 2).map((text, index) => ({ id: `hint-reduced-${index}`, text, slot: SETUP_TASK_HINT_SLOTS[index * 4], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length], phase: "visible" })));
       return () => {
         timerIds.forEach((id) => window.clearTimeout(id));
       };
     }
 
     let tick = 0;
-    let cycleTimer: number | null = null;
     let idCounter = 100;
 
     const cycle = () => {
+      let exitingHint: VisibleHint | undefined;
       setVisibleHints((current) => {
         if (!current.length) return current;
         const replaceIndex = tick % current.length;
+        exitingHint = current[replaceIndex];
         return current.map((hint, index) => (index === replaceIndex ? { ...hint, phase: "exit" } : hint));
       });
 
-      cycleTimer = trackTimer(window.setTimeout(() => {
+      trackTimer(window.setTimeout(() => {
       tick += 1;
       setVisibleHints((current) => {
         const visibleCount = window.matchMedia("(max-width: 640px)").matches ? 2 : 3;
         const base = current.slice(0, visibleCount);
         const replaceIndex = (tick - 1) % Math.max(1, base.length);
         const usedTexts = new Set(base.map((hint, index) => (index === replaceIndex ? null : hint.text)).filter(Boolean) as string[]);
-        const usedSlots = new Set(base.map((hint, index) => (index === replaceIndex ? null : hint.slot)).filter(Boolean) as HintSlot[]);
+        const usedSlots = new Set(base.map((hint, index) => (index === replaceIndex ? null : hint.slot.id)).filter(Boolean) as string[]);
 
-        const hintIndex = (tick * 3 + replaceIndex * 5) % hints.length;
-        const nextText = hints.find((text, idx) => idx >= hintIndex && !usedTexts.has(text)) ?? hints[hintIndex];
-        const slotCandidate = SETUP_TASK_HINT_SLOTS[(tick + replaceIndex * 2) % SETUP_TASK_HINT_SLOTS.length];
-        const nextSlot = usedSlots.has(slotCandidate)
-          ? SETUP_TASK_HINT_SLOTS.find((slot) => !usedSlots.has(slot)) ?? slotCandidate
-          : slotCandidate;
-        const nextTone = SETUP_TASK_HINT_TONES[(tick + replaceIndex) % SETUP_TASK_HINT_TONES.length];
+        const hintIndex = (tick * 5 + replaceIndex * 7) % hints.length;
+        const nextText = hints.find((text, idx) => idx >= hintIndex && !usedTexts.has(text)) ?? hints.find((text) => !usedTexts.has(text)) ?? hints[hintIndex];
+        const nextSlot = pickNextSlot(usedSlots, tick, replaceIndex, exitingHint?.slot.id);
+        const nextTone = SETUP_TASK_HINT_TONES[(tick * 2 + replaceIndex) % SETUP_TASK_HINT_TONES.length];
         const replacement: VisibleHint = { id: `hint-${idCounter++}`, text: nextText, slot: nextSlot, tone: nextTone, phase: "enter" };
 
         const next = [...base];
@@ -144,16 +160,15 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
         setVisibleHints((current) => current.map((hint) => (hint.phase === "enter" ? { ...hint, phase: "visible" } : hint)));
       }, 700));
 
-      cycleTimer = trackTimer(window.setTimeout(cycle, 2600));
+      trackTimer(window.setTimeout(cycle, 2250));
       }, 750));
     };
 
     trackTimer(window.setTimeout(() => {
       setVisibleHints((current) => current.map((hint) => ({ ...hint, phase: "visible" })));
     }, 700));
-    cycleTimer = trackTimer(window.setTimeout(cycle, 2600));
+    trackTimer(window.setTimeout(cycle, 2250));
     return () => {
-      if (cycleTimer) window.clearTimeout(cycleTimer);
       timerIds.forEach((id) => window.clearTimeout(id));
     };
   }, [hints]);
@@ -161,7 +176,7 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
   return (
     <div aria-hidden="true" className="setup-task-hints">
       {visibleHints.map((hint) => (
-        <span className={`setup-task-hint setup-task-hint--${hint.phase} setup-task-hint--slot-${hint.slot} setup-task-hint--tone-${hint.tone}`} key={hint.id}>
+        <span className={`setup-task-hint setup-task-hint--${hint.phase} setup-task-hint--tone-${hint.tone}`} key={hint.id} style={hint.slot.style}>
           {hint.text}
         </span>
       ))}
