@@ -15,19 +15,36 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
+import {
+  enableLocalOnlyMode,
+  saveSelectedHouseholdId,
+} from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
-import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
+import {
+  consumePendingFirstRunReveal,
+  hasPendingFirstRunReveal,
+} from "@/lib/firstRunReveal";
 import { useTasks } from "@/lib/hooks/useTasks";
-import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type WallTaskCreatorMode } from "@/lib/wallPreferences";
+import {
+  readWallTaskCreatorMode,
+  WALL_TASK_CREATOR_MODE_CHANGE_EVENT,
+  type WallTaskCreatorMode,
+} from "@/lib/wallPreferences";
 import { saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
-import { getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } from "@/lib/tasks/streak";
+import {
+  getLocalDateKey,
+  hasSeenStreakFlameToday,
+  markStreakFlameSeenToday,
+} from "@/lib/tasks/streak";
 import { createStreakService } from "@/lib/services/streakService";
-import { shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
+import {
+  shouldShowInRemainingTasks,
+  shouldShowTodayTask,
+} from "@/lib/tasks/visibility";
 import type { TaskInstance } from "@/types";
 
 const QUICK_CREATOR_CLOSE_MS = 240;
@@ -36,7 +53,9 @@ const MAX_WALL_STREAK_PREVIEW = 24;
 
 function getFirstCreatedTaskId(created: unknown) {
   if (!Array.isArray(created)) return null;
-  const firstTask = created.find((task): task is TaskInstance => Boolean(task && typeof task === "object" && "id" in task));
+  const firstTask = created.find((task): task is TaskInstance =>
+    Boolean(task && typeof task === "object" && "id" in task),
+  );
   return firstTask?.id ?? null;
 }
 
@@ -61,30 +80,55 @@ export default function WallPage() {
   const { events, todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted } = useTasks();
   const [now, setNow] = useState(new Date());
-  const [completionFeedback, setCompletionFeedback] = useState<{ taskId: string; message: string } | null>(null);
-  const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
-  const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
+  const [completionFeedback, setCompletionFeedback] = useState<{
+    taskId: string;
+    message: string;
+  } | null>(null);
+  const [createSuccessMessage, setCreateSuccessMessage] = useState<
+    string | null
+  >(null);
+  const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<
+    string | null
+  >(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
-  const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("wall"));
-  const [wallTaskCreatorMode, setWallTaskCreatorMode] = useState<WallTaskCreatorMode | null>(null);
+  const [isFirstRunRevealActive] = useState(() =>
+    hasPendingFirstRunReveal("wall"),
+  );
+  const [wallTaskCreatorMode, setWallTaskCreatorMode] =
+    useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
   const [isQuickCreatorMounted, setQuickCreatorMounted] = useState(false);
   const [useLocalWall, setUseLocalWall] = useState(false);
-  const [streakPreviewOverride] = useState(() => getWallStreakPreviewOverride());
+  const [streakPreviewOverride] = useState(() =>
+    getWallStreakPreviewOverride(),
+  );
   const quickCreatorTimerRef = useRef<number | null>(null);
 
-  const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
-  const remainingTodayTasks = useMemo(() => todayTasks.filter((task) => shouldShowInRemainingTasks(task, now)), [now, todayTasks]);
+  const todayTasks = useMemo(
+    () => tasks.filter((task) => shouldShowTodayTask(task, now)),
+    [now, tasks],
+  );
+  const remainingTodayTasks = useMemo(
+    () => todayTasks.filter((task) => shouldShowInRemainingTasks(task, now)),
+    [now, todayTasks],
+  );
   const filteredTodayTasks = useMemo(() => {
     if (!selectedMemberId) return remainingTodayTasks;
-    return remainingTodayTasks.filter((task) => task.assignedToMemberId === selectedMemberId);
+    return remainingTodayTasks.filter(
+      (task) => task.assignedToMemberId === selectedMemberId,
+    );
   }, [selectedMemberId, remainingTodayTasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
-    return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
+    return {
+      completed,
+      total: todayTasks.length,
+      remaining: todayTasks.length - completed,
+    };
   }, [todayTasks]);
 
-  const allVisibleTasksDone = todayTasks.length > 0 && filteredTodayTasks.length === 0;
+  const allVisibleTasksDone =
+    todayTasks.length > 0 && filteredTodayTasks.length === 0;
   const [streak, setStreak] = useState(0);
   const displayStreak = streakPreviewOverride ?? streak;
   const [showStreakIntro, setShowStreakIntro] = useState(false);
@@ -101,7 +145,10 @@ export default function WallPage() {
     const syncStreak = async () => {
       try {
         await streakService.maybeMarkTodayComplete(householdId, todayTasks);
-        const nextStreak = await streakService.getHouseholdTaskStreak(householdId, now);
+        const nextStreak = await streakService.getHouseholdTaskStreak(
+          householdId,
+          now,
+        );
         if (!cancelled) setStreak(nextStreak);
       } catch (error) {
         console.warn("Unable to sync household streak", error);
@@ -132,8 +179,14 @@ export default function WallPage() {
     return () => window.clearTimeout(timer);
   }, [householdId, now, displayStreak]);
 
-  const allDoneTitle = language === "sv" ? "Allt är klart för idag." : "Everything is done for today.";
-  const allDoneBody = language === "sv" ? "Klara uppgifter finns kvar i mobilvyn under Klart." : "Completed tasks remain available in the mobile Done view.";
+  const allDoneTitle =
+    language === "sv"
+      ? "Allt är klart för idag."
+      : "Everything is done for today.";
+  const allDoneBody =
+    language === "sv"
+      ? "Klara uppgifter finns kvar i mobilvyn under Klart."
+      : "Completed tasks remain available in the mobile Done view.";
   const todayTitle = language === "sv" ? "Idag" : "Today";
 
   useEffect(() => {
@@ -145,18 +198,27 @@ export default function WallPage() {
     if (householdId || useLocalWall) consumePendingFirstRunReveal("wall");
   }, [householdId, useLocalWall]);
   const closeQuickCreator = useCallback(() => {
-    if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+    if (quickCreatorTimerRef.current)
+      window.clearTimeout(quickCreatorTimerRef.current);
 
     setQuickCreatorOpen(false);
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    quickCreatorTimerRef.current = window.setTimeout(() => {
-      setQuickCreatorMounted(false);
-      quickCreatorTimerRef.current = null;
-    }, prefersReducedMotion ? QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS : QUICK_CREATOR_CLOSE_MS);
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    quickCreatorTimerRef.current = window.setTimeout(
+      () => {
+        setQuickCreatorMounted(false);
+        quickCreatorTimerRef.current = null;
+      },
+      prefersReducedMotion
+        ? QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS
+        : QUICK_CREATOR_CLOSE_MS,
+    );
   }, []);
 
   const openQuickCreator = useCallback(() => {
-    if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+    if (quickCreatorTimerRef.current)
+      window.clearTimeout(quickCreatorTimerRef.current);
 
     setQuickCreatorMounted(true);
     window.requestAnimationFrame(() => setQuickCreatorOpen(true));
@@ -171,41 +233,60 @@ export default function WallPage() {
     openQuickCreator();
   }, [closeQuickCreator, isQuickCreatorOpen, openQuickCreator]);
 
-
   useEffect(() => {
     setWallTaskCreatorMode(readWallTaskCreatorMode());
 
-    const handleChange = () => setWallTaskCreatorMode(readWallTaskCreatorMode());
+    const handleChange = () =>
+      setWallTaskCreatorMode(readWallTaskCreatorMode());
     window.addEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
-    return () => window.removeEventListener(WALL_TASK_CREATOR_MODE_CHANGE_EVENT, handleChange);
+    return () =>
+      window.removeEventListener(
+        WALL_TASK_CREATOR_MODE_CHANGE_EVENT,
+        handleChange,
+      );
   }, []);
 
   useEffect(() => {
-    if (wallTaskCreatorMode !== "docked" && isQuickCreatorMounted) closeQuickCreator();
+    if (wallTaskCreatorMode !== "docked" && isQuickCreatorMounted)
+      closeQuickCreator();
   }, [closeQuickCreator, isQuickCreatorMounted, wallTaskCreatorMode]);
 
   useEffect(() => {
     return () => {
-      if (quickCreatorTimerRef.current) window.clearTimeout(quickCreatorTimerRef.current);
+      if (quickCreatorTimerRef.current)
+        window.clearTimeout(quickCreatorTimerRef.current);
     };
   }, []);
 
-  const handleTaskCreated = useCallback((created: unknown) => {
-    const createdTaskId = getFirstCreatedTaskId(created);
-    setCreateSuccessMessage(t("taskAdded"));
-    setRecentlyCreatedTaskId(createdTaskId);
-    window.setTimeout(() => {
-      setRecentlyCreatedTaskId((current) => (current === createdTaskId ? null : current));
-    }, 1800);
-  }, [setCreateSuccessMessage, setRecentlyCreatedTaskId, t]);
-
+  const handleTaskCreated = useCallback(
+    (created: unknown) => {
+      const createdTaskId = getFirstCreatedTaskId(created);
+      setCreateSuccessMessage(t("taskAdded"));
+      setRecentlyCreatedTaskId(createdTaskId);
+      window.setTimeout(() => {
+        setRecentlyCreatedTaskId((current) =>
+          current === createdTaskId ? null : current,
+        );
+      }, 1800);
+    },
+    [setCreateSuccessMessage, setRecentlyCreatedTaskId, t],
+  );
 
   const finishPairing = useCallback((nextHouseholdId: string) => {
     saveSelectedHouseholdId(nextHouseholdId);
   }, []);
 
   if (!householdId && !useLocalWall && isCloudConfigured()) {
-    return <WallPairingCard onPaired={finishPairing} onUseLocal={() => { saveDeviceStartView({ mode: "wall", route: "/wall" }); enableLocalOnlyMode(); setUseLocalWall(true); }} />;
+    return (
+      <WallPairingCard
+        onPaired={finishPairing}
+        onUseLocal={() => {
+          saveDeviceStartView({ mode: "wall", route: "/wall" });
+          enableLocalOnlyMode();
+          setUseLocalWall(true);
+        }}
+      />
+    );
   }
 
   async function toggleTask(task: TaskInstance) {
@@ -219,7 +300,13 @@ export default function WallPage() {
     if (willComplete) {
       const message = getCompletionEncouragement(completionFeedback?.message);
       setCompletionFeedback({ taskId: task.id, message });
-      window.setTimeout(() => setCompletionFeedback((current) => (current?.taskId === task.id ? null : current)), 1400);
+      window.setTimeout(
+        () =>
+          setCompletionFeedback((current) =>
+            current?.taskId === task.id ? null : current,
+          ),
+        1400,
+      );
     }
   }
 
@@ -228,58 +315,101 @@ export default function WallPage() {
       <div className="relative flex flex-1 flex-col">
         <StreakBalloons householdId={householdId} streak={displayStreak} />
         <div className="relative z-10 flex flex-1 flex-col">
-      <header className={`grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${isFirstRunRevealActive ? "reveal-item reveal-item--header reveal-stagger-3" : ""}`}>
-        <div className="min-w-0">
-          <p className="text-lg font-black uppercase tracking-[0.24em] text-amber-700">{household?.name ?? "HomeBoard"}</p>
-          <h1 className="mt-2 text-6xl font-black tracking-tight text-stone-950 lg:text-8xl">{formatShortDate(now, locale)}</h1>
-          <p className="mt-3 text-4xl font-black text-stone-600">
-            {new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(now)}
-          </p>
-        </div>
-        <div className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""} ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-4" : ""}`}>
-          <p className="min-h-5 text-sm font-bold uppercase tracking-[0.18em] text-amber-200 flex items-center justify-between gap-2"><span className="truncate">{completionFeedback?.message ?? t("todaysProgress")}</span>
-            <StreakFlameIndicator streak={displayStreak} animateIntro={showStreakIntro} /></p>
-          <p className="mt-2 text-5xl font-black">{stats.completed}/{stats.total}</p>
-          <p className="mt-1 min-h-6 truncate font-semibold text-white/70">{t("progressComplete")} · {stats.remaining} {t("remaining")}</p>
-        </div>
-      </header>
+          <header
+            className={`grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end ${isFirstRunRevealActive ? "reveal-item reveal-item--header reveal-stagger-3" : ""}`}
+          >
+            <div className="min-w-0">
+              <p className="text-lg font-black uppercase tracking-[0.24em] text-amber-700">
+                {household?.name ?? "HomeBoard"}
+              </p>
+              <h1 className="mt-2 text-6xl font-black tracking-tight text-stone-950 lg:text-8xl">
+                {formatShortDate(now, locale)}
+              </h1>
+              <p className="mt-3 text-4xl font-black text-stone-600">
+                {new Intl.DateTimeFormat(locale, {
+                  hour: "numeric",
+                  minute: "2-digit",
+                }).format(now)}
+              </p>
+            </div>
+            <div
+              className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""} ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-4" : ""}`}
+            >
+              <p className="min-h-5 text-sm font-bold uppercase tracking-[0.18em] text-amber-200 flex items-center justify-between gap-2">
+                <span className="truncate">
+                  {completionFeedback?.message ?? t("todaysProgress")}
+                </span>
+                <StreakFlameIndicator
+                  streak={displayStreak}
+                  animateIntro={showStreakIntro}
+                />
+              </p>
+              <p className="mt-2 text-5xl font-black">
+                {stats.completed}/{stats.total}
+              </p>
+              <p className="mt-1 min-h-6 truncate font-semibold text-white/70">
+                {t("progressComplete")} · {stats.remaining} {t("remaining")}
+              </p>
+            </div>
+          </header>
 
-      <div className={`mt-5 flex flex-wrap gap-2 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-5" : ""}`}>
-        {members.map((member) => (
-          <MemberBadge
-            isSelected={selectedMemberId === member.id}
-            key={member.id}
-            member={member}
-            onClick={() => setSelectedMemberId((current) => (current === member.id ? null : member.id))}
-          />
-        ))}
-      </div>
-
-      <div className="mt-6 grid flex-1 min-h-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
-        <section className={`flex min-h-0 flex-col rounded-[2.25rem] bg-white/82 p-5 shadow-[0_24px_80px_rgba(120,93,58,0.18)] backdrop-blur ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-6" : ""}`}>
-          <div className="flex items-center justify-between gap-4">
-            <SectionHeader eyebrow={t("tasks")} title={todayTitle} />
-            <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={toggleQuickCreator} />
+          <div
+            className={`mt-5 flex flex-wrap gap-2 ${isFirstRunRevealActive ? "reveal-item reveal-item--list reveal-stagger-5" : ""}`}
+          >
+            {members.map((member) => (
+              <MemberBadge
+                isSelected={selectedMemberId === member.id}
+                key={member.id}
+                member={member}
+                onClick={() =>
+                  setSelectedMemberId((current) =>
+                    current === member.id ? null : member.id,
+                  )
+                }
+              />
+            ))}
           </div>
-          {wallTaskCreatorMode === "docked" ? (
-            <WallQuickTaskCreator
-              members={members}
-              onCreateTask={createTask}
-              onCreated={handleTaskCreated}
-              variant="panel"
-            />
-          ) : null}
-          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
-            {allVisibleTasksDone ? <EmptyState body={allDoneBody} title={allDoneTitle} /> : <TaskList filter="open" highlightTaskId={recentlyCreatedTaskId} onToggle={toggleTask} tasks={filteredTodayTasks} variant="wall" />}
-          </div>
-        </section>
 
-        <aside className="grid min-h-0 gap-5 lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
-          <TodayAgenda events={todayEvents} />
-          <WeekPreview events={events} variant="wall" />
-        </aside>
-      </div>
-      </div>
+          <div className="mt-6 grid flex-1 min-h-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
+            <section
+              className={`flex min-h-0 flex-col rounded-[2.25rem] bg-white/82 p-5 shadow-[0_24px_80px_rgba(120,93,58,0.18)] backdrop-blur ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-6" : ""}`}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <SectionHeader eyebrow={t("tasks")} title={todayTitle} />
+                <WallQuickTaskButton
+                  isOpen={isQuickCreatorOpen}
+                  onToggle={toggleQuickCreator}
+                />
+              </div>
+              {wallTaskCreatorMode === "docked" ? (
+                <WallQuickTaskCreator
+                  members={members}
+                  onCreateTask={createTask}
+                  onCreated={handleTaskCreated}
+                  variant="panel"
+                />
+              ) : null}
+              <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
+                {allVisibleTasksDone ? (
+                  <EmptyState title={allDoneTitle}>{allDoneBody}</EmptyState>
+                ) : (
+                  <TaskList
+                    filter="open"
+                    highlightTaskId={recentlyCreatedTaskId}
+                    onToggle={toggleTask}
+                    tasks={filteredTodayTasks}
+                    variant="wall"
+                  />
+                )}
+              </div>
+            </section>
+
+            <aside className="grid min-h-0 gap-5 lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+              <TodayAgenda events={todayEvents} />
+              <WeekPreview events={events} variant="wall" />
+            </aside>
+          </div>
+        </div>
       </div>
     </WallShell>
   );
