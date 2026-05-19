@@ -19,7 +19,8 @@ import { useMembers } from "@/lib/hooks/useMembers";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { useLanguage } from "@/lib/i18n";
-import { calculateHouseholdStreak, getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } from "@/lib/tasks/streak";
+import { getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } from "@/lib/tasks/streak";
+import { createStreakService } from "@/lib/services/streakService";
 import { shouldShowInCompletedTasks, shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
 import { isFutureLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
@@ -63,8 +64,9 @@ export default function MobileAppPage() {
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const upcomingTasks = useMemo(() => tasks.filter((task) => !isRecurringTask(task) && isFutureLocalDay(task.dueDate)), [tasks]);
-  const streak = useMemo(() => calculateHouseholdStreak(tasks, now), [now, tasks]);
+  const [streak, setStreak] = useState(0);
   const [showStreakIntro, setShowStreakIntro] = useState(false);
+  const streakService = useMemo(() => createStreakService(), []);
 
   useEffect(() => {
     if (!householdId || streak < 2) {
@@ -83,6 +85,31 @@ export default function MobileAppPage() {
     return () => window.clearTimeout(timer);
   }, [householdId, now, streak]);
 
+
+  useEffect(() => {
+    if (!householdId) {
+      setStreak(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncStreak = async () => {
+      try {
+        await streakService.maybeMarkTodayComplete(householdId, todayTasks);
+        const nextStreak = await streakService.getHouseholdTaskStreak(householdId, now);
+        if (!cancelled) setStreak(nextStreak);
+      } catch (error) {
+        console.warn("Unable to sync household streak", error);
+      }
+    };
+
+    syncStreak();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [householdId, now, streakService, todayTasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };

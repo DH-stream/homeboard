@@ -24,7 +24,8 @@ import { readWallTaskCreatorMode, WALL_TASK_CREATOR_MODE_CHANGE_EVENT, type Wall
 import { saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
-import { calculateHouseholdStreak, getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } from "@/lib/tasks/streak";
+import { getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } from "@/lib/tasks/streak";
+import { createStreakService } from "@/lib/services/streakService";
 import { shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
 import type { TaskInstance } from "@/types";
 
@@ -67,9 +68,36 @@ export default function WallPage() {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return { completed, total: todayTasks.length, remaining: todayTasks.length - completed };
   }, [todayTasks]);
+
   const allVisibleTasksDone = todayTasks.length > 0 && filteredTodayTasks.length === 0;
-  const streak = useMemo(() => calculateHouseholdStreak(tasks, now), [now, tasks]);
+  const [streak, setStreak] = useState(0);
   const [showStreakIntro, setShowStreakIntro] = useState(false);
+  const streakService = useMemo(() => createStreakService(), []);
+
+  useEffect(() => {
+    if (!householdId) {
+      setStreak(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncStreak = async () => {
+      try {
+        await streakService.maybeMarkTodayComplete(householdId, todayTasks);
+        const nextStreak = await streakService.getHouseholdTaskStreak(householdId, now);
+        if (!cancelled) setStreak(nextStreak);
+      } catch (error) {
+        console.warn("Unable to sync household streak", error);
+      }
+    };
+
+    syncStreak();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [householdId, now, streakService, todayTasks]);
 
   useEffect(() => {
     if (!householdId || streak < 2) {
