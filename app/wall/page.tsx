@@ -261,7 +261,14 @@ export default function WallPage() {
             <SectionHeader eyebrow={t("tasks")} title={todayTitle} />
             <WallQuickTaskButton isOpen={isQuickCreatorOpen} onToggle={toggleQuickCreator} />
           </div>
-          {wallTaskCreatorMode === "docked" ? <WallQuickTaskCreator members={members} mode="docked" onCreated={handleTaskCreated} /> : null}
+          {wallTaskCreatorMode === "docked" ? (
+            <WallQuickTaskCreator
+              members={members}
+              onCreateTask={createTask}
+              onCreated={handleTaskCreated}
+              variant="panel"
+            />
+          ) : null}
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
             {allVisibleTasksDone ? <EmptyState body={allDoneBody} title={allDoneTitle} /> : <TaskList filter="open" highlightTaskId={recentlyCreatedTaskId} onToggle={toggleTask} tasks={filteredTodayTasks} variant="wall" />}
           </div>
