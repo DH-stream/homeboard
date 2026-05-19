@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   canSelectAdultProfile,
+  getOrCreateDeviceId,
   DEVICE_START_VIEW_OPTIONS,
   readDeviceStartView,
   saveDeviceStartView,
@@ -90,6 +91,7 @@ export default function HomePage() {
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    getOrCreateDeviceId();
     const startView = readDeviceStartView();
 
     if (startView) {
@@ -157,7 +159,7 @@ export default function HomePage() {
             return (
               <button
                 aria-pressed={isSelected}
-                className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
+                className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} ${isLockedAdmin ? "setup-option-card--locked" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
                 aria-disabled={selectedStartView !== null || isLockedAdmin}
                 key={option.mode}
                 onClick={() => chooseStartView(option)}
@@ -173,13 +175,18 @@ export default function HomePage() {
                 </span>
                 <span className="mt-4 text-2xl font-black tracking-[-0.035em] text-stone-950 sm:mt-6 sm:text-4xl">{copy.title}</span>
                 <span className="mt-2 max-w-sm text-sm font-semibold leading-6 text-stone-600 sm:mt-3 sm:text-lg sm:leading-8">{copy.description}</span>
-                {isLockedAdmin ? <span className="mt-2 text-xs font-bold text-amber-800">{t("adultViewLockedTitle")}</span> : null}
+                {isLockedAdmin ? (
+                  <span className="setup-locked-chip mt-3 inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-amber-900">
+                    <span aria-hidden="true">🔒</span>
+                    {t("adultViewLockedTitle")}
+                  </span>
+                ) : null}
               </button>
             );
           })}
         </div>
 
-        {!canSelectAdultProfile(hasAdultAccess) ? <p className="mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 sm:text-sm">{t("adultViewLockedBody")}</p> : null}
+        {!canSelectAdultProfile(hasAdultAccess) ? <p className="mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 sm:text-sm">{t("adultViewLockedHelper")}</p> : null}
 
         <p className="setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 sm:mt-7 sm:text-base sm:leading-6">{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">

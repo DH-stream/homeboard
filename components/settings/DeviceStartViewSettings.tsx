@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import {
   canSelectAdultProfile,
+  ADULT_ACCESS_REQUIRED_REASON,
+  getOrCreateDeviceId,
   DEVICE_START_VIEW_OPTIONS,
   readDeviceStartView,
   resetDeviceProfile,
@@ -26,6 +28,7 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
   const [startView, setStartView] = useState<DeviceStartView | null>(null);
 
   useEffect(() => {
+    getOrCreateDeviceId();
     setStartView(readDeviceStartView());
   }, []);
 
@@ -74,9 +77,12 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
         </select>
 
         {!canSelectAdultProfile(hasAdultAccess) ? (
-          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
-            {t("adultViewLockedTitle")} {t("adultViewLockedBody")}
-          </p>
+          <div className="adult-view-lock-panel rounded-[1.4rem] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">{t("adultViewLockedTitle")}</p>
+            <p className="mt-2 text-base font-black tracking-tight text-stone-950">{t("adultViewLockedBody")}</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-stone-700">{t("adultViewLockedHelper")}</p>
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">Code: {ADULT_ACCESS_REQUIRED_REASON}</p>
+          </div>
         ) : null}
 
         <div className="rounded-2xl bg-amber-50 p-4 text-amber-950 ring-1 ring-amber-100">

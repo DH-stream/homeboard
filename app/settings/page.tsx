@@ -10,7 +10,8 @@ import { SettingsCard } from "@/components/settings/SettingsCard";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
 import { MembersSettings } from "@/components/settings/MembersSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
-import { canAccessFullSettings, getDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
+import Link from "next/link";
+import { ADULT_ACCESS_REQUIRED_REASON, canAccessFullSettings, getDeviceProfile, getOrCreateDeviceId, setDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { useLanguage, type Language } from "@/lib/i18n";
 
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const hasFullSettings = canAccessFullSettings(deviceProfile, hasAdultAccess);
 
   useEffect(() => {
+    getOrCreateDeviceId();
     consumePendingFirstRunReveal("settings");
     setDeviceProfile(getDeviceProfile());
   }, []);
@@ -50,9 +52,16 @@ export default function SettingsPage() {
         <DeviceStartViewSettings onProfileChange={setDeviceProfile} />
         <CloudStatusSettings />
         {deviceProfile === "admin" && !hasAdultAccess ? (
-          <SettingsCard status={t("planned")} title={t("adultViewLockedTitle")}>
-            <p>{t("adultViewLockedBody")}</p>
-          </SettingsCard>
+          <div className="adult-view-lock-panel md:col-span-2 rounded-[2rem] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-800">{t("adultViewLockedTitle")}</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950">{t("adultViewLockedBody")}</h2>
+            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-stone-700">{t("adultViewLockedHelper")}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" href="/app" onClick={() => setDeviceProfile("mobile")}>{t("continueWithMobileView")}</Link>
+              <Link className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" href="/wall" onClick={() => setDeviceProfile("wall")}>{t("chooseWallView")}</Link>
+            </div>
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">Code: {ADULT_ACCESS_REQUIRED_REASON}</p>
+          </div>
         ) : null}
         {hasFullSettings ? (
           <>

@@ -9,6 +9,7 @@ export type DeviceStartView = {
 export const DEVICE_MODE_STORAGE_KEY = "homeboard.deviceMode.v1";
 export const DEFAULT_ROUTE_STORAGE_KEY = "homeboard.defaultRoute.v1";
 export const DEVICE_ID_STORAGE_KEY = "homeboard.deviceId.v1";
+export const ADULT_ACCESS_REQUIRED_REASON = "ADULT_ACCESS_REQUIRED";
 
 export const DEVICE_START_VIEW_OPTIONS: DeviceStartView[] = [
   { mode: "wall", route: "/wall" },
