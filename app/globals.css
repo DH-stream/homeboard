@@ -1572,22 +1572,28 @@ button:disabled {
   position: absolute;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,0.7);
-  background: rgba(255,255,255,0.62);
+  background: rgba(255,255,255,0.76);
   padding: 0.35rem 0.7rem;
   font-size: 0.72rem;
   font-weight: 700;
-  color: rgba(68,64,60,0.72);
+  color: rgba(41,37,36,0.86);
   backdrop-filter: blur(6px);
-  opacity: 0.22;
-  animation: setup-task-float 13s ease-in-out infinite;
+  opacity: 0.72;
+  animation: setup-task-float 9s ease-in-out infinite, setup-task-enter 560ms var(--ease-out);
+  transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
 }
+.setup-task-hint--slot-a { top: 18%; left: 8%; }
+.setup-task-hint--slot-b { top: 24%; right: 8%; }
+.setup-task-hint--slot-c { top: 56%; left: 11%; }
+.setup-task-hint--slot-d { top: 43%; right: 14%; }
+.setup-task-hint--slot-e { bottom: 21%; left: 18%; }
+.setup-task-hint--slot-f { bottom: 16%; right: 9%; }
 
-.setup-task-hint--1 { top: 18%; left: 8%; opacity: 0.48; }
-.setup-task-hint--2 { top: 24%; right: 7%; opacity: 0.2; animation-delay: 1.4s; }
-.setup-task-hint--3 { bottom: 30%; left: 10%; opacity: 0.18; animation-delay: 3s; }
-.setup-task-hint--4 { bottom: 22%; right: 11%; opacity: 0.46; animation-delay: 4.8s; }
-.setup-task-hint--5 { top: 41%; right: 19%; opacity: 0.18; animation-delay: 6.2s; }
-.setup-task-hint--6 { top: 55%; left: 16%; opacity: 0.43; animation-delay: 7.6s; }
+.setup-task-hint--tone-amber { background: rgba(255, 251, 235, 0.85); }
+.setup-task-hint--tone-emerald { background: rgba(236, 253, 245, 0.84); }
+.setup-task-hint--tone-sky { background: rgba(240, 249, 255, 0.84); }
+.setup-task-hint--tone-rose { background: rgba(255, 241, 242, 0.83); }
+.setup-task-hint--tone-stone { background: rgba(245, 245, 244, 0.84); }
 
 .setup-locked-state-panel { position: relative; z-index: 4; }
 
@@ -1596,10 +1602,15 @@ button:disabled {
   50% { transform: translateY(-8px); }
 }
 
+@keyframes setup-task-enter {
+  from { opacity: 0; transform: translateY(7px) scale(0.98); }
+  to { opacity: 0.72; transform: translateY(0) scale(1); }
+}
+
 @media (max-width: 640px) {
-  .setup-task-hint--2,
-  .setup-task-hint--3,
-  .setup-task-hint--5 { display: none; }
+  .setup-task-hint--slot-b,
+  .setup-task-hint--slot-c,
+  .setup-task-hint--slot-f { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

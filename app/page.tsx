@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ADULT_ACCESS_REQUIRED_REASON,
@@ -34,6 +34,9 @@ const revealRouteByMode: Record<DeviceMode, FirstRunRevealRoute> = {
   mobile: "app",
   admin: "settings",
 };
+
+const SETUP_TASK_HINT_SLOTS = ["a", "b", "c", "d", "e", "f"] as const;
+const SETUP_TASK_HINT_TONES = ["amber", "emerald", "sky", "rose", "stone"] as const;
 
 function getDeviceModeCopy(mode: DeviceMode, t: ReturnType<typeof useLanguage>["t"]) {
   if (mode === "wall") return { title: t("deviceModeWall"), description: t("deviceModeWallDescription") };
@@ -83,14 +86,33 @@ function SetupSky() {
 }
 
 function SetupTaskHints({ language }: { language: "en" | "sv" }) {
-  const hints = language === "sv"
-    ? ["Packa förskoleväskan", "Ta ut soporna", "Gympapåse på torsdag", "Kolla kalendern", "Handla mjölk", "Ladda surfplattan"]
-    : ["Pack daycare bag", "Take out trash", "Gym bag on Thursday", "Check calendar", "Buy milk", "Charge tablet"];
+  const hints = useMemo(() => language === "sv"
+    ? ["Packa förskoleväskan", "Ta ut soporna", "Gympapåse på torsdag", "Kolla kalendern", "Hämta paket", "Vattna växterna", "Lägg fram regnkläder", "Kom ihåg BVC", "Handla mjölk", "Ladda surfplattan", "Mormor kommer 15:00", "Glöm inte regnjackan", "Fredagsmys", "Byt lakan", "Ställ ut återvinningen"]
+    : ["Pack daycare bag", "Take out trash", "Gym bag on Thursday", "Check calendar", "Pick up package", "Water the plants", "Put out rain clothes", "Remember appointment", "Buy milk", "Charge tablet", "Grandma visits at 3", "Don't forget rain jacket", "Friday cozy time", "Change sheets", "Take out recycling"], [language]);
+  const [visibleHints, setVisibleHints] = useState(() => hints.slice(0, 3).map((text, index) => ({ text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length] })));
+
+  useEffect(() => {
+    let tick = 0;
+    const timer = window.setInterval(() => {
+      tick += 1;
+      const visibleCount = window.matchMedia("(max-width: 640px)").matches ? 2 : 3;
+      const next = Array.from({ length: visibleCount }, (_, index) => {
+        const hintIndex = (tick * 3 + index * 5) % hints.length;
+        const slotIndex = (tick + index * 2) % SETUP_TASK_HINT_SLOTS.length;
+        const toneIndex = (tick + index) % SETUP_TASK_HINT_TONES.length;
+        return { text: hints[hintIndex], slot: SETUP_TASK_HINT_SLOTS[slotIndex], tone: SETUP_TASK_HINT_TONES[toneIndex] };
+      });
+      setVisibleHints(next);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [hints]);
 
   return (
     <div aria-hidden="true" className="setup-task-hints">
-      {hints.map((hint, index) => (
-        <span className={`setup-task-hint setup-task-hint--${index + 1}`} key={hint}>{hint}</span>
+      {visibleHints.map((hint) => (
+        <span className={`setup-task-hint setup-task-hint--slot-${hint.slot} setup-task-hint--tone-${hint.tone}`} key={`${hint.slot}-${hint.text}`}>
+          {hint.text}
+        </span>
       ))}
     </div>
   );
@@ -199,9 +221,7 @@ export default function HomePage() {
                   <span className="setup-option-icon flex size-14 items-center justify-center rounded-[1.35rem] bg-white/86 text-3xl shadow-sm ring-1 ring-black/5 sm:size-20 sm:rounded-[1.6rem] sm:text-5xl">
                     {isLockedAdmin ? "🔐" : optionIcons[option.mode]}
                   </span>
-                  <span className="setup-option-check mt-1 flex size-8 items-center justify-center rounded-full bg-white/78 text-base font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95 sm:size-9 sm:text-lg">
-                    ✓
-                  </span>
+                  {!isLockedAdmin ? <span className="setup-option-check mt-1 flex size-8 items-center justify-center rounded-full bg-white/78 text-base font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95 sm:size-9 sm:text-lg">✓</span> : null}
                 </span>
                 <span className="mt-4 text-2xl font-black tracking-[-0.035em] text-stone-950 sm:mt-6 sm:text-4xl">{copy.title}</span>
                 <span className="mt-2 max-w-sm text-sm font-semibold leading-6 text-stone-600 sm:mt-3 sm:text-lg sm:leading-8">{copy.description}</span>
