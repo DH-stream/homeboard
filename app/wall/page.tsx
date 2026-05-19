@@ -249,7 +249,7 @@ export default function WallPage() {
             isSelected={selectedMemberId === member.id}
             key={member.id}
             member={member}
-            onClick={() => setSelectedMemberId((current) => (current === member.id ? null : member.id))}
+            onClick={() => setSelectedMemberId((current) => (current === member.id ? null : current.id))}
           />
         ))}
       </div>
@@ -257,7 +257,7 @@ export default function WallPage() {
       <div className="mt-6 grid flex-1 min-h-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
         <section className={`flex min-h-0 flex-col rounded-[2.25rem] bg-white/82 p-5 shadow-[0_24px_80px_rgba(120,93,58,0.18)] backdrop-blur ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-6" : ""}`}>
           <div className="flex items-center justify-between gap-4">
-            <SectionHeader eyebrow={t("householdTasks")} title={t("today")} />
+            <SectionHeader eyebrow={t("tasks")} title={t("today")} />
             <WallQuickTaskButton isOpen={isQuickCreatorOpen} mode={wallTaskCreatorMode} onClick={toggleQuickCreator} />
           </div>
           {wallTaskCreatorMode === "docked" ? <WallQuickTaskCreator members={members} mode="docked" onCreated={handleTaskCreated} /> : null}
