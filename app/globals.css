@@ -575,6 +575,8 @@ button:disabled {
   transition:
     transform 1000ms var(--ease-out),
     opacity 700ms var(--ease-out);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
 }
 
 .setup-sun {
@@ -1527,10 +1529,14 @@ button:disabled {
   font-weight: 700;
   color: rgba(41,37,36,0.86);
   backdrop-filter: blur(6px);
-  opacity: 0.72;
-  animation: setup-task-float 9s ease-in-out infinite, setup-task-enter 560ms var(--ease-out);
+  opacity: 0.75;
+  animation: setup-task-float 9s ease-in-out infinite;
   transition: opacity 420ms var(--ease-out), transform 420ms var(--ease-out);
 }
+
+.setup-task-hint--enter { opacity: 0; animation: setup-task-float 9s ease-in-out infinite, setup-task-enter 760ms var(--ease-out) forwards; }
+.setup-task-hint--visible { opacity: 0.75; }
+.setup-task-hint--exit { opacity: 0; transform: translateY(-4px) scale(0.985); }
 .setup-task-hint--slot-a { top: 18%; left: 8%; }
 .setup-task-hint--slot-b { top: 24%; right: 8%; }
 .setup-task-hint--slot-c { top: 56%; left: 11%; }
@@ -1563,5 +1569,8 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .setup-task-hint { animation: none; }
+  .setup-task-hint,
+  .setup-task-hint--enter,
+  .setup-task-hint--visible,
+  .setup-task-hint--exit { animation: none; opacity: 0.72; transform: none; }
 }

@@ -88,15 +88,21 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
     ? ["Packa förskoleväskan", "Ta ut soporna", "Gympapåse på torsdag", "Kolla kalendern", "Hämta paket", "Vattna växterna", "Lägg fram regnkläder", "Kom ihåg BVC", "Handla mjölk", "Ladda surfplattan", "Mormor kommer 15:00", "Glöm inte regnjackan", "Fredagsmys", "Byt lakan", "Ställ ut återvinningen"]
     : ["Pack daycare bag", "Take out trash", "Gym bag on Thursday", "Check calendar", "Pick up package", "Water the plants", "Put out rain clothes", "Remember appointment", "Buy milk", "Charge tablet", "Grandma visits at 3", "Don't forget rain jacket", "Friday cozy time", "Change sheets", "Take out recycling"], [language]);
   const [visibleHints, setVisibleHints] = useState(() => hints.slice(0, 3).map((text, index) => ({ text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length] })));
+  const [hintPhase, setHintPhase] = useState<"enter" | "visible" | "exit">("enter");
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setVisibleHints(hints.slice(0, 2).map((text, index) => ({ text, slot: SETUP_TASK_HINT_SLOTS[index], tone: SETUP_TASK_HINT_TONES[index % SETUP_TASK_HINT_TONES.length] })));
+      setHintPhase("visible");
       return;
     }
 
     let tick = 0;
-    const timer = window.setInterval(() => {
+    let cycleTimer: number | null = null;
+
+    const cycle = () => {
+      setHintPhase("exit");
+      cycleTimer = window.setTimeout(() => {
       tick += 1;
       const visibleCount = window.matchMedia("(max-width: 640px)").matches ? ((tick % 2) + 1) : ((tick % 2) + 2);
       const next = Array.from({ length: visibleCount }, (_, index) => {
@@ -106,14 +112,23 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
         return { text: hints[hintIndex], slot: SETUP_TASK_HINT_SLOTS[slotIndex], tone: SETUP_TASK_HINT_TONES[toneIndex] };
       });
       setVisibleHints(next);
-    }, 5000);
-    return () => window.clearInterval(timer);
+      setHintPhase("enter");
+      window.setTimeout(() => setHintPhase("visible"), 700);
+      cycleTimer = window.setTimeout(cycle, 4300);
+      }, 750);
+    };
+
+    window.setTimeout(() => setHintPhase("visible"), 700);
+    cycleTimer = window.setTimeout(cycle, 4300);
+    return () => {
+      if (cycleTimer) window.clearTimeout(cycleTimer);
+    };
   }, [hints]);
 
   return (
     <div aria-hidden="true" className="setup-task-hints">
       {visibleHints.map((hint) => (
-        <span className={`setup-task-hint setup-task-hint--slot-${hint.slot} setup-task-hint--tone-${hint.tone}`} key={`${hint.slot}-${hint.text}`}>
+        <span className={`setup-task-hint setup-task-hint--${hintPhase} setup-task-hint--slot-${hint.slot} setup-task-hint--tone-${hint.tone}`} key={`${hint.slot}-${hint.text}`}>
           {hint.text}
         </span>
       ))}
