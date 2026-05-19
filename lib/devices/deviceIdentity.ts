@@ -8,6 +8,7 @@ export type LocalDeviceIdentity = {
 const DEVICE_ID_STORAGE_KEY = "homeboard.deviceId.v1";
 const DEVICE_CREATED_AT_STORAGE_KEY = "homeboard.deviceCreatedAt.v1";
 const DEVICE_ID_PREFIX = "device";
+const CLOUD_DEVICE_ID_STORAGE_KEY = "homeboard.cloudDeviceId.v1";
 
 function createDeviceId() {
   const cryptoApi = globalThis.crypto;
@@ -46,4 +47,15 @@ export function resetLocalDeviceIdentity() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(DEVICE_ID_STORAGE_KEY);
   window.localStorage.removeItem(DEVICE_CREATED_AT_STORAGE_KEY);
+}
+
+
+export function getPersistedCloudDeviceId() {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(CLOUD_DEVICE_ID_STORAGE_KEY)?.trim() || null;
+}
+
+export function setPersistedCloudDeviceId(deviceId: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CLOUD_DEVICE_ID_STORAGE_KEY, deviceId);
 }
