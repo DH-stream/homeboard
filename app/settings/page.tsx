@@ -11,7 +11,7 @@ import { SettingsCard } from "@/components/settings/SettingsCard";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
 import { MembersSettings } from "@/components/settings/MembersSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
-import { ADULT_ACCESS_REQUIRED_REASON, canAccessFullSettings, getDeviceProfile, getOrCreateDeviceId, resetDeviceProfile, setDeviceProfile as persistDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
+import { canAccessFullSettings, getDeviceProfile, getOrCreateDeviceId, resetDeviceProfile, setDeviceProfile as persistDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { useLanguage, type Language } from "@/lib/i18n";
 
@@ -77,7 +77,6 @@ export default function SettingsPage() {
               <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("wall", "/wall")} type="button">{t("chooseWallView")}</button>
               <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700" onClick={chooseScreenAgain} type="button">{t("backToScreenChoice")}</button>
             </div>
-            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">Code: {ADULT_ACCESS_REQUIRED_REASON}</p>
           </div>
         ) : null}
         {hasFullSettings ? (
