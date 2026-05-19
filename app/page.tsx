@@ -34,7 +34,6 @@ const revealRouteByMode: Record<DeviceMode, FirstRunRevealRoute> = {
   admin: "settings",
 };
 
-const ADULT_SETUP_REVEAL_KEY = "homeboard.adultSetupRevealPending";
 const SETUP_TASK_HINT_SLOTS = [
   { id: "a", style: { top: "14%", left: "7%" } },
   { id: "b", style: { top: "20%", right: "8%" } },
@@ -194,10 +193,10 @@ export default function HomePage() {
   const [showAdultLockedMessage, setShowAdultLockedMessage] = useState(false);
   const [activeSetupState, setActiveSetupState] = useState<"chooser" | "adult_locked">("chooser");
   const [isSetupExiting, setIsSetupExiting] = useState(false);
-  const [isAdultSetupStarting, setIsAdultSetupStarting] = useState(false);
+  const [isAdultLockOpening, setIsAdultLockOpening] = useState(false);
   const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const adultSetupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const adultLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     getOrCreateDeviceId();
@@ -215,16 +214,22 @@ export default function HomePage() {
     return () => {
       if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
       if (navigationTimeoutRef.current) clearTimeout(navigationTimeoutRef.current);
-      if (adultSetupTimeoutRef.current) clearTimeout(adultSetupTimeoutRef.current);
+      if (adultLockTimeoutRef.current) clearTimeout(adultLockTimeoutRef.current);
     };
   }, []);
 
   const chooseStartView = (startView: DeviceStartView) => {
-    if (selectedStartView || isAdultSetupStarting) return;
+    if (selectedStartView || isAdultLockOpening) return;
     if (startView.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) {
-      setActiveSetupState("adult_locked");
-      setShowAdultLockedMessage(true);
-      window.setTimeout(() => setShowAdultLockedMessage(false), 1800);
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      setShowAdultLockedMessage(false);
+      setIsAdultLockOpening(true);
+      adultLockTimeoutRef.current = setTimeout(() => {
+        setActiveSetupState("adult_locked");
+        setIsAdultLockOpening(false);
+        setShowAdultLockedMessage(true);
+        window.setTimeout(() => setShowAdultLockedMessage(false), 1800);
+      }, prefersReducedMotion ? 80 : 520);
       return;
     }
 
@@ -243,18 +248,9 @@ export default function HomePage() {
   };
 
   const continueWithProfile = (nextProfile: "mobile" | "wall") => {
-    if (isAdultSetupStarting) return;
     const next = setDeviceProfile(nextProfile);
     setPendingFirstRunReveal(revealRouteByMode[next.mode]);
     router.push(next.route);
-  };
-
-  const startAdultSetup = () => {
-    if (isAdultSetupStarting) return;
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.sessionStorage.setItem(ADULT_SETUP_REVEAL_KEY, "true");
-    setIsAdultSetupStarting(true);
-    adultSetupTimeoutRef.current = setTimeout(() => router.push("/setup/adult"), prefersReducedMotion ? 80 : 560);
   };
 
   if (isCheckingStartView) {
@@ -266,8 +262,8 @@ export default function HomePage() {
       <SetupSky />
       <SetupTaskHints language={language} />
 
-      <section className={`setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 transition-[opacity,filter,transform] duration-500 ease-[var(--ease-out)] sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8 ${isAdultSetupStarting ? "scale-[0.996] opacity-95" : ""}`}>
-        <div className={`surface-card setup-hero-card relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] px-3 py-4 backdrop-blur-xl transition-[opacity,transform,filter] duration-500 ease-[var(--ease-out)] sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12 ${isAdultSetupStarting ? "-translate-y-1 scale-[0.99] opacity-55 blur-[1px]" : ""}`}>
+      <section className={`setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 transition-[opacity,filter,transform] duration-500 ease-[var(--ease-out)] sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8 ${isAdultLockOpening ? "scale-[0.998]" : ""}`}>
+        <div className={`surface-card setup-hero-card relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] px-3 py-4 backdrop-blur-xl transition-[opacity,transform,filter] duration-500 ease-[var(--ease-out)] sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12 ${isAdultLockOpening ? "-translate-y-1 opacity-65 blur-[1px]" : ""}`}>
           <div className="setup-card-shine" aria-hidden="true" />
           <div className="setup-card-wake" aria-hidden="true" />
           <div className="setup-hero-copy mx-auto max-w-3xl text-center">
@@ -280,24 +276,26 @@ export default function HomePage() {
           </div>
         </div>
 
-        {activeSetupState === "chooser" ? <div className={`setup-options mt-4 grid gap-3 transition-[opacity,transform,filter] duration-500 ease-[var(--ease-out)] sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3 ${isAdultSetupStarting ? "translate-y-3 opacity-25 blur-[1px]" : ""}`}>
+        {activeSetupState === "chooser" ? <div className="setup-options mt-4 grid gap-3 sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3">
           {DEVICE_START_VIEW_OPTIONS.map((option, index) => {
             const copy = getDeviceModeCopy(option.mode, t);
             const isSelected = selectedStartView?.mode === option.mode;
             const isSoftened = selectedStartView !== null && !isSelected;
             const isLockedAdmin = option.mode === "admin" && !canSelectAdultProfile(hasAdultAccess);
+            const isOpeningAdultLock = isAdultLockOpening && option.mode === "admin";
+            const isDimmedForAdultLock = isAdultLockOpening && option.mode !== "admin";
 
             return (
               <button
-                aria-pressed={isSelected}
-                className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} ${isLockedAdmin ? "setup-option-card--locked" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
-                aria-disabled={selectedStartView !== null || isLockedAdmin || isAdultSetupStarting}
+                aria-pressed={isSelected || isOpeningAdultLock}
+                className={`setup-option-card setup-stagger-${index + 1} ${optionAccents[option.mode]} ${isSelected ? "setup-option-card--selected" : ""} ${isSoftened ? "setup-option-card--softened" : ""} ${isLockedAdmin ? "setup-option-card--locked" : ""} ${isOpeningAdultLock ? "-translate-y-2 scale-[1.018] shadow-[0_30px_85px_rgba(245,158,11,0.24)] ring-2 ring-amber-200/80" : ""} ${isDimmedForAdultLock ? "translate-y-2 opacity-30 blur-[1px]" : ""} pressable hover-lift group flex min-h-40 flex-col rounded-[1.75rem] p-4 text-left shadow-[0_18px_55px_rgba(84,59,34,0.10)] ring-1 ring-white/80 sm:min-h-56 sm:rounded-[2.25rem] sm:p-6`}
+                aria-disabled={selectedStartView !== null || isLockedAdmin || isAdultLockOpening}
                 key={option.mode}
                 onClick={() => chooseStartView(option)}
                 type="button"
               >
                 <span className="flex items-start justify-between gap-4">
-                  <span className="setup-option-icon flex size-14 items-center justify-center rounded-[1.35rem] bg-white/86 text-3xl shadow-sm ring-1 ring-black/5 sm:size-20 sm:rounded-[1.6rem] sm:text-5xl">
+                  <span className={`setup-option-icon flex size-14 items-center justify-center rounded-[1.35rem] bg-white/86 text-3xl shadow-sm ring-1 ring-black/5 transition-transform duration-500 ease-[var(--ease-out)] sm:size-20 sm:rounded-[1.6rem] sm:text-5xl ${isOpeningAdultLock ? "scale-110 rotate-[-3deg]" : ""}`}>
                     {isLockedAdmin ? "🔐" : optionIcons[option.mode]}
                   </span>
                   {!isLockedAdmin ? <span className="setup-option-check mt-1 flex size-8 items-center justify-center rounded-full bg-white/78 text-base font-black text-amber-700 opacity-80 shadow-sm ring-1 ring-black/5 transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-95 sm:size-9 sm:text-lg">✓</span> : null}
@@ -314,25 +312,25 @@ export default function HomePage() {
             );
           })}
         </div> : (
-          <section className={`adult-view-lock-panel setup-locked-state-panel mx-auto mt-5 w-full max-w-3xl rounded-[2rem] p-5 transition-[opacity,transform,box-shadow,filter] duration-[560ms] ease-[var(--ease-out)] sm:p-8 ${isAdultSetupStarting ? "-translate-y-2 scale-[1.014] shadow-[0_32px_90px_rgba(245,158,11,0.26)] ring-2 ring-amber-200/80" : ""}`}>
+          <section className="adult-view-lock-panel setup-locked-state-panel mx-auto mt-5 w-full max-w-3xl rounded-[2rem] p-5 [animation:adult-step-in_420ms_var(--ease-out)_both] sm:p-8">
             <div className="adult-view-lock-panel__shine" aria-hidden="true" />
             <div className="adult-view-lock-panel__wake" aria-hidden="true" />
-            <div className={`adult-view-lock-panel__icon transition-transform duration-500 ease-[var(--ease-out)] ${isAdultSetupStarting ? "scale-110 rotate-[-3deg]" : ""}`} aria-hidden="true">🔐</div>
+            <div className="adult-view-lock-panel__icon" aria-hidden="true">🔐</div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-800">{t("adultViewLockedTitle")}</p>
             <h2 className="mt-2 text-3xl font-black tracking-tight text-stone-950 sm:text-4xl">{t("adultViewLockedBody")}</h2>
             <p className="mt-3 text-sm font-semibold leading-6 text-stone-700 sm:text-base">{t("adultViewLockedHelper")}</p>
-            <div className={`mt-5 flex flex-wrap gap-2 transition-opacity duration-300 ${isAdultSetupStarting ? "opacity-70" : ""}`}>
-              <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white disabled:opacity-70" disabled={isAdultSetupStarting} onClick={startAdultSetup} type="button">{t("loginOrCreateHome")}</button>
-              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900 disabled:opacity-50" disabled={isAdultSetupStarting} onClick={() => continueWithProfile("mobile")} type="button">{t("continueWithMobileView")}</button>
-              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900 disabled:opacity-50" disabled={isAdultSetupStarting} onClick={() => continueWithProfile("wall")} type="button">{t("chooseWallView")}</button>
-              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700 disabled:opacity-50" disabled={isAdultSetupStarting} onClick={() => setActiveSetupState("chooser")} type="button">{t("backToScreenChoice")}</button>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => router.push("/setup/adult")} type="button">{t("loginOrCreateHome")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("mobile")} type="button">{t("continueWithMobileView")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2 text-sm font-black text-stone-900" onClick={() => continueWithProfile("wall")} type="button">{t("chooseWallView")}</button>
+              <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white/70 px-4 py-2 text-sm font-black text-stone-700" onClick={() => setActiveSetupState("chooser")} type="button">{t("backToScreenChoice")}</button>
             </div>
           </section>
         )}
 
-        {!canSelectAdultProfile(hasAdultAccess) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 transition-opacity duration-300 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""} ${isAdultSetupStarting ? "opacity-0" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
+        {!canSelectAdultProfile(hasAdultAccess) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 transition-opacity duration-300 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""} ${isAdultLockOpening ? "opacity-0" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
 
-        <p className={`setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 transition-opacity duration-300 sm:mt-7 sm:text-base sm:leading-6 ${isAdultSetupStarting ? "opacity-0" : ""}`}>{t("deviceStartViewFooter")}</p>
+        <p className={`setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 transition-opacity duration-300 sm:mt-7 sm:text-base sm:leading-6 ${isAdultLockOpening ? "opacity-0" : ""}`}>{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">
           {selectedStartView ? <p>{selectedStartView.mode === "wall" ? t("deviceStartViewWallConfirmation") : t("deviceStartViewConfirmation")}</p> : null}
         </div>
