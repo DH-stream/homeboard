@@ -13,3 +13,28 @@ create table if not exists public.household_task_day_status (
 
 create index if not exists household_task_day_status_household_date_idx
   on public.household_task_day_status (household_id, date desc);
+
+alter table public.household_task_day_status enable row level security;
+
+drop policy if exists "members can read household task day status" on public.household_task_day_status;
+drop policy if exists "members can create household task day status" on public.household_task_day_status;
+drop policy if exists "members can update household task day status" on public.household_task_day_status;
+
+create policy "members can read household task day status"
+on public.household_task_day_status
+for select
+to authenticated
+using (public.is_household_member(household_id));
+
+create policy "members can create household task day status"
+on public.household_task_day_status
+for insert
+to authenticated
+with check (public.is_household_member(household_id));
+
+create policy "members can update household task day status"
+on public.household_task_day_status
+for update
+to authenticated
+using (public.is_household_member(household_id))
+with check (public.is_household_member(household_id));
