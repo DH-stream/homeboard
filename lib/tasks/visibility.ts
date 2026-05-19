@@ -1,7 +1,7 @@
 import { isSameLocalDay } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
 
-const DAILY_RECURRING_REVEAL_MINUTES = 90;
+const DAILY_RECURRING_REVEAL_MINUTES = 360;
 export const COMPLETED_TASK_REMAINING_GRACE_MINUTES = 30;
 
 export function shouldShowTodayTask(task: TaskInstance, now: Date) {
