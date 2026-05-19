@@ -186,7 +186,7 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
 
 export default function HomePage() {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { hasAdultAccess } = useAdultAccess();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
@@ -197,6 +197,9 @@ export default function HomePage() {
   const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const adultLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nextLanguage = language === "sv" ? "en" : "sv";
+  const languageToggleLabel = language === "sv" ? "English" : "Svenska";
+  const languageToggleAriaLabel = language === "sv" ? "Switch language to English" : "Byt språk till svenska";
 
   useEffect(() => {
     getOrCreateDeviceId();
@@ -261,6 +264,14 @@ export default function HomePage() {
     <main className={`setup-stage ${selectedStartView ? "setup-stage--leaving" : ""} ${isSetupExiting ? "setup-stage--exiting" : ""} relative isolate min-h-screen overflow-hidden px-3 py-4 sm:px-6 sm:py-10`}>
       <SetupSky />
       <SetupTaskHints language={language} />
+      <button
+        aria-label={languageToggleAriaLabel}
+        className="pressable hover-lift absolute right-4 top-4 z-30 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-stone-700 shadow-[0_14px_40px_rgba(84,59,34,0.12)] backdrop-blur-xl transition-[transform,background,box-shadow] duration-200 ease-[var(--ease-out)] hover:bg-white/95 sm:right-6 sm:top-6"
+        onClick={() => setLanguage(nextLanguage)}
+        type="button"
+      >
+        {languageToggleLabel}
+      </button>
 
       <section className={`setup-hero relative z-10 mx-auto flex min-h-[calc(100svh-2rem)] max-w-5xl flex-col justify-center py-3 transition-[opacity,filter,transform] duration-500 ease-[var(--ease-out)] sm:min-h-[calc(100vh-5rem)] sm:max-w-6xl sm:py-8 ${isAdultLockOpening ? "scale-[0.998]" : ""}`}>
         <div className={`surface-card setup-hero-card relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] px-3 py-4 backdrop-blur-xl transition-[opacity,transform,filter] duration-500 ease-[var(--ease-out)] sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12 ${isAdultLockOpening ? "-translate-y-1 opacity-65 blur-[1px]" : ""}`}>
