@@ -249,7 +249,7 @@ export default function WallPage() {
             isSelected={selectedMemberId === member.id}
             key={member.id}
             member={member}
-            onClick={() => setSelectedMemberId((current) => (current === member.id ? null : current.id))}
+            onClick={() => setSelectedMemberId((current) => (current === member.id ? null : member.id))}
           />
         ))}
       </div>
