@@ -7,7 +7,7 @@ import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
-import { MobileSetupCard } from "@/components/pairing/MobileSetupCard";
+import { WallPairingCard } from "@/components/pairing/WallPairingCard";
 import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { TaskList } from "@/components/tasks/TaskList";
 import { ActionToast } from "@/components/ui/ActionToast";
@@ -16,6 +16,8 @@ import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
+import { isCloudConfigured } from "@/lib/cloud/config";
+import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
@@ -56,6 +58,7 @@ export default function MobileAppPage() {
   const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
   const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const [useLocalMobile, setUseLocalMobile] = useState(false);
   const showDebugNavigation = shouldShowDebugNavigation();
 
   useEffect(() => {
@@ -189,7 +192,27 @@ export default function MobileAppPage() {
   };
 
   if (isSetupMode) {
-    return <MobileSetupCard onBack={() => { resetDeviceStartView(); router.replace("/?choose=1"); }} />;
+    if (!householdId && !useLocalMobile && isCloudConfigured()) {
+      return (
+        <WallPairingCard
+          targetMode="mobile"
+          onBack={() => { resetDeviceStartView(); router.replace("/?choose=1"); }}
+          onPaired={(nextHouseholdId) => {
+            saveSelectedHouseholdId(nextHouseholdId);
+            saveDeviceStartView({ mode: "mobile", route: "/app" });
+            router.replace("/app");
+          }}
+          onUseLocal={() => {
+            saveDeviceStartView({ mode: "mobile", route: "/app" });
+            enableLocalOnlyMode();
+            setUseLocalMobile(true);
+            router.replace("/app");
+          }}
+        />
+      );
+    }
+    router.replace("/app");
+    return null;
   }
 
   return (
