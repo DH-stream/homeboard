@@ -229,6 +229,11 @@ export default function HomePage() {
 
   useEffect(() => {
     getOrCreateDeviceId();
+    const forceChooser = new URLSearchParams(window.location.search).get("choose") === "1";
+    if (forceChooser) {
+      setIsCheckingStartView(false);
+      return;
+    }
     const startView = readDeviceStartView();
 
     if (startView) {
@@ -262,7 +267,8 @@ export default function HomePage() {
       return;
     }
 
-    saveDeviceStartView(startView);
+    const isDirectlyFinalizingMode = startView.mode === "admin";
+    if (isDirectlyFinalizingMode) saveDeviceStartView(startView);
     setPendingFirstRunReveal(revealRouteByMode[startView.mode]);
     setSelectedStartView(startView);
 
@@ -272,7 +278,8 @@ export default function HomePage() {
     }, prefersReducedMotion ? 60 : 520);
 
     navigationTimeoutRef.current = setTimeout(() => {
-      router.push(startView.route);
+      const destination = startView.mode === "admin" ? startView.route : `${startView.route}?setup=1`;
+      router.push(destination);
     }, prefersReducedMotion ? 180 : 1450);
   };
 

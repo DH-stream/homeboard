@@ -11,7 +11,7 @@ function getSecondsLeft(expiresAt?: string) {
   return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
 }
 
-export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (householdId: string) => void; onUseLocal: () => void }) {
+export function WallPairingCard({ onPaired, onUseLocal, onBack, targetMode = "wall" }: { onPaired: (householdId: string) => void; onUseLocal: () => void; onBack?: () => void; targetMode?: "wall" | "mobile" }) {
   const { t, language } = useLanguage();
   const [isPairingFlowActive, setPairingFlowActive] = useState(false);
   const { canPair, createSession, error, isLoading, session } = useWallDevicePairing(isPairingFlowActive);
@@ -58,21 +58,32 @@ export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (household
 
   const countdown = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
   const waitingDots = secondsLeft % 3;
+  const isMobileTarget = targetMode === "mobile";
+  const setupEyebrow = isMobileTarget ? (language === "sv" ? "Koppla den här mobilen" : "Connect this phone") : t("pairWallTitle");
+  const setupTitle = isMobileTarget ? (language === "sv" ? "Koppla mobilen till hemmet" : "Connect this phone to your home") : t("pairScanTitle");
+  const setupBody = isMobileTarget ? (language === "sv" ? "Använd den här mobilen för att se HomeBoard, uppgifter och inställningar." : "Use this phone to view HomeBoard, tasks, and settings.") : t("pairScanBody");
+  const setupHelper = isMobileTarget ? (language === "sv" ? "Koppla mobilen till ett hem med QR-kod eller kod, eller fortsätt med lokal användning om du bara vill testa." : "Connect this phone to a home with a QR code or code, or continue locally if you only want to try it.") : (language === "sv" ? "Du kan fortsätta lokalt på den här enheten nu och aktivera molnsynk senare i Inställningar." : "You can continue only on this device now and turn on cloud sync later in Settings.");
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4 py-8 text-stone-950 sm:px-8">
+      {onBack ? (
+        <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable absolute left-4 top-4 z-20 inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/75 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={onBack} type="button">
+          <span aria-hidden="true">←</span>
+          <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
+        </button>
+      ) : null}
       {!isPairingFlowActive ? (
         <section className="surface-card relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-amber-950/10">
           <div className="pointer-events-none absolute -left-16 top-10 h-52 w-52 rounded-full bg-amber-200/40 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 right-16 h-64 w-64 rounded-full bg-orange-200/35 blur-3xl" />
           <div className="relative rounded-[2rem] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100 p-8 shadow-inner shadow-white/60">
             <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">{t("pairWallTitle")}</p>
-            <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{t("pairScanTitle")}</h1>
-            <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{t("pairScanBody")}</p>
-            <p className="mt-3 text-sm font-semibold text-stone-600">{language === "sv" ? "Du kan fortsätta lokalt på den här enheten nu och aktivera molnsynk senare i Inställningar." : "You can continue only on this device now and turn on cloud sync later in Settings."}</p>
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">{setupEyebrow}</p>
+            <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{setupTitle}</h1>
+            <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{setupBody}</p>
+            <p className="mt-3 text-sm font-semibold text-stone-600">{setupHelper}</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <button className="pressable min-h-12 rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" onClick={() => setPairingFlowActive(true)} type="button">{t("pairScanTitle")}</button>
+              <button className="pressable min-h-12 rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" onClick={() => setPairingFlowActive(true)} type="button">{setupTitle}</button>
               <button className="pressable min-h-12 rounded-2xl border border-stone-200 bg-white px-5 py-3 font-black text-stone-800 shadow-sm" onClick={onUseLocal} type="button">{t("pairOpenLocal")}</button>
             </div>
           </div>
@@ -84,11 +95,11 @@ export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (household
         <div className="relative flex min-h-[28rem] flex-col justify-between rounded-[2rem] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100 p-6 shadow-inner shadow-white/60">
           <div>
             <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">{t("pairWallTitle")}</p>
-            <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{t("pairScanTitle")}</h1>
-            <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{t("pairScanBody")}</p>
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">{setupEyebrow}</p>
+            <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{setupTitle}</h1>
+            <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{setupBody}</p>
             <p className="mt-3 max-w-xl text-base font-bold leading-7 text-stone-700">{t("pairWallScanOrCode")}</p>
-            <p className="mt-3 text-sm font-semibold text-stone-600">{language === "sv" ? "Du kan fortsätta lokalt på den här enheten nu och aktivera molnsynk senare i Inställningar." : "You can continue only on this device now and turn on cloud sync later in Settings."}</p>
+            <p className="mt-3 text-sm font-semibold text-stone-600">{setupHelper}</p>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">

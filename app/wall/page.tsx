@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { WeekPreview } from "@/components/calendar/WeekPreview";
 import { WallPairingCard } from "@/components/pairing/WallPairingCard";
@@ -32,7 +33,7 @@ import {
   WALL_TASK_CREATOR_MODE_CHANGE_EVENT,
   type WallTaskCreatorMode,
 } from "@/lib/wallPreferences";
-import { saveDeviceStartView } from "@/lib/devicePreferences";
+import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
 import {
@@ -72,6 +73,8 @@ function getWallStreakPreviewOverride() {
 }
 
 export default function WallPage() {
+  const router = useRouter();
+  const [isSetupMode, setIsSetupMode] = useState(false);
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
   const { householdId } = useResolvedHouseholdId();
@@ -103,6 +106,10 @@ export default function WallPage() {
     getWallStreakPreviewOverride(),
   );
   const quickCreatorTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setIsSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
+  }, []);
 
   const todayTasks = useMemo(
     () => tasks.filter((task) => shouldShowTodayTask(task, now)),
@@ -281,6 +288,7 @@ export default function WallPage() {
     return (
       <WallPairingCard
         onPaired={finishPairing}
+        onBack={isSetupMode ? () => { resetDeviceStartView(); router.replace("/?choose=1"); } : undefined}
         onUseLocal={() => {
           saveDeviceStartView({ mode: "wall", route: "/wall" });
           enableLocalOnlyMode();
