@@ -25,7 +25,7 @@ const copy: Record<Language, Record<string, string>> = {
     cancel: "Cancel",
     loadError: "Could not load devices right now.",
     saveError: "Could not save the device name. Try again.",
-    addWallScreen: "Add wall screen",
+    addWallScreen: "Add device",
     addWallIntro: "Start pairing from the wall/tablet screen. This phone scans or enters the code.",
     addWallStep1: "1. Open HomeBoard on the tablet/wall screen.",
     addWallStep2: "2. Choose Wall screen.",
@@ -55,7 +55,7 @@ const copy: Record<Language, Record<string, string>> = {
     cancel: "Avbryt",
     loadError: "Kunde inte ladda enheter just nu.",
     saveError: "Kunde inte spara enhetsnamnet. Försök igen.",
-    addWallScreen: "Lägg till väggskärm",
+    addWallScreen: "Lägg till enhet",
     addWallIntro: "Starta parkopplingen från vägg-/surfplatteskärmen. Den här mobilen skannar eller skriver in koden.",
     addWallStep1: "1. Öppna HomeBoard på surfplattan/väggskärmen.",
     addWallStep2: "2. Välj Väggskärm.",
@@ -91,6 +91,7 @@ export function DevicesSettings() {
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [isSaving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [showPairingGuide, setShowPairingGuide] = useState(false);
 
   const startEdit = (device: Device) => {
     setEditingId(device.id);
@@ -140,16 +141,21 @@ export function DevicesSettings() {
       <div className="space-y-4">
         <p>{t.helper}</p>
         {householdId ? (
-          <div className="cloud-mode-card cloud-mode-card--active reveal-item reveal-item--card reveal-stagger-3 relative overflow-hidden rounded-[1.6rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50/60 to-white p-4 shadow-[0_18px_44px_rgba(120,93,58,0.12)]">
-            <div className="cloud-mode-card__shine" />
-            <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-200/45 blur-2xl" />
-            <p className="relative text-sm font-black text-stone-900">{t.addWallScreen}</p>
-            <p className="relative mt-1 text-sm font-semibold text-stone-700">{t.addWallIntro}</p>
-            <p className="cloud-connection-path mt-3">{t.wallScreenLabel} <i /><i /><i /> {t.parentPhoneLabel} <i /><i /><i /> {t.homeLabel}</p>
-            <ol className="mt-3 space-y-1 text-sm font-semibold text-stone-700">
-              <li>{t.addWallStep1}</li><li>{t.addWallStep2}</li><li>{t.addWallStep3}</li><li>{t.addWallStep4}</li>
-            </ol>
-            <Link className="pressable mt-3 inline-flex min-h-11 items-center rounded-xl bg-stone-950 px-4 text-sm font-black text-white shadow-lg shadow-stone-900/15" href="/pair">{t.enterPairingCode}</Link>
+          <div className="space-y-3">
+            <button className="pressable inline-flex min-h-11 items-center rounded-xl border border-stone-200 bg-white px-4 text-sm font-black text-stone-900" onClick={() => setShowPairingGuide((prev) => !prev)} type="button">{t.addWallScreen}</button>
+            {showPairingGuide ? (
+              <div className="cloud-mode-card cloud-mode-card--active reveal-item reveal-item--card reveal-stagger-3 relative overflow-hidden rounded-[1.6rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50/60 to-white p-4 shadow-[0_18px_44px_rgba(120,93,58,0.12)]">
+                <div className="cloud-mode-card__shine" />
+                <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-200/45 blur-2xl" />
+                <p className="relative text-sm font-black text-stone-900">{t.addWallScreen}</p>
+                <p className="relative mt-1 text-sm font-semibold text-stone-700">{t.addWallIntro}</p>
+                <p className="cloud-connection-path mt-3">{t.wallScreenLabel} <i /><i /><i /> {t.parentPhoneLabel} <i /><i /><i /> {t.homeLabel}</p>
+                <ol className="mt-3 space-y-1 text-sm font-semibold text-stone-700">
+                  <li>{t.addWallStep1}</li><li>{t.addWallStep2}</li><li>{t.addWallStep3}</li><li>{t.addWallStep4}</li>
+                </ol>
+                <Link className="pressable mt-3 inline-flex min-h-11 items-center rounded-xl bg-stone-950 px-4 text-sm font-black text-white shadow-lg shadow-stone-900/15" href="/pair">{t.enterPairingCode}</Link>
+              </div>
+            ) : null}
           </div>
         ) : null}
         {!householdId ? <p>{t.needsHome}</p> : null}

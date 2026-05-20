@@ -48,14 +48,14 @@ export default function SettingsPage() {
 
   return (
     <AppShell eyebrow={t("settingsEyebrow")} revealActive={isFirstRunRevealActive} title={t("settings")}>
-      <div className={`space-y-4 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
+      <div className={`space-y-3 sm:space-y-4 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
         <SettingsSection
           defaultOpen
-          description={language === "sv" ? "Språk, startvy och val som bara gäller på den här enheten." : "Language, start view, and choices that only affect this device."}
+          description={language === "sv" ? "Språk, startvy och lokala val." : "Language, start view, and local choices."}
           eyebrow={language === "sv" ? "Inställningar" : "Settings"}
           title={language === "sv" ? "Den här enheten" : "This device"}
         >
-          <SettingsCard status={t("localPreview")} title={t("language")}>
+          <SettingsCard status={t("local")} title={t("language")}>
             <div className="space-y-3">
               <p>{t("languageCopy")}</p>
               <label className="block text-xs font-black uppercase tracking-[0.18em] text-stone-500" htmlFor="language-select">{t("selectedLanguage")}</label>
