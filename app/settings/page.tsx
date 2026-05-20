@@ -52,7 +52,6 @@ export default function SettingsPage() {
         <SettingsSection
           defaultOpen
           description={language === "sv" ? "Språk, startvy och val som bara gäller på den här enheten." : "Language, start view, and choices that only affect this device."}
-          status={t("localPreview")}
           eyebrow={language === "sv" ? "Inställningar" : "Settings"}
           title={language === "sv" ? "Den här enheten" : "This device"}
         >
@@ -90,7 +89,6 @@ export default function SettingsPage() {
 
         <SettingsSection
           description={language === "sv" ? "Se om hemmet är synkat i molnet eller bara används på den här enheten." : "See whether your home is synced in cloud or used only on this device."}
-          status={language === "sv" ? "Synkstatus" : "Sync status"}
           eyebrow={language === "sv" ? "Synk" : "Sync"}
           title={language === "sv" ? "Moln & synk" : "Cloud & sync"}
         >
@@ -100,7 +98,6 @@ export default function SettingsPage() {
         {hasHouseholdSettings ? (
           <SettingsSection
             description={language === "sv" ? "Hantera familjens hem, medlemmar och enheter." : "Manage your family home, members, and connected devices."}
-            status={language === "sv" ? "Medlemmar & enheter" : "Members & devices"}
             eyebrow={language === "sv" ? "Hushåll" : "Household"}
             title={language === "sv" ? "Hem" : "Home"}
           >
@@ -113,7 +110,6 @@ export default function SettingsPage() {
         {hasHouseholdSettings ? (
           <SettingsSection
             description={language === "sv" ? "Kalenderkällor och synkstatus för familjens planering." : "Calendar sources and sync status for family planning."}
-            status={t("calendarSources")}
             title={language === "sv" ? "Kalender" : "Calendar"}
           >
             <CalendarSourcesSettings />
@@ -123,8 +119,7 @@ export default function SettingsPage() {
         {canShowWallTaskCreatorSettings ? (
           <SettingsSection
             description={language === "sv" ? "Val som påverkar hur väggskärmen visar och skapar uppgifter." : "Choices that affect how the wall screen displays and creates tasks."}
-            status={t("localPreview")}
-            title={language === "sv" ? "Väggskärm" : "Wall screen"}
+              title={language === "sv" ? "Väggskärm" : "Wall screen"}
           >
             <WallTaskCreatorSettings />
           </SettingsSection>
@@ -133,7 +128,6 @@ export default function SettingsPage() {
         {hasHouseholdSettings ? (
           <SettingsSection
             description={language === "sv" ? "Avancerade kopplingar till andra system. Frivilligt och planerat." : "Advanced connections to other systems. Optional and planned."}
-            status={t("planned")}
             title={language === "sv" ? "Integrationer" : "Integrations"}
           >
             <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}><p>{t("homeAssistantIntegrationCopy")}</p></SettingsCard>
@@ -144,7 +138,6 @@ export default function SettingsPage() {
         {deviceProfile !== "wall" ? (
           <SettingsSection
             description={language === "sv" ? "Teknisk information för felsökning och utveckling." : "Technical information for troubleshooting and development."}
-            status={language === "sv" ? "Avancerat" : "Advanced"}
             title={language === "sv" ? "Tekniskt" : "Technical"}
           >
             <SettingsCard status={t("localPreview")} title={language === "sv" ? "Förhandsläge" : "Preview mode"}>
@@ -152,7 +145,6 @@ export default function SettingsPage() {
             </SettingsCard>
           </SettingsSection>
         ) : null}
-
       </div>
     </AppShell>
   );
