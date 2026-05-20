@@ -14,7 +14,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
-import { saveDeviceStartView } from "@/lib/devicePreferences";
+import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
@@ -67,7 +67,9 @@ export default function MobileAppPage() {
   }, []);
 
   useEffect(() => {
-    setIsSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
+    const setupMode = new URLSearchParams(window.location.search).get("setup") === "1";
+    setIsSetupMode(setupMode);
+    if (setupMode) saveDeviceStartView({ mode: "mobile", route: "/app" });
   }, []);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
@@ -185,38 +187,24 @@ export default function MobileAppPage() {
     completed: t("filtersCompleted"),
   };
 
-  const finishMobileSetup = useCallback(() => {
-    saveDeviceStartView({ mode: "mobile", route: "/app" });
-    router.replace("/app");
-  }, [router]);
-
-  if (isSetupMode) {
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4 py-8 text-stone-950 sm:px-8">
-        <section className="surface-card relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-amber-950/10">
-          <div className="pointer-events-none absolute -left-16 top-10 h-52 w-52 rounded-full bg-amber-200/40 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-20 right-16 h-64 w-64 rounded-full bg-orange-200/35 blur-3xl" />
-          <div className="relative rounded-[2rem] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100 p-8 shadow-inner shadow-white/60">
-            <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable absolute left-3 top-3 inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/75 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={() => router.push("/")} type="button">
-              <span aria-hidden="true">←</span>
-              <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
-            </button>
-            <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
-            <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{language === "sv" ? "Mobilvy" : "Mobile view"}</h1>
-            <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{language === "sv" ? "Använd den här enheten som mobilvy för HomeBoard. Här kan du se hemmet, uppgifter och inställningar från telefonen." : "Use this device as the mobile view for HomeBoard. From here you can view your home, tasks, and settings on your phone."}</p>
-            <p className="mt-3 text-sm font-semibold text-stone-600">{language === "sv" ? "Vill du hellre sätta upp en väggskärm kan du gå tillbaka och välja det istället." : "If you meant to set up a wall screen, go back and choose that instead."}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button className="pressable min-h-12 rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" onClick={finishMobileSetup} type="button">{language === "sv" ? "Använd mobilvy" : "Use mobile view"}</button>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
       <HouseholdSetupGate>
+      {isSetupMode ? (
+        <section className="surface-card relative mb-5 overflow-hidden rounded-[2rem] p-4 shadow-xl shadow-amber-950/10 sm:p-6">
+          <div className="pointer-events-none absolute -left-14 top-8 h-40 w-40 rounded-full bg-amber-200/35 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 right-10 h-48 w-48 rounded-full bg-orange-200/30 blur-3xl" />
+          <div className="relative rounded-[1.5rem] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100 p-4 shadow-inner shadow-white/60 sm:p-5">
+            <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable absolute left-3 top-3 inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/75 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={() => { resetDeviceStartView(); router.push("/"); }} type="button">
+              <span aria-hidden="true">←</span>
+              <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
+            </button>
+            <h1 className="mt-8 text-3xl font-black tracking-tight text-stone-950 sm:text-4xl">{language === "sv" ? "Mobilvy" : "Mobile view"}</h1>
+            <p className="mt-3 max-w-xl text-base font-bold leading-7 text-stone-600 sm:text-lg">{language === "sv" ? "Den här enheten används som mobilvy för HomeBoard. Här kan du se hemmet, uppgifter och inställningar från telefonen." : "This device is used as the mobile view for HomeBoard. From here you can view your home, tasks, and settings on your phone."}</p>
+            <p className="mt-2 text-sm font-semibold text-stone-600">{language === "sv" ? "Valde du fel? Gå tillbaka och välj väggskärm istället." : "Picked the wrong one? Go back and choose wall screen instead."}</p>
+          </div>
+        </section>
+      ) : null}
       <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
