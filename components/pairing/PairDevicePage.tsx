@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { usePairingCode } from "@/lib/hooks/useDevicePairing";
@@ -14,7 +14,7 @@ import type { Household } from "@/types";
 
 const service = createHouseholdService(householdRepository);
 type PairingDeviceKind = "wall" | "mobile" | "generic";
-const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; manualTitle: string; codeDetected: string; continueCta: string; deviceNames: Record<PairingDeviceKind, string>; connectTitle: Record<PairingDeviceKind, string>; confirmHome: Record<PairingDeviceKind, string>; connectSubmit: Record<PairingDeviceKind, string>; successDone: Record<PairingDeviceKind, string>; successBody: Record<PairingDeviceKind, string> }> = {
+const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; manualTitle: string; codeDetected: string; continueCta: string; closeToMobile: string; successHelper: Record<PairingDeviceKind, string>; deviceNames: Record<PairingDeviceKind, string>; connectTitle: Record<PairingDeviceKind, string>; confirmHome: Record<PairingDeviceKind, string>; connectSubmit: Record<PairingDeviceKind, string>; successDone: Record<PairingDeviceKind, string>; successBody: Record<PairingDeviceKind, string> }> = {
   en: {
     claimFailed: "Could not connect this device. Try again.",
     chooseHome: "Choose home",
@@ -25,6 +25,8 @@ const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; n
     manualTitle: "Enter pairing code",
     codeDetected: "Detected pairing code",
     continueCta: "Continue",
+    closeToMobile: "Close and return to mobile view",
+    successHelper: { wall: "The wall screen will open your home automatically. You can continue here on your phone.", mobile: "You can continue here on your phone.", generic: "You can continue here on your phone." },
     deviceNames: { wall: "wall screen", mobile: "phone", generic: "device" },
     connectTitle: { wall: "Connect wall screen", mobile: "Connect phone", generic: "Connect device" },
     confirmHome: { wall: "Do you want to connect this wall screen to", mobile: "Do you want to connect this phone to", generic: "Do you want to connect this device to" },
@@ -42,6 +44,8 @@ const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; n
     manualTitle: "Ange parkod",
     codeDetected: "Upptäckt parkod",
     continueCta: "Fortsätt",
+    closeToMobile: "Stäng och gå tillbaka till mobilvyn",
+    successHelper: { wall: "Väggskärmen öppnar hemmet automatiskt. Du kan fortsätta här på mobilen.", mobile: "Du kan fortsätta här på mobilen.", generic: "Du kan fortsätta här på mobilen." },
     deviceNames: { wall: "väggskärmen", mobile: "mobilen", generic: "enheten" },
     connectTitle: { wall: "Koppla väggskärm", mobile: "Koppla mobil", generic: "Koppla enhet" },
     confirmHome: { wall: "Vill du koppla den här väggskärmen till", mobile: "Vill du koppla den här mobilen till", generic: "Vill du koppla den här enheten till" },
@@ -52,6 +56,7 @@ const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; n
 };
 
 function PairDeviceContent() {
+  const router = useRouter();
   const params = useSearchParams();
   const pairingCode = params.get("code");
   const { language, t } = useLanguage();
@@ -126,6 +131,7 @@ function PairDeviceContent() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl items-center justify-center px-4 py-8">
       <section className="surface-card relative w-full overflow-hidden rounded-[2.25rem] p-5 shadow-xl shadow-amber-900/5 sm:p-7">
+        <button aria-label={copy.closeToMobile} className="pressable absolute left-4 top-4 z-10 inline-flex size-10 items-center justify-center rounded-full border border-white/70 bg-white/70 text-lg font-black text-stone-700 shadow-sm backdrop-blur-xl transition-colors duration-150 hover:bg-white/90" onClick={() => router.push("/app")} type="button">×</button>
         <div className="pointer-events-none absolute -right-12 top-6 h-36 w-36 rounded-full bg-amber-200/40 blur-3xl" />
         <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
         <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">{pairingCode ? copy.connectTitle[pairDeviceKind] : t("pairPhoneTitle")}</p>
@@ -175,6 +181,7 @@ function PairDeviceContent() {
           <div className="cloud-success-copy cloud-success-copy--celebrating mt-5 space-y-4">
             <StatusChip tone="emerald">{copy.successDone[pairDeviceKind]}</StatusChip>
             <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody[pairDeviceKind]}</p>
+            <p className="text-sm font-semibold leading-6 text-stone-600">{copy.successHelper[pairDeviceKind]}</p>
             <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">{t("open")}</Link>
           </div>
         ) : null}

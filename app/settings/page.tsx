@@ -12,7 +12,7 @@ import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSe
 import { MembersSettings } from "@/components/settings/MembersSettings";
 import { DevicesSettings } from "@/components/settings/DevicesSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
-import { canAccessFullSettings, getDeviceProfile, getOrCreateDeviceId, resetDeviceProfile, setDeviceProfile as persistDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
+import { canManageDeviceLocalSettings, canManageHouseholdSettings, getDeviceProfile, getOrCreateDeviceId, resetDeviceProfile, setDeviceProfile as persistDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { useLanguage, type Language } from "@/lib/i18n";
 
@@ -22,7 +22,9 @@ export default function SettingsPage() {
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("settings"));
   const [deviceProfile, setDeviceProfileState] = useState<DeviceMode | null>(null);
   const { hasAdultAccess } = useAdultAccess();
-  const hasFullSettings = canAccessFullSettings(deviceProfile, hasAdultAccess);
+  const hasHouseholdSettings = canManageHouseholdSettings(deviceProfile, hasAdultAccess);
+  const hasDeviceLocalSettings = canManageDeviceLocalSettings(deviceProfile);
+  const showWallLimitedNotice = deviceProfile === "wall" && !hasHouseholdSettings;
 
   useEffect(() => {
     getOrCreateDeviceId();
@@ -80,12 +82,17 @@ export default function SettingsPage() {
             </div>
           </div>
         ) : null}
-        {hasFullSettings ? (
+        {showWallLimitedNotice ? (
+          <SettingsCard status={t("localPreview")} title={language === "sv" ? "Inställningar för den här skärmen" : "Settings for this screen"}>
+            <p>{language === "sv" ? "De här valen påverkar bara väggskärmen. Logga in som vuxen för att ändra hushållets inställningar." : "These choices only affect the wall screen. Sign in as an adult to change household settings."}</p>
+          </SettingsCard>
+        ) : null}
+        {hasDeviceLocalSettings ? <WallTaskCreatorSettings /> : null}
+        {hasHouseholdSettings ? (
           <>
             <HouseholdSettings />
             <MembersSettings />
             <DevicesSettings />
-            <WallTaskCreatorSettings />
             <CalendarSourcesSettings />
             <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
               <p>{t("homeAssistantIntegrationCopy")}</p>
