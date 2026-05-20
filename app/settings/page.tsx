@@ -53,6 +53,7 @@ export default function SettingsPage() {
           defaultOpen
           description={language === "sv" ? "Språk, startvy och val som bara gäller på den här enheten." : "Language, start view, and choices that only affect this device."}
           status={t("localPreview")}
+          eyebrow={language === "sv" ? "Inställningar" : "Settings"}
           title={language === "sv" ? "Den här enheten" : "This device"}
         >
           <SettingsCard status={t("localPreview")} title={t("language")}>
@@ -67,9 +68,7 @@ export default function SettingsPage() {
           </SettingsCard>
           <DeviceStartViewSettings onProfileChange={setDeviceProfileState} />
           {showWallLimitedNotice ? (
-            <SettingsCard status={t("localPreview")} title={language === "sv" ? "Inställningar för den här skärmen" : "Settings for this screen"}>
-              <p>{language === "sv" ? "De här valen påverkar bara väggskärmen. Logga in som vuxen för att ändra hushållets inställningar." : "These choices only affect the wall screen. Sign in as an adult to change household settings."}</p>
-            </SettingsCard>
+            <p className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3 text-sm font-semibold leading-6 text-stone-700 md:col-span-2">{language === "sv" ? "Du ändrar bara den här väggskärmen. Logga in som vuxen för hem, medlemmar och kopplade enheter." : "You’re only changing this wall screen. Sign in as an adult to manage the home, members, and connected devices."}</p>
           ) : null}
         </SettingsSection>
 
@@ -92,6 +91,7 @@ export default function SettingsPage() {
         <SettingsSection
           description={language === "sv" ? "Se om hemmet är synkat i molnet eller bara används på den här enheten." : "See whether your home is synced in cloud or used only on this device."}
           status={language === "sv" ? "Synkstatus" : "Sync status"}
+          eyebrow={language === "sv" ? "Synk" : "Sync"}
           title={language === "sv" ? "Moln & synk" : "Cloud & sync"}
         >
           <CloudStatusSettings />
@@ -101,6 +101,7 @@ export default function SettingsPage() {
           <SettingsSection
             description={language === "sv" ? "Hantera familjens hem, medlemmar och enheter." : "Manage your family home, members, and connected devices."}
             status={language === "sv" ? "Medlemmar & enheter" : "Members & devices"}
+            eyebrow={language === "sv" ? "Hushåll" : "Household"}
             title={language === "sv" ? "Hem" : "Home"}
           >
             <HouseholdSettings />
