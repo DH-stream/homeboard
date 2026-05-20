@@ -104,6 +104,14 @@ export function canAccessFullSettings(mode: DeviceMode | null, hasAdultAccess: b
   return mode === "admin" && hasAdultAccess;
 }
 
+export function canManageHouseholdSettings(mode: DeviceMode | null, hasAdultAccess: boolean) {
+  return canAccessFullSettings(mode, hasAdultAccess);
+}
+
+export function canManageDeviceLocalSettings(mode: DeviceMode | null) {
+  return mode === "wall";
+}
+
 export function canSelectAdultProfile(hasAdultAccess: boolean) {
   return hasAdultAccess;
 }

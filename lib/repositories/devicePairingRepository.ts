@@ -76,6 +76,7 @@ export interface DevicePairingRepository {
   createWallPairingSession(input: CreateDevicePairingSessionInput): Promise<DevicePairingSession>;
   getPairingSession(pairingCode: string): Promise<DevicePairingSession | null>;
   claimPairingSession(pairingCode: string, householdId: string, memberId?: string): Promise<DevicePairingSession>;
+  updateDeviceName(deviceId: string, name: string): Promise<void>;
 }
 
 export class SupabaseDevicePairingRepository implements DevicePairingRepository {
@@ -186,6 +187,15 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     if (deviceError) throw deviceError;
     return mapPairingSession(updatedSession as DevicePairingSessionRow);
+  }
+
+  async updateDeviceName(deviceId: string, name: string) {
+    if (!this.client) throw new Error("Cloud is not configured.");
+    const { error } = await this.client
+      .from("devices")
+      .update({ name: name.trim().slice(0, 40), updated_at: new Date().toISOString() })
+      .eq("id", deviceId);
+    if (error) throw error;
   }
 }
 

@@ -36,6 +36,12 @@ const copy: Record<Language, Record<string, string>> = {
     wallScreenLabel: "Wall screen",
     parentPhoneLabel: "Parent phone",
     homeLabel: "Home",
+    remove: "Remove",
+    removeTitle: "Remove this device?",
+    removeBody: "This device will be disconnected from the home and will need to be paired again to show household information.",
+    removeConfirm: "Remove from home",
+    removeCancel: "Cancel",
+    removeError: "Could not remove the device right now. Try again.",
   },
   sv: {
     title: "Enheter",
@@ -60,6 +66,12 @@ const copy: Record<Language, Record<string, string>> = {
     wallScreenLabel: "Väggskärm",
     parentPhoneLabel: "Förälders mobil",
     homeLabel: "Hem",
+    remove: "Ta bort",
+    removeTitle: "Ta bort enheten?",
+    removeBody: "Enheten kopplas bort från hemmet och behöver parkopplas igen för att visa hushållets information.",
+    removeConfirm: "Ta bort från hemmet",
+    removeCancel: "Avbryt",
+    removeError: "Kunde inte ta bort enheten just nu. Försök igen.",
   },
 };
 
@@ -76,7 +88,9 @@ export function DevicesSettings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const [isSaving, setSaving] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const startEdit = (device: Device) => {
     setEditingId(device.id);
@@ -101,6 +115,23 @@ export function DevicesSettings() {
       setSaveError(t.saveError);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function removeDevice(deviceId: string) {
+    const confirmed = window.confirm(`${t.removeTitle}\n\n${t.removeBody}`);
+    if (!confirmed) return;
+    const previous = devices;
+    setRemoveError(null);
+    setRemovingId(deviceId);
+    setDevices((current) => current.filter((device) => device.id !== deviceId));
+    try {
+      await service.unlinkDeviceFromHousehold(deviceId);
+    } catch {
+      setDevices(previous);
+      setRemoveError(t.removeError);
+    } finally {
+      setRemovingId(null);
     }
   }
 
@@ -146,7 +177,10 @@ export function DevicesSettings() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-base font-black text-stone-900">{fallbackName}</p>
-                        <button className="pressable min-h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-black text-stone-700" onClick={() => startEdit(device)} type="button">{t.edit}</button>
+                        <div className="flex items-center gap-2">
+                          <button className="pressable min-h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-black text-stone-700" onClick={() => startEdit(device)} type="button">{t.edit}</button>
+                          <button className="pressable min-h-9 rounded-xl border border-rose-200 bg-white px-3 text-xs font-black text-rose-700 disabled:opacity-60" disabled={removingId === device.id} onClick={() => void removeDevice(device.id)} type="button">{t.remove}</button>
+                        </div>
                       </div>
                       <p className="text-xs font-bold text-stone-600">{t.mode}: <span className="text-stone-900">{device.mode}</span></p>
                       <p className="text-xs font-bold text-stone-600">{t.lastOnline}: <span className="text-stone-900">{lastSeen ?? t.never}</span></p>
@@ -158,6 +192,7 @@ export function DevicesSettings() {
           </ul>
         ) : null}
         {saveError ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">{saveError}</p> : null}
+        {removeError ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">{removeError}</p> : null}
       </div>
     </SettingsCard>
   );

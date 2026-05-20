@@ -104,5 +104,10 @@ export function usePairingCode(pairingCode: string | null) {
     [normalizedCode],
   );
 
-  return { claim, error, isLoading, refresh, session };
+  const updateDeviceName = useCallback(async (deviceId: string, name: string) => {
+    await service.updateDeviceName(deviceId, name);
+    setSession((current) => (current ? { ...current, deviceName: name } : current));
+  }, []);
+
+  return { claim, error, isLoading, refresh, session, updateDeviceName };
 }
