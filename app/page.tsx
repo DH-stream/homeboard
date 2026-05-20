@@ -15,6 +15,8 @@ import {
 import { setPendingFirstRunReveal, type FirstRunRevealRoute } from "@/lib/firstRunReveal";
 import { signOutParentLocally } from "@/lib/auth/parentAuth";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
+import { isCloudConfigured } from "@/lib/cloud/config";
+import { getLocalSelectedHouseholdId, isLocalOnlyModeEnabled } from "@/lib/households/selection";
 import { useLanguage } from "@/lib/i18n";
 
 const optionIcons: Record<DeviceMode, string> = {
@@ -264,8 +266,8 @@ export default function HomePage() {
       return;
     }
 
+    saveDeviceStartView(startView);
     const isDirectlyFinalizingMode = startView.mode === "admin";
-    if (isDirectlyFinalizingMode) saveDeviceStartView(startView);
     setPendingFirstRunReveal(revealRouteByMode[startView.mode]);
     setSelectedStartView(startView);
 
@@ -276,8 +278,15 @@ export default function HomePage() {
 
     navigationTimeoutRef.current = setTimeout(() => {
       if (startView.mode === "wall") void signOutParentLocally();
-      const destination = startView.mode === "admin" ? startView.route : `${startView.route}?setup=1`;
-      router.push(destination);
+      if (startView.mode === "admin") {
+        router.push(startView.route);
+        return;
+      }
+
+      const hasLocalOnlyMode = isLocalOnlyModeEnabled();
+      const hasSelectedHousehold = Boolean(getLocalSelectedHouseholdId());
+      const shouldOpenSetup = isCloudConfigured() && !hasLocalOnlyMode && !hasSelectedHousehold;
+      router.push(shouldOpenSetup ? `${startView.route}?setup=1` : startView.route);
     }, prefersReducedMotion ? 180 : 1450);
   };
 
@@ -285,7 +294,10 @@ export default function HomePage() {
     if (nextProfile === "wall") void signOutParentLocally();
     const next = setDeviceProfile(nextProfile);
     setPendingFirstRunReveal(revealRouteByMode[next.mode]);
-    router.push(`${next.route}?setup=1`);
+    const hasLocalOnlyMode = isLocalOnlyModeEnabled();
+    const hasSelectedHousehold = Boolean(getLocalSelectedHouseholdId());
+    const shouldOpenSetup = isCloudConfigured() && !hasLocalOnlyMode && !hasSelectedHousehold;
+    router.push(shouldOpenSetup ? `${next.route}?setup=1` : next.route);
   };
 
 

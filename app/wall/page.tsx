@@ -24,7 +24,6 @@ import {
   getLocalSelectedHouseholdId,
   isLocalOnlyModeEnabled,
   LOCAL_ONLY_MODE_CHANGED_EVENT,
-  resetHouseholdSelectionForScreenChooser,
   saveSelectedHouseholdId,
 } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
@@ -85,7 +84,10 @@ function getWallStreakPreviewOverride() {
 
 export default function WallPage() {
   const router = useRouter();
-  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isSetupMode, setIsSetupMode] = useState(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("setup") === "1",
+  );
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
   const { householdId } = useResolvedHouseholdId();
@@ -119,10 +121,6 @@ export default function WallPage() {
     getWallStreakPreviewOverride(),
   );
   const quickCreatorTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setIsSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
-  }, []);
 
   useEffect(() => {
     const syncLocalOnlyMode = () => setUseLocalWall(isLocalOnlyModeEnabled());
@@ -357,7 +355,6 @@ export default function WallPage() {
         onPaired={finishPairing}
         onBack={isSetupMode ? () => {
           resetDeviceStartView();
-          resetHouseholdSelectionForScreenChooser();
           router.replace("/?choose=1");
         } : undefined}
         onUseLocal={() => {

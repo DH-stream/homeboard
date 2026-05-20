@@ -15,7 +15,6 @@ import { DevicesSettings } from "@/components/settings/DevicesSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { canManageDeviceLocalSettings, canManageHouseholdSettings, getDeviceProfile, getOrCreateDeviceId, resetDeviceProfile, setDeviceProfile as persistDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
-import { resetHouseholdSelectionForScreenChooser } from "@/lib/households/selection";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
@@ -43,7 +42,6 @@ export default function SettingsPage() {
 
   const chooseScreenAgain = () => {
     resetDeviceProfile();
-    resetHouseholdSelectionForScreenChooser();
     setDeviceProfileState(null);
     router.push("/");
   };

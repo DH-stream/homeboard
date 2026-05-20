@@ -21,7 +21,6 @@ import {
   enableLocalOnlyMode,
   isLocalOnlyModeEnabled,
   LOCAL_ONLY_MODE_CHANGED_EVENT,
-  resetHouseholdSelectionForScreenChooser,
   saveSelectedHouseholdId,
 } from "@/lib/households/selection";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
@@ -50,7 +49,10 @@ function getFirstCreatedTaskId(created: unknown) {
 
 export default function MobileAppPage() {
   const router = useRouter();
-  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isSetupMode, setIsSetupMode] = useState(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("setup") === "1",
+  );
   const { getCompletionEncouragement, language, t } = useLanguage();
   const { members } = useMembers();
   const { householdId } = useResolvedHouseholdId();
@@ -89,11 +91,6 @@ export default function MobileAppPage() {
       window.removeEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, syncLocalOnlyMode);
       window.removeEventListener("storage", syncLocalOnlyMode);
     };
-  }, []);
-
-  useEffect(() => {
-    const setupMode = new URLSearchParams(window.location.search).get("setup") === "1";
-    setIsSetupMode(setupMode);
   }, []);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
@@ -218,7 +215,6 @@ export default function MobileAppPage() {
           targetMode="mobile"
           onBack={() => {
             resetDeviceStartView();
-            resetHouseholdSelectionForScreenChooser();
             router.replace("/?choose=1");
           }}
           onPaired={(nextHouseholdId) => {
