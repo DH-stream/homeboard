@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { signOutParent } from "@/lib/auth/parentAuth";
+import { signOutParentLocally } from "@/lib/auth/parentAuth";
 import { getDeviceProfile } from "@/lib/devicePreferences";
 import { enableLocalOnlyMode, forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
 import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
@@ -25,7 +25,7 @@ export function HouseholdSettings() {
   const [isConfirming, setConfirming] = useState(false);
 
   function forgetOnDevice() {
-    if (getDeviceProfile() === "wall") void signOutParent();
+    if (getDeviceProfile() === "wall") void signOutParentLocally();
     forgetSelectedCloudHouseholdOnThisDevice();
     enableLocalOnlyMode();
     refreshHouseholdId();

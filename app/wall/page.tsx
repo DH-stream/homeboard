@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { signOutParent } from "@/lib/auth/parentAuth";
+import { signOutParentLocally } from "@/lib/auth/parentAuth";
 import {
   enableLocalOnlyMode,
   saveSelectedHouseholdId,
@@ -281,7 +281,7 @@ export default function WallPage() {
   );
 
   const finishPairing = useCallback((nextHouseholdId: string) => {
-    void signOutParent();
+    void signOutParentLocally();
     saveSelectedHouseholdId(nextHouseholdId);
     saveDeviceStartView({ mode: "wall", route: "/wall" });
   }, []);
@@ -292,7 +292,7 @@ export default function WallPage() {
         onPaired={finishPairing}
         onBack={isSetupMode ? () => { resetDeviceStartView(); router.replace("/?choose=1"); } : undefined}
         onUseLocal={() => {
-          void signOutParent();
+          void signOutParentLocally();
           saveDeviceStartView({ mode: "wall", route: "/wall" });
           enableLocalOnlyMode();
           setUseLocalWall(true);
