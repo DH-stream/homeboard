@@ -282,7 +282,7 @@ export default function HomePage() {
   const continueWithProfile = (nextProfile: "mobile" | "wall") => {
     const next = setDeviceProfile(nextProfile);
     setPendingFirstRunReveal(revealRouteByMode[next.mode]);
-    router.push(next.route);
+    router.push(`${next.route}?setup=1`);
   };
 
 
