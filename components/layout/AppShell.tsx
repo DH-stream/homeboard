@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import type { ReactNode } from "react";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
-import { getRememberedStableRoute, getStableSettingsBackTarget, isStableAppRoute, rememberStableRoute } from "@/lib/navigation/stableRoutes";
+import { getRememberedStableRoute, getStableSettingsBackTarget, isStableAppRoute } from "@/lib/navigation/stableRoutes";
 
 function AppShellInner({ children, title, eyebrow, revealActive = false }: { children: ReactNode; title: string; eyebrow?: string; revealActive?: boolean }) {
   const { t, language } = useLanguage();
@@ -20,11 +20,6 @@ function AppShellInner({ children, title, eyebrow, revealActive = false }: { chi
   const settingsBackHref = isSettingsPage ? getStableSettingsBackTarget({ returnTo, rememberedRoute: lastStableRoute }) : "/settings";
   const settingsHref = isStableAppRoute(pathname, searchParams) ? `/settings?returnTo=${encodeURIComponent(pathname)}` : "/settings";
   const backLabel = language === "sv" ? "Tillbaka" : "Back";
-
-  useEffect(() => {
-    if (typeof window !== "undefined") rememberStableRoute(pathname, searchParams);
-  }, [pathname, searchParams]);
-
 
   return (
     <main className={`mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 safe-top safe-bottom sm:px-6 ${revealActive ? "first-run-reveal first-run-reveal--active app-first-run-reveal" : ""}`}>

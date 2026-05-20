@@ -17,7 +17,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
+import { enableLocalOnlyMode, isLocalOnlyModeEnabled, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
@@ -28,6 +28,7 @@ import { getLocalDateKey, hasSeenStreakFlameToday, markStreakFlameSeenToday } fr
 import { createStreakService } from "@/lib/services/streakService";
 import { shouldShowInCompletedTasks, shouldShowInRemainingTasks, shouldShowTodayTask } from "@/lib/tasks/visibility";
 import { isFutureLocalDay } from "@/lib/utils/date";
+import { rememberStableRoute } from "@/lib/navigation/stableRoutes";
 import type { TaskInstance } from "@/types";
 
 type Filter = "open" | "completed";
@@ -75,6 +76,14 @@ export default function MobileAppPage() {
     setIsSetupMode(setupMode);
   }, []);
 
+
+  useEffect(() => {
+    if (isSetupMode) return;
+    if (typeof window === "undefined") return;
+    const isLocalOnly = isLocalOnlyModeEnabled();
+    const canUseStableApp = Boolean(householdId) || isLocalOnly || !isCloudConfigured();
+    if (canUseStableApp) rememberStableRoute("/app");
+  }, [householdId, isSetupMode]);
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
   const upcomingTasks = useMemo(() => tasks.filter((task) => !isRecurringTask(task) && isFutureLocalDay(task.dueDate)), [tasks]);
   const [streak, setStreak] = useState(0);

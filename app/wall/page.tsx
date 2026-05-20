@@ -38,6 +38,7 @@ import {
   type WallTaskCreatorMode,
 } from "@/lib/wallPreferences";
 import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
+import { rememberStableRoute } from "@/lib/navigation/stableRoutes";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
 import {
@@ -332,6 +333,14 @@ export default function WallPage() {
     saveSelectedHouseholdId(nextHouseholdId);
     saveDeviceStartView({ mode: "wall", route: "/wall" });
   }, []);
+
+
+  useEffect(() => {
+    if (isSetupMode) return;
+    if (typeof window === "undefined") return;
+    const canUseStableWall = Boolean(householdId) || useLocalWall || !isCloudConfigured();
+    if (canUseStableWall) rememberStableRoute("/wall");
+  }, [householdId, isSetupMode, useLocalWall]);
 
   if (!householdId && !useLocalWall && isCloudConfigured()) {
     return (

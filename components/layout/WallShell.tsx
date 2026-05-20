@@ -1,19 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
-import { rememberStableRoute } from "@/lib/navigation/stableRoutes";
 
 export function WallShell({ children, revealActive = false }: { children: ReactNode; revealActive?: boolean }) {
   const { t } = useLanguage();
   const showDebugNavigation = shouldShowDebugNavigation();
 
-  useEffect(() => {
-    if (typeof window !== "undefined") rememberStableRoute("/wall");
-  }, []);
 
   return (
     <main className={`min-h-screen overflow-hidden bg-[radial-gradient(circle_at_20%_10%,rgba(251,191,36,0.25),transparent_30rem),linear-gradient(135deg,#fff8ed,#eefdf8_55%,#f7f2ff)] p-5 text-stone-950 lg:p-8 ${revealActive ? "first-run-reveal first-run-reveal--active wall-first-run-reveal" : ""}`}>
