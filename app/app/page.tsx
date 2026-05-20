@@ -73,7 +73,6 @@ export default function MobileAppPage() {
   useEffect(() => {
     const setupMode = new URLSearchParams(window.location.search).get("setup") === "1";
     setIsSetupMode(setupMode);
-    if (setupMode) saveDeviceStartView({ mode: "mobile", route: "/app" });
   }, []);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
@@ -200,12 +199,14 @@ export default function MobileAppPage() {
           onPaired={(nextHouseholdId) => {
             saveSelectedHouseholdId(nextHouseholdId);
             saveDeviceStartView({ mode: "mobile", route: "/app" });
+            setIsSetupMode(false);
             router.replace("/app");
           }}
           onUseLocal={() => {
             saveDeviceStartView({ mode: "mobile", route: "/app" });
             enableLocalOnlyMode();
             setUseLocalMobile(true);
+            setIsSetupMode(false);
             router.replace("/app");
           }}
         />
