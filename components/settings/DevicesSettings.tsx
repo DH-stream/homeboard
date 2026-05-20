@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { useDevices } from "@/lib/hooks/useDevices";
@@ -24,6 +25,14 @@ const copy: Record<Language, Record<string, string>> = {
     cancel: "Cancel",
     loadError: "Could not load devices right now.",
     saveError: "Could not save the device name. Try again.",
+    addWallScreen: "Add wall screen",
+    addWallIntro: "Start pairing from the wall/tablet screen. This phone scans or enters the code.",
+    addWallStep1: "1. Open HomeBoard on the tablet/wall screen.",
+    addWallStep2: "2. Choose Wall screen.",
+    addWallStep3: "3. Choose Link to household.",
+    addWallStep4: "4. Scan the QR code from this phone, or enter the code manually.",
+    enterPairingCode: "Enter pairing code",
+    mode: "Mode",
   },
   sv: {
     title: "Enheter",
@@ -37,6 +46,14 @@ const copy: Record<Language, Record<string, string>> = {
     cancel: "Avbryt",
     loadError: "Kunde inte ladda enheter just nu.",
     saveError: "Kunde inte spara enhetsnamnet. Försök igen.",
+    addWallScreen: "Lägg till väggskärm",
+    addWallIntro: "Starta parkopplingen från vägg-/surfplatteskärmen. Den här mobilen skannar eller skriver in koden.",
+    addWallStep1: "1. Öppna HomeBoard på surfplattan/väggskärmen.",
+    addWallStep2: "2. Välj Väggskärm.",
+    addWallStep3: "3. Välj Koppla till hem.",
+    addWallStep4: "4. Skanna QR-koden med mobilen, eller skriv in koden manuellt.",
+    enterPairingCode: "Ange parkopplingskod",
+    mode: "Läge",
   },
 };
 
@@ -85,6 +102,16 @@ export function DevicesSettings() {
     <SettingsCard status={householdId ? `${devices.length}` : "—"} title={t.title}>
       <div className="space-y-4">
         <p>{t.helper}</p>
+        {householdId ? (
+          <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+            <p className="text-sm font-black text-stone-900">{t.addWallScreen}</p>
+            <p className="mt-1 text-sm font-semibold text-stone-600">{t.addWallIntro}</p>
+            <ol className="mt-3 space-y-1 text-sm font-semibold text-stone-700">
+              <li>{t.addWallStep1}</li><li>{t.addWallStep2}</li><li>{t.addWallStep3}</li><li>{t.addWallStep4}</li>
+            </ol>
+            <Link className="pressable mt-3 inline-flex min-h-10 items-center rounded-xl border border-stone-200 bg-white px-3 text-sm font-black text-stone-800" href="/pair">{t.enterPairingCode}</Link>
+          </div>
+        ) : null}
         {!householdId ? <p>{t.needsHome}</p> : null}
         {householdId && isLoading ? <p className="text-sm font-bold text-stone-500">…</p> : null}
         {householdId && error ? <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">{t.loadError}</p> : null}
@@ -112,6 +139,7 @@ export function DevicesSettings() {
                         <p className="text-base font-black text-stone-900">{fallbackName}</p>
                         <button className="pressable min-h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-black text-stone-700" onClick={() => startEdit(device)} type="button">{t.edit}</button>
                       </div>
+                      <p className="text-xs font-bold text-stone-600">{t.mode}: <span className="text-stone-900">{device.mode}</span></p>
                       <p className="text-xs font-bold text-stone-600">{t.lastOnline}: <span className="text-stone-900">{lastSeen ?? t.never}</span></p>
                     </div>
                   )}

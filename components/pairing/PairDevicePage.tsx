@@ -47,8 +47,14 @@ function PairDeviceContent() {
   const [isLoadingHomes, setLoadingHomes] = useState(false);
   const [homesError, setHomesError] = useState<string | null>(null);
   const [selectedHomeId, setSelectedHomeId] = useState<string>("");
+  const [manualCode, setManualCode] = useState(() => pairingCode?.trim().toUpperCase() ?? "");
   const isExpired = session?.status === "expired";
   const isClaimed = session?.status === "claimed";
+  const hasManualCode = manualCode.length === 6;
+
+  useEffect(() => {
+    setManualCode(pairingCode?.trim().toUpperCase() ?? "");
+  }, [pairingCode]);
 
   useEffect(() => {
     if (!isSignedIn || !session || session.status !== "pending") return;
@@ -102,8 +108,29 @@ function PairDeviceContent() {
         <h1 className="mt-2 text-3xl font-black tracking-tight text-stone-950">{t("pairPhoneTitle")}</h1>
 
         {isLoading ? <p className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-600">{t("loading")}</p> : null}
-        {(error || !session) ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeInvalid")}</p> : null}
+        {!pairingCode ? (
+          <form action="/pair" className="mt-5 space-y-3" method="get">
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{t("pairCodeLabel")}</span>
+              <input
+                autoCapitalize="characters"
+                autoComplete="one-time-code"
+                className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 font-black tracking-[0.18em] text-stone-950 uppercase"
+                inputMode="text"
+                maxLength={6}
+                name="code"
+                onChange={(event) => setManualCode(event.target.value.replace(/\s+/g, "").toUpperCase())}
+                placeholder="ABC123"
+                value={manualCode}
+              />
+            </label>
+            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={!hasManualCode} type="submit">{t("continueWithMobileView")}</button>
+          </form>
+        ) : null}
+        {(pairingCode && (error || !session)) ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeInvalid")}</p> : null}
         {isExpired ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.expiredHint}</p> : null}
+        {session?.status === "claimed" ? <p className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-bold text-stone-700">{t("pairAlreadyClaimed")}</p> : null}
+        {error === "unavailable" ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCloudUnavailable")}</p> : null}
         {claimError ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.claimFailed}</p> : null}
 
         {!isSignedIn && session?.status === "pending" ? <div className="mt-5"><ParentAuthCard compact /></div> : null}
