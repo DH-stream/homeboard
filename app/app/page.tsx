@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
-import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
 import { WallPairingCard } from "@/components/pairing/WallPairingCard";
@@ -208,38 +207,34 @@ export default function MobileAppPage() {
     completed: t("filtersCompleted"),
   };
 
-  if (isSetupMode) {
-    if (!householdId && !useLocalMobile && isCloudConfigured()) {
-      return (
-        <WallPairingCard
-          targetMode="mobile"
-          onBack={() => {
-            resetDeviceStartView();
-            router.replace("/?choose=1");
-          }}
-          onPaired={(nextHouseholdId) => {
-            saveSelectedHouseholdId(nextHouseholdId);
-            saveDeviceStartView({ mode: "mobile", route: "/app" });
-            setIsSetupMode(false);
-            router.replace("/app");
-          }}
-          onUseLocal={() => {
-            saveDeviceStartView({ mode: "mobile", route: "/app" });
-            enableLocalOnlyMode();
-            setUseLocalMobile(true);
-            setIsSetupMode(false);
-            router.replace("/app");
-          }}
-        />
-      );
-    }
-    router.replace("/app");
-    return null;
+  if (isSetupMode || (!householdId && !useLocalMobile && isCloudConfigured())) {
+    return (
+      <WallPairingCard
+        targetMode="mobile"
+        onBack={() => {
+          resetDeviceStartView();
+          router.replace("/?choose=1");
+        }}
+        onPaired={(nextHouseholdId) => {
+          saveSelectedHouseholdId(nextHouseholdId);
+          saveDeviceStartView({ mode: "mobile", route: "/app" });
+          setUseLocalMobile(false);
+          setIsSetupMode(false);
+          router.replace("/app");
+        }}
+        onUseLocal={() => {
+          saveDeviceStartView({ mode: "mobile", route: "/app" });
+          enableLocalOnlyMode();
+          setUseLocalMobile(true);
+          setIsSetupMode(false);
+          router.replace("/app");
+        }}
+      />
+    );
   }
 
   return (
     <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
-      <HouseholdSetupGate>
       <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
@@ -336,7 +331,6 @@ export default function MobileAppPage() {
           </section>
         </div>
       ) : null}
-      </HouseholdSetupGate>
     </AppShell>
   );
 }
