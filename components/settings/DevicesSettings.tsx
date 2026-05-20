@@ -103,13 +103,14 @@ export function DevicesSettings() {
       <div className="space-y-4">
         <p>{t.helper}</p>
         {householdId ? (
-          <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-            <p className="text-sm font-black text-stone-900">{t.addWallScreen}</p>
-            <p className="mt-1 text-sm font-semibold text-stone-600">{t.addWallIntro}</p>
+          <div className="relative overflow-hidden rounded-[1.6rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50/60 to-white p-4 shadow-[0_18px_44px_rgba(120,93,58,0.12)]">
+            <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-200/45 blur-2xl" />
+            <p className="relative text-sm font-black text-stone-900">{t.addWallScreen}</p>
+            <p className="relative mt-1 text-sm font-semibold text-stone-700">{t.addWallIntro}</p>
             <ol className="mt-3 space-y-1 text-sm font-semibold text-stone-700">
               <li>{t.addWallStep1}</li><li>{t.addWallStep2}</li><li>{t.addWallStep3}</li><li>{t.addWallStep4}</li>
             </ol>
-            <Link className="pressable mt-3 inline-flex min-h-10 items-center rounded-xl border border-stone-200 bg-white px-3 text-sm font-black text-stone-800" href="/pair">{t.enterPairingCode}</Link>
+            <Link className="pressable mt-3 inline-flex min-h-11 items-center rounded-xl bg-stone-950 px-4 text-sm font-black text-white shadow-lg shadow-stone-900/15" href="/pair">{t.enterPairingCode}</Link>
           </div>
         ) : null}
         {!householdId ? <p>{t.needsHome}</p> : null}
