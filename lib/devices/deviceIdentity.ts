@@ -59,3 +59,12 @@ export function setPersistedCloudDeviceId(deviceId: string) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(CLOUD_DEVICE_ID_STORAGE_KEY, deviceId);
 }
+
+export function clearPersistedCloudDeviceId() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(CLOUD_DEVICE_ID_STORAGE_KEY);
+}
+
+export function resetCurrentCloudDeviceIdentity() {
+  clearPersistedCloudDeviceId();
+}
