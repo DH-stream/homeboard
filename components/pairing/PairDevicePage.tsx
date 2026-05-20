@@ -13,7 +13,7 @@ import { createHouseholdService } from "@/lib/services/householdService";
 import type { Household } from "@/types";
 
 const service = createHouseholdService(householdRepository);
-const pairingCopy: Record<Language, { claimFailed: string; successBody: string; chooseHome: string; confirmHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; connectTitle: string; manualTitle: string; connectWall: string; codeDetected: string }> = {
+const pairingCopy: Record<Language, { claimFailed: string; successBody: string; chooseHome: string; confirmHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; connectTitle: string; manualTitle: string; connectWall: string; codeDetected: string; continueCta: string }> = {
   en: {
     claimFailed: "Could not connect this device. Try again.",
     successBody: "This device will open the selected home in a moment.",
@@ -27,6 +27,7 @@ const pairingCopy: Record<Language, { claimFailed: string; successBody: string; 
     manualTitle: "Enter pairing code",
     connectWall: "Connect wall screen",
     codeDetected: "Detected pairing code",
+    continueCta: "Continue",
   },
   sv: {
     claimFailed: "Kunde inte koppla den här enheten. Försök igen.",
@@ -41,6 +42,7 @@ const pairingCopy: Record<Language, { claimFailed: string; successBody: string; 
     manualTitle: "Ange parkod",
     connectWall: "Koppla väggskärm",
     codeDetected: "Upptäckt parkod",
+    continueCta: "Fortsätt",
   },
 };
 
@@ -109,6 +111,7 @@ function PairDeviceContent() {
   }
 
   const selectedHome = homes.find((home) => home.id === selectedHomeId);
+  const pairStep = isClaimed ? 3 : pairingCode ? 2 : 1;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl items-center justify-center px-4 py-8">
@@ -137,9 +140,20 @@ function PairDeviceContent() {
                 value={manualCode}
               />
             </label>
-            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={!hasManualCode} type="submit">{t("continueWithMobileView")}</button>
+            <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={!hasManualCode} type="submit">{copy.continueCta}</button>
           </form>
         ) : null}
+        <div className={`cloud-mode-card mt-4 rounded-2xl border p-4 ${isClaimed ? "cloud-mode-card--celebrating" : pairingCode ? "cloud-mode-card--active" : ""}`}>
+          <div className="cloud-mode-card__shine" />
+          <div className="cloud-milestone-stage">
+            <p className="cloud-connection-path">{t("deviceModeWall")} <i /><i /><i /> {t("home")}</p>
+            <ol className="cloud-milestone-steps">
+              <li className={`cloud-milestone-step ${pairStep >= 1 ? "cloud-milestone-step--active" : ""}`}><span />{copy.manualTitle}</li>
+              <li className={`cloud-milestone-step ${pairStep >= 2 ? "cloud-milestone-step--active" : ""}`}><span />{copy.connectTitle}</li>
+              <li className={`cloud-milestone-step ${pairStep >= 3 ? "cloud-milestone-step--active" : ""}`}><span />{t("pairComplete")}</li>
+            </ol>
+          </div>
+        </div>
         {(pairingCode && (error || !session)) ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCodeInvalid")}</p> : null}
         {isExpired ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{copy.expiredHint}</p> : null}
         {error === "unavailable" ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">{t("pairCloudUnavailable")}</p> : null}
@@ -148,7 +162,7 @@ function PairDeviceContent() {
         {!isSignedIn && session?.status === "pending" ? <div className="mt-5"><ParentAuthCard compact /></div> : null}
 
         {isClaimed ? (
-          <div className="mt-5 space-y-4">
+          <div className="cloud-success-copy cloud-success-copy--celebrating mt-5 space-y-4">
             <StatusChip tone="emerald">{t("pairComplete")}</StatusChip>
             <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody}</p>
             <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">{t("open")}</Link>

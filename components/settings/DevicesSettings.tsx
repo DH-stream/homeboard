@@ -103,10 +103,12 @@ export function DevicesSettings() {
       <div className="space-y-4">
         <p>{t.helper}</p>
         {householdId ? (
-          <div className="relative overflow-hidden rounded-[1.6rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50/60 to-white p-4 shadow-[0_18px_44px_rgba(120,93,58,0.12)]">
+          <div className="cloud-mode-card cloud-mode-card--active reveal-item reveal-item--card reveal-stagger-3 relative overflow-hidden rounded-[1.6rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50/60 to-white p-4 shadow-[0_18px_44px_rgba(120,93,58,0.12)]">
+            <div className="cloud-mode-card__shine" />
             <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-200/45 blur-2xl" />
             <p className="relative text-sm font-black text-stone-900">{t.addWallScreen}</p>
             <p className="relative mt-1 text-sm font-semibold text-stone-700">{t.addWallIntro}</p>
+            <p className="cloud-connection-path mt-3">{language === "sv" ? "Väggskärm" : "Wall screen"} <i /><i /><i /> {language === "sv" ? "Förälders mobil" : "Parent phone"} <i /><i /><i /> {language === "sv" ? "Hem" : "Home"}</p>
             <ol className="mt-3 space-y-1 text-sm font-semibold text-stone-700">
               <li>{t.addWallStep1}</li><li>{t.addWallStep2}</li><li>{t.addWallStep3}</li><li>{t.addWallStep4}</li>
             </ol>
