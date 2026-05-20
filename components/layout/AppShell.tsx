@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { getDefaultRouteForMode, getDeviceProfile, readDeviceStartView, shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
 
 const SAFE_SETTINGS_RETURN_ROUTES = new Set(["/app", "/wall"]);
+const LAST_STABLE_ROUTE_KEY = "homeboard.lastStableRoute.v1";
 
-function getSettingsBackHref(returnTo: string | null) {
+function getSettingsBackHref(returnTo: string | null, lastStableRoute: string | null) {
   if (returnTo && SAFE_SETTINGS_RETURN_ROUTES.has(returnTo)) return returnTo;
+  if (lastStableRoute && SAFE_SETTINGS_RETURN_ROUTES.has(lastStableRoute)) return lastStableRoute;
 
   const startView = readDeviceStartView();
   const profile = startView?.mode ?? getDeviceProfile();
@@ -23,12 +26,21 @@ function getSettingsBackHref(returnTo: string | null) {
 export function AppShell({ children, title, eyebrow, revealActive = false }: { children: ReactNode; title: string; eyebrow?: string; revealActive?: boolean }) {
   const { t, language } = useLanguage();
   const pathname = usePathname();
+  const router = useRouter();
   const showDebugNavigation = shouldShowDebugNavigation();
   const isSettingsPage = pathname === "/settings";
   const returnTo = isSettingsPage && typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("returnTo") : null;
-  const settingsBackHref = isSettingsPage ? getSettingsBackHref(returnTo) : "/settings";
+  const lastStableRoute = typeof window !== "undefined" ? window.sessionStorage.getItem(LAST_STABLE_ROUTE_KEY) : null;
+  const settingsBackHref = isSettingsPage ? getSettingsBackHref(returnTo, lastStableRoute) : "/settings";
   const settingsHref = SAFE_SETTINGS_RETURN_ROUTES.has(pathname) ? `/settings?returnTo=${encodeURIComponent(pathname)}` : "/settings";
   const backLabel = language === "sv" ? "Tillbaka" : "Back";
+
+  useEffect(() => {
+    if (SAFE_SETTINGS_RETURN_ROUTES.has(pathname) && typeof window !== "undefined") {
+      window.sessionStorage.setItem(LAST_STABLE_ROUTE_KEY, pathname);
+    }
+  }, [pathname]);
+
 
   return (
     <main className={`mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-5 safe-bottom sm:px-6 ${revealActive ? "first-run-reveal first-run-reveal--active app-first-run-reveal" : ""}`}>
@@ -47,9 +59,9 @@ export function AppShell({ children, title, eyebrow, revealActive = false }: { c
             </Link>
           </nav>
         ) : isSettingsPage ? (
-          <Link className="pressable min-h-11 rounded-full bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-white hover:text-stone-950" href={settingsBackHref}>
+          <button className="pressable min-h-11 rounded-full bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-white hover:text-stone-950" onClick={() => router.replace(settingsBackHref)} type="button">
             ← {backLabel}
-          </Link>
+          </button>
         ) : (
           <Link className="pressable min-h-11 rounded-full bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-white hover:text-stone-950" href={settingsHref}>
             {t("settings")}

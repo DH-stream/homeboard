@@ -1809,21 +1809,15 @@ button:disabled {
 }
 
 .settings-section-content {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 200ms var(--ease-out);
-}
-
-.settings-section-content--open {
-  grid-template-rows: 1fr;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 220ms var(--ease-out);
 }
 
 .settings-section-content__inner {
-  min-height: 0;
-  overflow: hidden;
   opacity: 0;
   transform: translateY(-3px);
-  transition: opacity 180ms var(--ease-out), transform 200ms var(--ease-out);
+  transition: opacity 180ms var(--ease-out), transform 220ms var(--ease-out);
 }
 
 .settings-section-content--open .settings-section-content__inner {
@@ -1838,7 +1832,7 @@ button:disabled {
   }
 
   .settings-section-content {
-    grid-template-rows: 1fr;
+    max-height: none !important;
   }
 
   .settings-section-content__inner {
