@@ -22,6 +22,8 @@ import { resetThisDeviceLocally } from "@/lib/devices/resetLocalDevice";
 import {
   enableLocalOnlyMode,
   getLocalSelectedHouseholdId,
+  isLocalOnlyModeEnabled,
+  LOCAL_ONLY_MODE_CHANGED_EVENT,
   saveSelectedHouseholdId,
 } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
@@ -110,7 +112,9 @@ export default function WallPage() {
     useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
   const [isQuickCreatorMounted, setQuickCreatorMounted] = useState(false);
-  const [useLocalWall, setUseLocalWall] = useState(false);
+  const [useLocalWall, setUseLocalWall] = useState(() =>
+    isLocalOnlyModeEnabled(),
+  );
   const [streakPreviewOverride] = useState(() =>
     getWallStreakPreviewOverride(),
   );
@@ -118,6 +122,17 @@ export default function WallPage() {
 
   useEffect(() => {
     setIsSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
+  }, []);
+
+  useEffect(() => {
+    const refreshLocalWallMode = () => setUseLocalWall(isLocalOnlyModeEnabled());
+    refreshLocalWallMode();
+    window.addEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, refreshLocalWallMode);
+    window.addEventListener("storage", refreshLocalWallMode);
+    return () => {
+      window.removeEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, refreshLocalWallMode);
+      window.removeEventListener("storage", refreshLocalWallMode);
+    };
   }, []);
 
   const todayTasks = useMemo(
