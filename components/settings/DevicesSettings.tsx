@@ -33,6 +33,9 @@ const copy: Record<Language, Record<string, string>> = {
     addWallStep4: "4. Scan the QR code from this phone, or enter the code manually.",
     enterPairingCode: "Enter pairing code",
     mode: "Mode",
+    wallScreenLabel: "Wall screen",
+    parentPhoneLabel: "Parent phone",
+    homeLabel: "Home",
   },
   sv: {
     title: "Enheter",
@@ -54,6 +57,9 @@ const copy: Record<Language, Record<string, string>> = {
     addWallStep4: "4. Skanna QR-koden med mobilen, eller skriv in koden manuellt.",
     enterPairingCode: "Ange parkopplingskod",
     mode: "Läge",
+    wallScreenLabel: "Väggskärm",
+    parentPhoneLabel: "Förälders mobil",
+    homeLabel: "Hem",
   },
 };
 
@@ -108,7 +114,7 @@ export function DevicesSettings() {
             <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-200/45 blur-2xl" />
             <p className="relative text-sm font-black text-stone-900">{t.addWallScreen}</p>
             <p className="relative mt-1 text-sm font-semibold text-stone-700">{t.addWallIntro}</p>
-            <p className="cloud-connection-path mt-3">{language === "sv" ? "Väggskärm" : "Wall screen"} <i /><i /><i /> {language === "sv" ? "Förälders mobil" : "Parent phone"} <i /><i /><i /> {language === "sv" ? "Hem" : "Home"}</p>
+            <p className="cloud-connection-path mt-3">{t.wallScreenLabel} <i /><i /><i /> {t.parentPhoneLabel} <i /><i /><i /> {t.homeLabel}</p>
             <ol className="mt-3 space-y-1 text-sm font-semibold text-stone-700">
               <li>{t.addWallStep1}</li><li>{t.addWallStep2}</li><li>{t.addWallStep3}</li><li>{t.addWallStep4}</li>
             </ol>
