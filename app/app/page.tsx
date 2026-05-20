@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
 import { AppShell } from "@/components/layout/AppShell";
@@ -13,6 +14,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
+import { saveDeviceStartView } from "@/lib/devicePreferences";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
@@ -38,6 +40,8 @@ function getFirstCreatedTaskId(created: unknown) {
 }
 
 export default function MobileAppPage() {
+  const router = useRouter();
+  const [isSetupMode, setIsSetupMode] = useState(false);
   const { getCompletionEncouragement, language, t } = useLanguage();
   const { members } = useMembers();
   const { householdId } = useResolvedHouseholdId();
@@ -60,6 +64,10 @@ export default function MobileAppPage() {
 
   useEffect(() => {
     consumePendingFirstRunReveal("app");
+  }, []);
+
+  useEffect(() => {
+    setIsSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
   }, []);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
@@ -177,9 +185,25 @@ export default function MobileAppPage() {
     completed: t("filtersCompleted"),
   };
 
+  const finishMobileSetup = useCallback(() => {
+    saveDeviceStartView({ mode: "mobile", route: "/app" });
+    router.replace("/app");
+  }, [router]);
+
   return (
     <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
       <HouseholdSetupGate>
+      {isSetupMode ? (
+        <div className="mb-3 flex items-center gap-2">
+          <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/80 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={() => router.push("/")} type="button">
+            <span aria-hidden="true">←</span>
+            <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
+          </button>
+          <button className="pressable inline-flex min-h-9 items-center rounded-full border border-stone-200/80 bg-white/80 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={finishMobileSetup} type="button">
+            {language === "sv" ? "Fortsätt" : "Continue"}
+          </button>
+        </div>
+      ) : null}
       <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>

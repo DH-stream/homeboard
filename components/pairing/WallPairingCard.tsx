@@ -11,7 +11,7 @@ function getSecondsLeft(expiresAt?: string) {
   return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
 }
 
-export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (householdId: string) => void; onUseLocal: () => void }) {
+export function WallPairingCard({ onPaired, onUseLocal, onBack }: { onPaired: (householdId: string) => void; onUseLocal: () => void; onBack?: () => void }) {
   const { t, language } = useLanguage();
   const [isPairingFlowActive, setPairingFlowActive] = useState(false);
   const { canPair, createSession, error, isLoading, session } = useWallDevicePairing(isPairingFlowActive);
@@ -61,6 +61,12 @@ export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (household
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4 py-8 text-stone-950 sm:px-8">
+      {onBack ? (
+        <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable absolute left-4 top-4 z-20 inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/75 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={onBack} type="button">
+          <span aria-hidden="true">←</span>
+          <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
+        </button>
+      ) : null}
       {!isPairingFlowActive ? (
         <section className="surface-card relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-amber-950/10">
           <div className="pointer-events-none absolute -left-16 top-10 h-52 w-52 rounded-full bg-amber-200/40 blur-3xl" />
