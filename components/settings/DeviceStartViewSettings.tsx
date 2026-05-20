@@ -45,11 +45,11 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
   };
 
   return (
-    <SettingsCard status={t("localPreview")} title={t("deviceStartViewTitle")}>
-      <div className="space-y-4">
+    <SettingsCard status={t("local")} title={t("deviceStartViewTitle")}>
+      <div className="space-y-3 sm:space-y-4">
         <p>{t("deviceStartViewCopy")}</p>
 
-        <dl className="rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
+        <dl className="rounded-2xl border border-stone-200/70 bg-stone-50 p-3.5 text-sm sm:p-4">
           <div className="flex justify-between gap-3">
             <dt className="font-bold text-stone-500">{t("defaultRoute")}</dt>
             <dd className="text-right font-black text-stone-900">{startView ? getDeviceModeLabel(startView.mode, t) : t("deviceModeUnset")}</dd>
@@ -83,7 +83,7 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
           </div>
         ) : null}
 
-        <div className="rounded-2xl bg-amber-50 p-4 text-amber-950 ring-1 ring-amber-100">
+        <div className="rounded-2xl bg-amber-50 p-3.5 text-amber-950 ring-1 ring-amber-100 sm:p-4">
           <p className="font-black">{t("deviceStartViewSaved")}</p>
           <p className="mt-1 text-sm leading-6">{t("deviceStartViewResetCopy")}</p>
         </div>
