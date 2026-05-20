@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { setDeviceProfile } from "@/lib/devicePreferences";
+import { readDeviceStartView, setDeviceProfile } from "@/lib/devicePreferences";
 import { saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useLanguage } from "@/lib/i18n";
 import { useParentAuth } from "@/lib/hooks/useParentAuth";
@@ -50,7 +50,7 @@ export default function AdultSetupPage() {
       authChannelRef.current?.postMessage({ type: "auth-completed", at: completedAt });
     }
   }, [isSignedIn, step]);
-  useEffect(() => { if (step !== 4) return; const id = window.setTimeout(() => router.replace("/settings"), window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 700 : 1600); return () => window.clearTimeout(id); }, [router, step]);
+  useEffect(() => { if (step !== 4) return; const mode = readDeviceStartView()?.mode; const returnTo = mode === "wall" ? "/wall" : "/app"; const id = window.setTimeout(() => router.replace(`/settings?returnTo=${encodeURIComponent(returnTo)}`), window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 700 : 1600); return () => window.clearTimeout(id); }, [router, step]);
 
 
   useEffect(() => {

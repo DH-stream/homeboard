@@ -5,14 +5,14 @@ import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
-import { saveLastStableRoute } from "@/lib/navigation/lastStableRoute";
+import { rememberStableRoute } from "@/lib/navigation/stableRoutes";
 
 export function WallShell({ children, revealActive = false }: { children: ReactNode; revealActive?: boolean }) {
   const { t } = useLanguage();
   const showDebugNavigation = shouldShowDebugNavigation();
 
   useEffect(() => {
-    if (typeof window !== "undefined") saveLastStableRoute("/wall");
+    if (typeof window !== "undefined") rememberStableRoute("/wall");
   }, []);
 
   return (

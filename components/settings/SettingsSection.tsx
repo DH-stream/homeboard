@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 type SettingsSectionProps = {
   title: string;
@@ -15,31 +15,34 @@ export function SettingsSection({ title, description, eyebrow, status, defaultOp
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [contentHeight, setContentHeight] = useState(defaultOpen ? "none" : "0px");
   const contentRef = useRef<HTMLDivElement>(null);
-  const contentHeightRef = useRef(contentHeight);
-
-  useEffect(() => {
-    contentHeightRef.current = contentHeight;
-  }, [contentHeight]);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === "undefined") return;
+    const node = contentRef.current;
+    if (!node) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setContentHeight(isOpen ? "none" : "0px");
       return;
     }
 
-    const node = contentRef.current;
-    if (!node) return;
+    let frame = 0;
+    let timeout = 0;
 
     if (isOpen) {
-      const nextHeight = `${node.scrollHeight}px`;
-      setContentHeight(nextHeight);
-      const timeout = window.setTimeout(() => setContentHeight("none"), 220);
-      return () => window.clearTimeout(timeout);
+      setContentHeight("0px");
+      frame = window.requestAnimationFrame(() => {
+        setContentHeight(`${node.scrollHeight}px`);
+        timeout = window.setTimeout(() => setContentHeight("none"), 230);
+      });
+    } else {
+      const from = `${node.scrollHeight}px`;
+      setContentHeight(from);
+      frame = window.requestAnimationFrame(() => setContentHeight("0px"));
     }
 
-    if (contentHeightRef.current === "none") setContentHeight(`${node.scrollHeight}px`);
-    requestAnimationFrame(() => setContentHeight("0px"));
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      if (timeout) window.clearTimeout(timeout);
+    };
   }, [isOpen]);
 
   return (

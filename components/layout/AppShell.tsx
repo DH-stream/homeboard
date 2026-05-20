@@ -4,22 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import type { ReactNode } from "react";
-import { getDefaultRouteForMode, getDeviceProfile, readDeviceStartView, shouldShowDebugNavigation } from "@/lib/devicePreferences";
+import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
-import { isSafeSettingsReturnRoute, readLastStableRoute, saveLastStableRoute } from "@/lib/navigation/lastStableRoute";
-
-function getSettingsBackHref(returnTo: string | null, lastStableRoute: string | null) {
-  if (isSafeSettingsReturnRoute(returnTo)) return returnTo;
-  if (isSafeSettingsReturnRoute(lastStableRoute)) return lastStableRoute;
-
-  const startView = readDeviceStartView();
-  const profile = startView?.mode ?? getDeviceProfile();
-  if (profile === "wall") return "/wall";
-  if (profile === "mobile") return "/app";
-  if (profile === "admin") return "/app";
-  const fallback = getDefaultRouteForMode("mobile");
-  return isSafeSettingsReturnRoute(fallback) ? fallback : "/app";
-}
+import { getRememberedStableRoute, getStableSettingsBackTarget, isStableAppRoute, rememberStableRoute } from "@/lib/navigation/stableRoutes";
 
 function AppShellInner({ children, title, eyebrow, revealActive = false }: { children: ReactNode; title: string; eyebrow?: string; revealActive?: boolean }) {
   const { t, language } = useLanguage();
@@ -29,14 +16,14 @@ function AppShellInner({ children, title, eyebrow, revealActive = false }: { chi
   const showDebugNavigation = shouldShowDebugNavigation();
   const isSettingsPage = pathname === "/settings";
   const returnTo = isSettingsPage ? searchParams.get("returnTo") : null;
-  const lastStableRoute = typeof window !== "undefined" ? readLastStableRoute() : null;
-  const settingsBackHref = isSettingsPage ? getSettingsBackHref(returnTo, lastStableRoute) : "/settings";
-  const settingsHref = isSafeSettingsReturnRoute(pathname) ? `/settings?returnTo=${encodeURIComponent(pathname)}` : "/settings";
+  const lastStableRoute = typeof window !== "undefined" ? getRememberedStableRoute() : null;
+  const settingsBackHref = isSettingsPage ? getStableSettingsBackTarget({ returnTo, rememberedRoute: lastStableRoute }) : "/settings";
+  const settingsHref = isStableAppRoute(pathname, searchParams) ? `/settings?returnTo=${encodeURIComponent(pathname)}` : "/settings";
   const backLabel = language === "sv" ? "Tillbaka" : "Back";
 
   useEffect(() => {
-    if (isSafeSettingsReturnRoute(pathname) && typeof window !== "undefined") saveLastStableRoute(pathname);
-  }, [pathname]);
+    if (typeof window !== "undefined") rememberStableRoute(pathname, searchParams);
+  }, [pathname, searchParams]);
 
 
   return (
