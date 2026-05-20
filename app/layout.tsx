@@ -13,7 +13,13 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "HomeBoard",
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
+  },
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: "HomeBoard",
+    description: "A self-hostable family wall calendar and task dashboard.",
+    type: "website",
   },
 };
 
@@ -21,7 +27,7 @@ export const viewport: Viewport = {
   themeColor: "#fbf7ef",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
