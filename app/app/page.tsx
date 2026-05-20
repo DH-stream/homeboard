@@ -17,7 +17,12 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
+import {
+  enableLocalOnlyMode,
+  isLocalOnlyModeEnabled,
+  LOCAL_ONLY_MODE_CHANGED_EVENT,
+  saveSelectedHouseholdId,
+} from "@/lib/households/selection";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
@@ -58,7 +63,9 @@ export default function MobileAppPage() {
   const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
   const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
-  const [useLocalMobile, setUseLocalMobile] = useState(false);
+  const [useLocalMobile, setUseLocalMobile] = useState(() =>
+    isLocalOnlyModeEnabled(),
+  );
   const showDebugNavigation = shouldShowDebugNavigation();
 
   useEffect(() => {
@@ -68,6 +75,19 @@ export default function MobileAppPage() {
 
   useEffect(() => {
     consumePendingFirstRunReveal("app");
+  }, []);
+
+  useEffect(() => {
+    const syncLocalOnlyMode = () => setUseLocalMobile(isLocalOnlyModeEnabled());
+
+    syncLocalOnlyMode();
+    window.addEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, syncLocalOnlyMode);
+    window.addEventListener("storage", syncLocalOnlyMode);
+
+    return () => {
+      window.removeEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, syncLocalOnlyMode);
+      window.removeEventListener("storage", syncLocalOnlyMode);
+    };
   }, []);
 
   useEffect(() => {
