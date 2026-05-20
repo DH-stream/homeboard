@@ -13,6 +13,7 @@ import {
   type DeviceStartView,
 } from "@/lib/devicePreferences";
 import { setPendingFirstRunReveal, type FirstRunRevealRoute } from "@/lib/firstRunReveal";
+import { signOutParent } from "@/lib/auth/parentAuth";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
 import { useLanguage } from "@/lib/i18n";
 
@@ -274,12 +275,14 @@ export default function HomePage() {
     }, prefersReducedMotion ? 60 : 520);
 
     navigationTimeoutRef.current = setTimeout(() => {
+      if (startView.mode === "wall") void signOutParent();
       const destination = startView.mode === "admin" ? startView.route : `${startView.route}?setup=1`;
       router.push(destination);
     }, prefersReducedMotion ? 180 : 1450);
   };
 
   const continueWithProfile = (nextProfile: "mobile" | "wall") => {
+    if (nextProfile === "wall") void signOutParent();
     const next = setDeviceProfile(nextProfile);
     setPendingFirstRunReveal(revealRouteByMode[next.mode]);
     router.push(`${next.route}?setup=1`);

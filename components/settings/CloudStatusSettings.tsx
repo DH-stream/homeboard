@@ -5,6 +5,7 @@ import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { isCloudConfigured } from "@/lib/cloud/config";
+import { getDeviceProfile } from "@/lib/devicePreferences";
 import { enableLocalOnlyMode, forgetSelectedCloudHouseholdOnThisDevice, isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { useCloudDiagnostics } from "@/lib/hooks/useCloudDiagnostics";
@@ -171,7 +172,7 @@ function maskId(id: string | null) {
 export function CloudStatusSettings() {
   const { diagnostics, isLoading, refresh } = useCloudDiagnostics();
   const { household, householdId, isDevOverride, refreshHouseholdId, selectedHouseholdId } = useActiveHousehold();
-  const { isLoading: isParentLoading, isSignedIn, user } = useParentAuth();
+  const { isLoading: isParentLoading, isSignedIn, signOut, user } = useParentAuth();
   const { language, t } = useLanguage();
   const copy = activationCopy[language];
   const [isLocalOnly, setLocalOnly] = useState(() => isLocalOnlyModeEnabled());
@@ -285,6 +286,7 @@ export function CloudStatusSettings() {
   }
 
   function forgetCloudHomeOnThisDevice() {
+    if (getDeviceProfile() === "wall") void signOut();
     forgetSelectedCloudHouseholdOnThisDevice();
     enableLocalOnlyMode();
     refreshHouseholdId();
