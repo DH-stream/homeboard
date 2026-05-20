@@ -31,7 +31,7 @@ const optionAccents: Record<DeviceMode, string> = {
 const revealRouteByMode: Record<DeviceMode, FirstRunRevealRoute> = {
   wall: "wall",
   mobile: "app",
-  admin: "settings",
+  admin: "app",
 };
 
 const SETUP_TASK_HINT_SLOTS = [
@@ -218,7 +218,6 @@ export default function HomePage() {
   const { hasAdultAccess } = useAdultAccess();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
-  const [showAdultLockedMessage, setShowAdultLockedMessage] = useState(false);
   const [activeSetupState, setActiveSetupState] = useState<"chooser" | "adult_locked">("chooser");
   const [isSetupExiting, setIsSetupExiting] = useState(false);
   const [isAdultLockOpening, setIsAdultLockOpening] = useState(false);
@@ -256,13 +255,10 @@ export default function HomePage() {
     if (selectedStartView || isAdultLockOpening) return;
     if (startView.mode === "admin" && !canSelectAdultProfile(hasAdultAccess)) {
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      setShowAdultLockedMessage(false);
       setIsAdultLockOpening(true);
       adultLockTimeoutRef.current = setTimeout(() => {
         setActiveSetupState("adult_locked");
         setIsAdultLockOpening(false);
-        setShowAdultLockedMessage(true);
-        window.setTimeout(() => setShowAdultLockedMessage(false), 1800);
       }, prefersReducedMotion ? 80 : 520);
       return;
     }
@@ -384,7 +380,6 @@ export default function HomePage() {
           </section>
         )}
 
-        {!canSelectAdultProfile(hasAdultAccess) ? <p className={`mx-auto mt-2 max-w-xl text-center text-xs font-bold text-stone-600 transition-opacity duration-300 sm:text-sm ${showAdultLockedMessage ? "adult-lock-message--visible" : ""} ${isAdultLockOpening ? "opacity-0" : ""}`}>{t("adultViewLockedHelper")}</p> : null}
 
         <p className={`setup-footer-note mx-auto mt-4 max-w-xl text-center text-xs font-bold leading-5 text-stone-500 transition-opacity duration-300 sm:mt-7 sm:text-base sm:leading-6 ${isAdultLockOpening ? "opacity-0" : ""}`}>{t("deviceStartViewFooter")}</p>
         <div className="setup-confirmation" aria-live="polite">

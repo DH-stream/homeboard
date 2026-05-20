@@ -14,7 +14,7 @@ export const ADULT_ACCESS_REQUIRED_REASON = "ADULT_ACCESS_REQUIRED";
 export const DEVICE_START_VIEW_OPTIONS: DeviceStartView[] = [
   { mode: "wall", route: "/wall" },
   { mode: "mobile", route: "/app" },
-  { mode: "admin", route: "/settings" },
+  { mode: "admin", route: "/app" },
 ];
 
 const validRoutes = new Set<DefaultRoute>(DEVICE_START_VIEW_OPTIONS.map((option) => option.route));
