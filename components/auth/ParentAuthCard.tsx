@@ -4,6 +4,12 @@ import { FormEvent, useState } from "react";
 import { useParentAuth } from "@/lib/hooks/useParentAuth";
 import { useLanguage, type Language } from "@/lib/i18n";
 
+const OTP_CODE_LENGTH = 8;
+
+function sanitizeOtpCode(value: string) {
+  return value.replace(/\D/g, "").slice(0, OTP_CODE_LENGTH);
+}
+
 const copy: Record<
   Language,
   {
@@ -91,10 +97,11 @@ export function ParentAuthCard({ compact = false, onSignedIn }: { compact?: bool
 
   async function verifyEmailCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const code = sanitizeOtpCode(token);
     setSubmitting(true);
     setError(null);
     try {
-      const nextUser = await verifyCode(email, token);
+      const nextUser = await verifyCode(email, code);
       if (nextUser) onSignedIn?.();
     } catch (unknownError) {
       console.warn("HomeBoard could not verify parent auth code.", unknownError);
@@ -152,7 +159,9 @@ export function ParentAuthCard({ compact = false, onSignedIn }: { compact?: bool
               autoComplete="one-time-code"
               className="mt-2 min-h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-xl font-black tracking-[0.18em] text-stone-950 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
               inputMode="numeric"
-              onChange={(event) => setToken(event.target.value)}
+              maxLength={OTP_CODE_LENGTH}
+              onChange={(event) => setToken(sanitizeOtpCode(event.target.value))}
+              pattern="[0-9]*"
               required
               value={token}
             />
@@ -173,7 +182,7 @@ export function ParentAuthCard({ compact = false, onSignedIn }: { compact?: bool
           </div>
         ) : null}
 
-        <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isLoading || isSubmitting || !email.trim() || (hasRequestedCode && !token.trim())} type="submit">
+        <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isLoading || isSubmitting || !email.trim() || (hasRequestedCode && sanitizeOtpCode(token).length !== OTP_CODE_LENGTH)} type="submit">
           {isSubmitting ? text.signingIn : hasRequestedCode ? text.verify : text.requestCode}
         </button>
       </form>
