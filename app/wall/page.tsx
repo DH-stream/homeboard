@@ -33,7 +33,7 @@ import {
   WALL_TASK_CREATOR_MODE_CHANGE_EVENT,
   type WallTaskCreatorMode,
 } from "@/lib/wallPreferences";
-import { saveDeviceStartView } from "@/lib/devicePreferences";
+import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
 import {
@@ -288,7 +288,7 @@ export default function WallPage() {
     return (
       <WallPairingCard
         onPaired={finishPairing}
-        onBack={isSetupMode ? () => router.push("/") : undefined}
+        onBack={isSetupMode ? () => { resetDeviceStartView(); router.replace("/?choose=1"); } : undefined}
         onUseLocal={() => {
           saveDeviceStartView({ mode: "wall", route: "/wall" });
           enableLocalOnlyMode();

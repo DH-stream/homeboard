@@ -229,6 +229,11 @@ export default function HomePage() {
 
   useEffect(() => {
     getOrCreateDeviceId();
+    const forceChooser = new URLSearchParams(window.location.search).get("choose") === "1";
+    if (forceChooser) {
+      setIsCheckingStartView(false);
+      return;
+    }
     const startView = readDeviceStartView();
 
     if (startView) {

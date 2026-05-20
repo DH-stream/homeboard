@@ -7,6 +7,7 @@ import { TodayAgenda } from "@/components/calendar/TodayAgenda";
 import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
+import { MobileSetupCard } from "@/components/pairing/MobileSetupCard";
 import { AddTaskForm } from "@/components/tasks/AddTaskForm";
 import { TaskList } from "@/components/tasks/TaskList";
 import { ActionToast } from "@/components/ui/ActionToast";
@@ -187,24 +188,13 @@ export default function MobileAppPage() {
     completed: t("filtersCompleted"),
   };
 
+  if (isSetupMode) {
+    return <MobileSetupCard onBack={() => { resetDeviceStartView(); router.replace("/?choose=1"); }} />;
+  }
+
   return (
     <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
       <HouseholdSetupGate>
-      {isSetupMode ? (
-        <section className="surface-card relative mb-5 overflow-hidden rounded-[2rem] p-4 shadow-xl shadow-amber-950/10 sm:p-6">
-          <div className="pointer-events-none absolute -left-14 top-8 h-40 w-40 rounded-full bg-amber-200/35 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-16 right-10 h-48 w-48 rounded-full bg-orange-200/30 blur-3xl" />
-          <div className="relative rounded-[1.5rem] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100 p-4 shadow-inner shadow-white/60 sm:p-5">
-            <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable absolute left-3 top-3 inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/75 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={() => { resetDeviceStartView(); router.push("/"); }} type="button">
-              <span aria-hidden="true">←</span>
-              <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
-            </button>
-            <h1 className="mt-8 text-3xl font-black tracking-tight text-stone-950 sm:text-4xl">{language === "sv" ? "Mobilvy" : "Mobile view"}</h1>
-            <p className="mt-3 max-w-xl text-base font-bold leading-7 text-stone-600 sm:text-lg">{language === "sv" ? "Den här enheten används som mobilvy för HomeBoard. Här kan du se hemmet, uppgifter och inställningar från telefonen." : "This device is used as the mobile view for HomeBoard. From here you can view your home, tasks, and settings on your phone."}</p>
-            <p className="mt-2 text-sm font-semibold text-stone-600">{language === "sv" ? "Valde du fel? Gå tillbaka och välj väggskärm istället." : "Picked the wrong one? Go back and choose wall screen instead."}</p>
-          </div>
-        </section>
-      ) : null}
       <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
