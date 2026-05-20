@@ -25,6 +25,7 @@ type DevicePairingSessionRow = {
   household_id: string | null;
   created_at: string;
   updated_at: string;
+  devices?: { mode: Device["mode"]; name: string }[] | null;
 };
 
 const PAIRING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -55,6 +56,8 @@ function mapPairingSession(row: DevicePairingSessionRow): DevicePairingSession {
     expiresAt: row.expires_at,
     householdId: row.household_id ?? undefined,
     claimedByMemberId: row.claimed_by_member_id ?? undefined,
+    deviceMode: row.devices?.[0]?.mode,
+    deviceName: row.devices?.[0]?.name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -123,7 +126,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
       const { data: session, error: sessionError } = await this.client
         .from("device_pairing_sessions")
         .insert({ device_id: device.id, pairing_code: createPairingCode(), status: "pending", expires_at: expiresAt })
-        .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
+        .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at, devices:device_id(mode,name)")
         .single();
 
       if (!sessionError) return mapPairingSession(session as DevicePairingSessionRow);
@@ -139,7 +142,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     const { data, error } = await this.client
       .from("device_pairing_sessions")
-      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
+      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at, devices:device_id(mode,name)")
       .eq("pairing_code", pairingCode.trim().toUpperCase())
       .order("created_at", { ascending: false })
       .limit(1)
@@ -162,7 +165,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
       .eq("id", session.id)
       .eq("status", "pending")
       .gt("expires_at", now)
-      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
+      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at, devices:device_id(mode,name)")
       .single();
 
     if (sessionError) throw sessionError;
