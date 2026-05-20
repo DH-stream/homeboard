@@ -24,6 +24,7 @@ import {
   getLocalSelectedHouseholdId,
   isLocalOnlyModeEnabled,
   LOCAL_ONLY_MODE_CHANGED_EVENT,
+  resetHouseholdSelectionForScreenChooser,
   saveSelectedHouseholdId,
 } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
@@ -354,7 +355,11 @@ export default function WallPage() {
     return (
       <WallPairingCard
         onPaired={finishPairing}
-        onBack={isSetupMode ? () => { resetDeviceStartView(); router.replace("/?choose=1"); } : undefined}
+        onBack={isSetupMode ? () => {
+          resetDeviceStartView();
+          resetHouseholdSelectionForScreenChooser();
+          router.replace("/?choose=1");
+        } : undefined}
         onUseLocal={() => {
           void signOutParentLocally();
           saveDeviceStartView({ mode: "wall", route: "/wall" });

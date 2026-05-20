@@ -21,6 +21,7 @@ import {
   enableLocalOnlyMode,
   isLocalOnlyModeEnabled,
   LOCAL_ONLY_MODE_CHANGED_EVENT,
+  resetHouseholdSelectionForScreenChooser,
   saveSelectedHouseholdId,
 } from "@/lib/households/selection";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
@@ -215,7 +216,11 @@ export default function MobileAppPage() {
       return (
         <WallPairingCard
           targetMode="mobile"
-          onBack={() => { resetDeviceStartView(); router.replace("/?choose=1"); }}
+          onBack={() => {
+            resetDeviceStartView();
+            resetHouseholdSelectionForScreenChooser();
+            router.replace("/?choose=1");
+          }}
           onPaired={(nextHouseholdId) => {
             saveSelectedHouseholdId(nextHouseholdId);
             saveDeviceStartView({ mode: "mobile", route: "/app" });
