@@ -53,7 +53,7 @@ export default function SettingsPage() {
           defaultOpen
           description={language === "sv" ? "Språk, startvy och lokala val." : "Language, start view, and local choices."}
           eyebrow={language === "sv" ? "Inställningar" : "Settings"}
-          title={language === "sv" ? "Enheten" : "Device"}
+          title={language === "sv" ? "Den här enheten" : "This device"}
         >
           <SettingsCard status={t("localPreview")} title={t("language")}>
             <div className="space-y-3">

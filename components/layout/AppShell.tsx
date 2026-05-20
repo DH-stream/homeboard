@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { getDefaultRouteForMode, getDeviceProfile, shouldShowDebugNavigation } from "@/lib/devicePreferences";
+import { getDefaultRouteForMode, getDeviceProfile, readDeviceStartView, shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useLanguage } from "@/lib/i18n";
 
 function getSettingsBackHref() {
-  const profile = getDeviceProfile();
+  const startView = readDeviceStartView();
+  const profile = startView?.mode ?? getDeviceProfile();
   if (profile === "wall") return "/wall";
   if (profile === "mobile") return "/app";
   if (profile === "admin") return "/app";
