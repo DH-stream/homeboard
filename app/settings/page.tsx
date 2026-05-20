@@ -8,6 +8,7 @@ import { CloudStatusSettings } from "@/components/settings/CloudStatusSettings";
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
+import { SettingsSection } from "@/components/settings/SettingsSection";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
 import { MembersSettings } from "@/components/settings/MembersSettings";
 import { DevicesSettings } from "@/components/settings/DevicesSettings";
@@ -47,29 +48,31 @@ export default function SettingsPage() {
 
   return (
     <AppShell eyebrow={t("settingsEyebrow")} revealActive={isFirstRunRevealActive} title={t("settings")}>
-      <div className={`grid gap-4 md:grid-cols-2 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
-        <SettingsCard status={t("localPreview")} title={t("language")}>
-          <div className="space-y-3">
-            <p>{t("languageCopy")}</p>
-            <label className="block text-xs font-black uppercase tracking-[0.18em] text-stone-500" htmlFor="language-select">
-              {t("selectedLanguage")}
-            </label>
-            <select
-              className="min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 py-3 font-bold text-stone-900 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
-              id="language-select"
-              onChange={(event) => setLanguage(event.target.value as Language)}
-              value={language}
-            >
-              <option value="en">English</option>
-              <option value="sv">Svenska</option>
-            </select>
-            <p className="font-bold text-stone-800">{languageName}</p>
-          </div>
-        </SettingsCard>
-        <DeviceStartViewSettings onProfileChange={setDeviceProfileState} />
-        <CloudStatusSettings />
+      <div className={`space-y-4 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
+        <SettingsSection
+          defaultOpen
+          description={language === "sv" ? "Språk, startvy och val som bara gäller på den här enheten." : "Language, start view, and choices that only affect this device."}
+          eyebrow={language === "sv" ? "Inställningar" : "Settings"}
+          title={language === "sv" ? "Den här enheten" : "This device"}
+        >
+          <SettingsCard status={t("localPreview")} title={t("language")}>
+            <div className="space-y-3">
+              <p>{t("languageCopy")}</p>
+              <label className="block text-xs font-black uppercase tracking-[0.18em] text-stone-500" htmlFor="language-select">{t("selectedLanguage")}</label>
+              <select className="min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 py-3 font-bold text-stone-900 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500" id="language-select" onChange={(event) => setLanguage(event.target.value as Language)} value={language}>
+                <option value="en">English</option><option value="sv">Svenska</option>
+              </select>
+              <p className="font-bold text-stone-800">{languageName}</p>
+            </div>
+          </SettingsCard>
+          <DeviceStartViewSettings onProfileChange={setDeviceProfileState} />
+          {showWallLimitedNotice ? (
+            <p className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3 text-sm font-semibold leading-6 text-stone-700 md:col-span-2">{language === "sv" ? "Du ändrar bara den här väggskärmen. Logga in som vuxen för hem, medlemmar och kopplade enheter." : "You’re only changing this wall screen. Sign in as an adult to manage the home, members, and connected devices."}</p>
+          ) : null}
+        </SettingsSection>
+
         {deviceProfile === "admin" && !hasAdultAccess ? (
-          <div className="adult-view-lock-panel md:col-span-2 rounded-[2rem] p-5">
+          <div className="adult-view-lock-panel rounded-[2rem] p-5">
             <div className="adult-view-lock-panel__shine" aria-hidden="true" />
             <div className="adult-view-lock-panel__wake" aria-hidden="true" />
             <div className="adult-view-lock-panel__icon" aria-hidden="true">🔐</div>
@@ -83,25 +86,64 @@ export default function SettingsPage() {
             </div>
           </div>
         ) : null}
-        {showWallLimitedNotice ? (
-          <SettingsCard status={t("localPreview")} title={language === "sv" ? "Inställningar för den här skärmen" : "Settings for this screen"}>
-            <p>{language === "sv" ? "De här valen påverkar bara väggskärmen. Logga in som vuxen för att ändra hushållets inställningar." : "These choices only affect the wall screen. Sign in as an adult to change household settings."}</p>
-          </SettingsCard>
-        ) : null}
-        {canShowWallTaskCreatorSettings ? <WallTaskCreatorSettings /> : null}
+
+        <SettingsSection
+          description={language === "sv" ? "Se om hemmet är synkat i molnet eller bara används på den här enheten." : "See whether your home is synced in cloud or used only on this device."}
+          eyebrow={language === "sv" ? "Synk" : "Sync"}
+          title={language === "sv" ? "Moln & synk" : "Cloud & sync"}
+        >
+          <CloudStatusSettings />
+        </SettingsSection>
+
         {hasHouseholdSettings ? (
-          <>
+          <SettingsSection
+            description={language === "sv" ? "Hantera familjens hem, medlemmar och enheter." : "Manage your family home, members, and connected devices."}
+            eyebrow={language === "sv" ? "Hushåll" : "Household"}
+            title={language === "sv" ? "Hem" : "Home"}
+          >
             <HouseholdSettings />
             <MembersSettings />
             <DevicesSettings />
+          </SettingsSection>
+        ) : null}
+
+        {hasHouseholdSettings ? (
+          <SettingsSection
+            description={language === "sv" ? "Kalenderkällor och synkstatus för familjens planering." : "Calendar sources and sync status for family planning."}
+            title={language === "sv" ? "Kalender" : "Calendar"}
+          >
             <CalendarSourcesSettings />
-            <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}>
-              <p>{t("homeAssistantIntegrationCopy")}</p>
+          </SettingsSection>
+        ) : null}
+
+        {canShowWallTaskCreatorSettings ? (
+          <SettingsSection
+            description={language === "sv" ? "Val som påverkar hur väggskärmen visar och skapar uppgifter." : "Choices that affect how the wall screen displays and creates tasks."}
+            title={language === "sv" ? "Väggskärm" : "Wall screen"}
+          >
+            <WallTaskCreatorSettings />
+          </SettingsSection>
+        ) : null}
+
+        {hasHouseholdSettings ? (
+          <SettingsSection
+            description={language === "sv" ? "Avancerade kopplingar till andra system. Frivilligt och planerat." : "Advanced connections to other systems. Optional and planned."}
+            title={language === "sv" ? "Integrationer" : "Integrations"}
+          >
+            <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}><p>{t("homeAssistantIntegrationCopy")}</p></SettingsCard>
+            <SettingsCard status={t("planned")} title={t("runaiApiTokens")}><p>{t("runaiApiTokensCopy")}</p></SettingsCard>
+          </SettingsSection>
+        ) : null}
+
+        {deviceProfile !== "wall" ? (
+          <SettingsSection
+            description={language === "sv" ? "Teknisk information för felsökning och utveckling." : "Technical information for troubleshooting and development."}
+            title={language === "sv" ? "Tekniskt" : "Technical"}
+          >
+            <SettingsCard status={t("localPreview")} title={language === "sv" ? "Förhandsläge" : "Preview mode"}>
+              <p>{language === "sv" ? "HomeBoard använder lokal lagring i förhandsläget. Delning mellan enheter kräver molnsynk." : "HomeBoard uses local storage in preview mode. Sharing across devices requires cloud sync."}</p>
             </SettingsCard>
-            <SettingsCard status={t("planned")} title={t("runaiApiTokens")}>
-              <p>{t("runaiApiTokensCopy")}</p>
-            </SettingsCard>
-          </>
+          </SettingsSection>
         ) : null}
       </div>
     </AppShell>
