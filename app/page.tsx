@@ -222,6 +222,7 @@ export default function HomePage() {
   const [activeSetupState, setActiveSetupState] = useState<"chooser" | "adult_locked">("chooser");
   const [isSetupExiting, setIsSetupExiting] = useState(false);
   const [isAdultLockOpening, setIsAdultLockOpening] = useState(false);
+  const [isLanguageSwitching, setIsLanguageSwitching] = useState(false);
   const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const adultLockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -281,6 +282,21 @@ export default function HomePage() {
     router.push(next.route);
   };
 
+
+  const toggleSetupLanguage = () => {
+    const nextLanguage = language === "sv" ? "en" : "sv";
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      setLanguage(nextLanguage);
+      return;
+    }
+
+    setIsLanguageSwitching(true);
+    setLanguage(nextLanguage);
+    window.setTimeout(() => setIsLanguageSwitching(false), 210);
+  };
+
   if (isCheckingStartView) {
     return <main className="min-h-screen" aria-hidden="true" />;
   }
@@ -297,9 +313,9 @@ export default function HomePage() {
           <SetupLanguageToggle
             language={language}
             label={language === "sv" ? t("setupLanguageSwitchToEnglish") : t("setupLanguageSwitchToSwedish")}
-            onToggle={() => setLanguage(language === "sv" ? "en" : "sv")}
+            onToggle={toggleSetupLanguage}
           />
-          <div className="setup-hero-copy mx-auto max-w-3xl text-center">
+          <div className={`setup-hero-copy mx-auto max-w-3xl text-center transition-[opacity,filter,transform] duration-[220ms] ease-[var(--ease-out)] ${isLanguageSwitching ? "translate-y-0.5 opacity-85 blur-[0.8px]" : "translate-y-0 opacity-100 blur-0"}`}>
             <div className="setup-spark mx-auto flex size-11 items-center justify-center rounded-[1.1rem] bg-white/86 text-2xl shadow-[0_18px_45px_rgba(120,72,22,0.16)] ring-1 ring-white/80 sm:size-20 sm:rounded-[1.8rem] sm:text-5xl">
               ✨
             </div>
@@ -309,7 +325,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {activeSetupState === "chooser" ? <div className="setup-options mt-4 grid gap-3 sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3">
+        {activeSetupState === "chooser" ? <div className={`setup-options mt-4 grid gap-3 transition-[opacity,filter,transform] duration-[220ms] ease-[var(--ease-out)] sm:mt-8 sm:gap-4 lg:mt-10 lg:grid-cols-3 ${isLanguageSwitching ? "translate-y-1 opacity-90 blur-[0.7px]" : "translate-y-0 opacity-100 blur-0"}`}>
           {DEVICE_START_VIEW_OPTIONS.map((option, index) => {
             const copy = getDeviceModeCopy(option.mode, t);
             const isSelected = selectedStartView?.mode === option.mode;
