@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const { hasAdultAccess } = useAdultAccess();
   const hasHouseholdSettings = canManageHouseholdSettings(deviceProfile, hasAdultAccess);
   const hasDeviceLocalSettings = canManageDeviceLocalSettings(deviceProfile);
+  const canShowWallTaskCreatorSettings = hasDeviceLocalSettings || hasHouseholdSettings;
   const showWallLimitedNotice = deviceProfile === "wall" && !hasHouseholdSettings;
 
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function SettingsPage() {
             <p>{language === "sv" ? "De här valen påverkar bara väggskärmen. Logga in som vuxen för att ändra hushållets inställningar." : "These choices only affect the wall screen. Sign in as an adult to change household settings."}</p>
           </SettingsCard>
         ) : null}
-        {hasDeviceLocalSettings ? <WallTaskCreatorSettings /> : null}
+        {canShowWallTaskCreatorSettings ? <WallTaskCreatorSettings /> : null}
         {hasHouseholdSettings ? (
           <>
             <HouseholdSettings />

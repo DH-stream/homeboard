@@ -109,7 +109,7 @@ export function canManageHouseholdSettings(mode: DeviceMode | null, hasAdultAcce
 }
 
 export function canManageDeviceLocalSettings(mode: DeviceMode | null) {
-  return mode === "wall" || mode === "mobile" || mode === "admin";
+  return mode === "wall";
 }
 
 export function canSelectAdultProfile(hasAdultAccess: boolean) {

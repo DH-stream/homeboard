@@ -91,6 +91,7 @@ function PairDeviceContent() {
     return "generic";
   }, [session?.deviceMode]);
   const hasManualCode = manualCode.length === 6;
+  const canEditClaimedDeviceName = Boolean(isClaimed && isSignedIn && session?.deviceId);
 
   useEffect(() => {
     setManualCode(pairingCode?.trim().toUpperCase() ?? "");
@@ -144,7 +145,7 @@ function PairDeviceContent() {
   }
 
   async function saveClaimedDeviceName() {
-    if (!session?.deviceId) return;
+    if (!canEditClaimedDeviceName || !session?.deviceId) return;
     const nextName = deviceName.trim().slice(0, 40);
     if (!nextName) return;
     setSavingDeviceName(true);
@@ -217,16 +218,18 @@ function PairDeviceContent() {
             <StatusChip tone="emerald">{copy.successDone[pairDeviceKind]}</StatusChip>
             <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody[pairDeviceKind]}</p>
             <p className="text-sm font-semibold leading-6 text-stone-600">{copy.successHelper[pairDeviceKind]}</p>
-            <div className="rounded-2xl border border-stone-200 bg-white/80 p-3">
-              <label className="block text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.deviceNameLabel}</label>
-              <p className="mt-1 text-xs font-semibold text-stone-600">{copy.deviceNameHelper}</p>
-              <div className="mt-2 flex gap-2">
-                <input className="min-h-11 flex-1 rounded-xl border border-stone-200 px-3 font-semibold text-stone-900" maxLength={40} onChange={(event) => { setDeviceName(event.target.value); setDeviceNameState("idle"); }} value={deviceName} />
-                <button className="pressable min-h-11 rounded-xl bg-stone-950 px-3 text-sm font-black text-white disabled:opacity-60" disabled={isSavingDeviceName || !deviceName.trim()} onClick={() => void saveClaimedDeviceName()} type="button">{copy.saveDeviceName}</button>
+            {canEditClaimedDeviceName ? (
+              <div className="rounded-2xl border border-stone-200 bg-white/80 p-3">
+                <label className="block text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.deviceNameLabel}</label>
+                <p className="mt-1 text-xs font-semibold text-stone-600">{copy.deviceNameHelper}</p>
+                <div className="mt-2 flex gap-2">
+                  <input className="min-h-11 flex-1 rounded-xl border border-stone-200 px-3 font-semibold text-stone-900" maxLength={40} onChange={(event) => { setDeviceName(event.target.value); setDeviceNameState("idle"); }} value={deviceName} />
+                  <button className="pressable min-h-11 rounded-xl bg-stone-950 px-3 text-sm font-black text-white disabled:opacity-60" disabled={isSavingDeviceName || !deviceName.trim()} onClick={() => void saveClaimedDeviceName()} type="button">{copy.saveDeviceName}</button>
+                </div>
+                {deviceNameState === "saved" ? <p className="mt-2 text-xs font-bold text-emerald-700">{copy.deviceNameSaved}</p> : null}
+                {deviceNameState === "error" ? <p className="mt-2 text-xs font-bold text-rose-700">{copy.deviceNameSaveError}</p> : null}
               </div>
-              {deviceNameState === "saved" ? <p className="mt-2 text-xs font-bold text-emerald-700">{copy.deviceNameSaved}</p> : null}
-              {deviceNameState === "error" ? <p className="mt-2 text-xs font-bold text-rose-700">{copy.deviceNameSaveError}</p> : null}
-            </div>
+            ) : null}
             <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">{t("open")}</Link>
           </div>
         ) : null}
