@@ -184,9 +184,37 @@ function SetupTaskHints({ language }: { language: "en" | "sv" }) {
   );
 }
 
+
+
+function SetupLanguageToggle({
+  language,
+  onToggle,
+  label,
+}: {
+  language: "en" | "sv";
+  onToggle: () => void;
+  label: string;
+}) {
+  const targetLanguage = language === "sv" ? "EN" : "SV";
+
+  return (
+    <button
+      aria-label={label}
+      className="pressable group absolute right-3 top-3 z-20 inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-white/75 bg-white/66 px-3 text-[0.7rem] font-black tracking-[0.12em] text-stone-700 shadow-[0_10px_30px_rgba(62,39,20,0.12)] backdrop-blur-md transition-[transform,box-shadow,background-color,opacity] duration-200 ease-[var(--ease-out)] hover:bg-white/76 hover:shadow-[0_16px_35px_rgba(62,39,20,0.15)] active:scale-[0.98] sm:right-5 sm:top-5"
+      onClick={onToggle}
+      title={label}
+      type="button"
+    >
+      <svg aria-hidden="true" className="size-4 text-stone-600 transition-transform duration-300 ease-[var(--ease-out)] group-hover:rotate-6" viewBox="0 0 24 24" fill="none">
+        <path d="M12 3a9 9 0 1 0 0 18m0-18c2.4 2.1 3.8 5.6 3.8 9S14.4 18.9 12 21m0-18C9.6 5.1 8.2 8.6 8.2 12s1.4 6.9 3.8 9m-8-9h16M5.7 7.3h12.6M5.7 16.7h12.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      <span>{targetLanguage}</span>
+    </button>
+  );
+}
 export default function HomePage() {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { hasAdultAccess } = useAdultAccess();
   const [isCheckingStartView, setIsCheckingStartView] = useState(true);
   const [selectedStartView, setSelectedStartView] = useState<DeviceStartView | null>(null);
@@ -266,6 +294,11 @@ export default function HomePage() {
         <div className={`surface-card setup-hero-card relative mx-auto w-full max-w-3xl overflow-hidden rounded-[1.75rem] px-3 py-4 backdrop-blur-xl transition-[opacity,transform,filter] duration-500 ease-[var(--ease-out)] sm:rounded-[3.5rem] sm:px-8 sm:py-10 lg:px-12 lg:py-12 ${isAdultLockOpening ? "-translate-y-1 opacity-65 blur-[1px]" : ""}`}>
           <div className="setup-card-shine" aria-hidden="true" />
           <div className="setup-card-wake" aria-hidden="true" />
+          <SetupLanguageToggle
+            language={language}
+            label={language === "sv" ? t("setupLanguageSwitchToEnglish") : t("setupLanguageSwitchToSwedish")}
+            onToggle={() => setLanguage(language === "sv" ? "en" : "sv")}
+          />
           <div className="setup-hero-copy mx-auto max-w-3xl text-center">
             <div className="setup-spark mx-auto flex size-11 items-center justify-center rounded-[1.1rem] bg-white/86 text-2xl shadow-[0_18px_45px_rgba(120,72,22,0.16)] ring-1 ring-white/80 sm:size-20 sm:rounded-[1.8rem] sm:text-5xl">
               ✨
