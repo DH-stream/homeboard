@@ -152,7 +152,7 @@ export default function SettingsPage() {
           </SettingsSection>
         ) : null}
 
-              </div>
+      </div>
     </AppShell>
   );
 }
