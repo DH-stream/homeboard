@@ -12,5 +12,8 @@ export function createDevicePairingService(repository: DevicePairingRepository) 
     claimPairingSession(pairingCode: string, householdId: string, memberId?: string) {
       return repository.claimPairingSession(pairingCode, householdId, memberId);
     },
+    updateDeviceName(deviceId: string, name: string) {
+      return repository.updateDeviceName(deviceId, name);
+    },
   };
 }

@@ -3,7 +3,7 @@ import type { Device } from "@/types";
 
 type DeviceRow = {
   id: string;
-  household_id: string;
+  household_id: string | null;
   name: string | null;
   mode: Device["mode"];
   last_seen_at: string | null;
@@ -16,7 +16,7 @@ type DeviceRow = {
 function mapDevice(row: DeviceRow): Device {
   return {
     id: row.id,
-    householdId: row.household_id,
+    householdId: row.household_id ?? "",
     name: row.name ?? "",
     mode: row.mode,
     lastSeenAt: row.last_seen_at ?? undefined,
@@ -30,6 +30,7 @@ function mapDevice(row: DeviceRow): Device {
 export interface DeviceRepository {
   listDevices(householdId?: string | null): Promise<Device[]>;
   updateDeviceName(deviceId: string, name: string): Promise<Device>;
+  unlinkDeviceFromHousehold(deviceId: string): Promise<Device>;
 }
 
 export class SupabaseDeviceRepository implements DeviceRepository {
@@ -59,6 +60,28 @@ export class SupabaseDeviceRepository implements DeviceRepository {
       .single();
 
     if (error) throw error;
+    return mapDevice(data as DeviceRow);
+  }
+
+  async unlinkDeviceFromHousehold(deviceId: string) {
+    if (!this.client) throw new Error("Supabase client unavailable");
+
+    const now = new Date().toISOString();
+    const { data, error } = await this.client
+      .from("devices")
+      .update({ household_id: null, paired_at: null, updated_at: now })
+      .eq("id", deviceId)
+      .select("id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, created_at, updated_at")
+      .single();
+
+    if (error) throw error;
+
+    await this.client
+      .from("device_pairing_sessions")
+      .update({ status: "expired", updated_at: now })
+      .eq("device_id", deviceId)
+      .eq("status", "pending");
+
     return mapDevice(data as DeviceRow);
   }
 }

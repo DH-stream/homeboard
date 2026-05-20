@@ -14,7 +14,7 @@ import type { Household } from "@/types";
 
 const service = createHouseholdService(householdRepository);
 type PairingDeviceKind = "wall" | "mobile" | "generic";
-const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; manualTitle: string; codeDetected: string; continueCta: string; closeToMobile: string; successHelper: Record<PairingDeviceKind, string>; deviceNames: Record<PairingDeviceKind, string>; connectTitle: Record<PairingDeviceKind, string>; confirmHome: Record<PairingDeviceKind, string>; connectSubmit: Record<PairingDeviceKind, string>; successDone: Record<PairingDeviceKind, string>; successBody: Record<PairingDeviceKind, string> }> = {
+const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; manualTitle: string; codeDetected: string; continueCta: string; closeToMobile: string; deviceNameLabel: string; deviceNameHelper: string; saveDeviceName: string; deviceNameSaved: string; deviceNameSaveError: string; successHelper: Record<PairingDeviceKind, string>; deviceNames: Record<PairingDeviceKind, string>; connectTitle: Record<PairingDeviceKind, string>; confirmHome: Record<PairingDeviceKind, string>; connectSubmit: Record<PairingDeviceKind, string>; successDone: Record<PairingDeviceKind, string>; successBody: Record<PairingDeviceKind, string> }> = {
   en: {
     claimFailed: "Could not connect this device. Try again.",
     chooseHome: "Choose home",
@@ -26,6 +26,11 @@ const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; n
     codeDetected: "Detected pairing code",
     continueCta: "Continue",
     closeToMobile: "Close and return to mobile view",
+    deviceNameLabel: "Device name",
+    deviceNameHelper: "Give this screen a name so it is easy to recognize in Settings.",
+    saveDeviceName: "Save name",
+    deviceNameSaved: "Name saved",
+    deviceNameSaveError: "Could not save the name right now. Try again.",
     successHelper: { wall: "The wall screen will open your home automatically. You can continue here on your phone.", mobile: "You can continue here on your phone.", generic: "You can continue here on your phone." },
     deviceNames: { wall: "wall screen", mobile: "phone", generic: "device" },
     connectTitle: { wall: "Connect wall screen", mobile: "Connect phone", generic: "Connect device" },
@@ -45,6 +50,11 @@ const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; n
     codeDetected: "Upptäckt parkod",
     continueCta: "Fortsätt",
     closeToMobile: "Stäng och gå tillbaka till mobilvyn",
+    deviceNameLabel: "Namn på enheten",
+    deviceNameHelper: "Ge skärmen ett namn så den blir lätt att känna igen i Inställningar.",
+    saveDeviceName: "Spara namn",
+    deviceNameSaved: "Namnet är sparat",
+    deviceNameSaveError: "Kunde inte spara namnet just nu. Försök igen.",
     successHelper: { wall: "Väggskärmen öppnar hemmet automatiskt. Du kan fortsätta här på mobilen.", mobile: "Du kan fortsätta här på mobilen.", generic: "Du kan fortsätta här på mobilen." },
     deviceNames: { wall: "väggskärmen", mobile: "mobilen", generic: "enheten" },
     connectTitle: { wall: "Koppla väggskärm", mobile: "Koppla mobil", generic: "Koppla enhet" },
@@ -61,7 +71,7 @@ function PairDeviceContent() {
   const pairingCode = params.get("code");
   const { language, t } = useLanguage();
   const copy = pairingCopy[language];
-  const { claim, error, isLoading, session } = usePairingCode(pairingCode);
+  const { claim, error, isLoading, session, updateDeviceName } = usePairingCode(pairingCode);
   const { isSignedIn } = useParentAuth();
   const [isClaiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
@@ -70,6 +80,9 @@ function PairDeviceContent() {
   const [homesError, setHomesError] = useState<string | null>(null);
   const [selectedHomeId, setSelectedHomeId] = useState<string>("");
   const [manualCode, setManualCode] = useState(() => pairingCode?.trim().toUpperCase() ?? "");
+  const [deviceName, setDeviceName] = useState("");
+  const [isSavingDeviceName, setSavingDeviceName] = useState(false);
+  const [deviceNameState, setDeviceNameState] = useState<"idle" | "saved" | "error">("idle");
   const isExpired = session?.status === "expired";
   const isClaimed = session?.status === "claimed";
   const pairDeviceKind: PairingDeviceKind = useMemo(() => {
@@ -82,6 +95,11 @@ function PairDeviceContent() {
   useEffect(() => {
     setManualCode(pairingCode?.trim().toUpperCase() ?? "");
   }, [pairingCode]);
+
+  useEffect(() => {
+    if (!isClaimed) return;
+    setDeviceName(session?.deviceName?.trim() || (language === "sv" ? "Väggskärm" : "Wall screen"));
+  }, [isClaimed, language, session?.deviceName]);
 
   useEffect(() => {
     if (!isSignedIn || !session || session.status !== "pending") return;
@@ -122,6 +140,23 @@ function PairDeviceContent() {
       setClaimError("claim_failed");
     } finally {
       setClaiming(false);
+    }
+  }
+
+  async function saveClaimedDeviceName() {
+    if (!session?.deviceId) return;
+    const nextName = deviceName.trim().slice(0, 40);
+    if (!nextName) return;
+    setSavingDeviceName(true);
+    setDeviceNameState("idle");
+    try {
+      await updateDeviceName(session.deviceId, nextName);
+      setDeviceName(nextName);
+      setDeviceNameState("saved");
+    } catch {
+      setDeviceNameState("error");
+    } finally {
+      setSavingDeviceName(false);
     }
   }
 
@@ -182,6 +217,16 @@ function PairDeviceContent() {
             <StatusChip tone="emerald">{copy.successDone[pairDeviceKind]}</StatusChip>
             <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody[pairDeviceKind]}</p>
             <p className="text-sm font-semibold leading-6 text-stone-600">{copy.successHelper[pairDeviceKind]}</p>
+            <div className="rounded-2xl border border-stone-200 bg-white/80 p-3">
+              <label className="block text-xs font-black uppercase tracking-[0.16em] text-stone-500">{copy.deviceNameLabel}</label>
+              <p className="mt-1 text-xs font-semibold text-stone-600">{copy.deviceNameHelper}</p>
+              <div className="mt-2 flex gap-2">
+                <input className="min-h-11 flex-1 rounded-xl border border-stone-200 px-3 font-semibold text-stone-900" maxLength={40} onChange={(event) => { setDeviceName(event.target.value); setDeviceNameState("idle"); }} value={deviceName} />
+                <button className="pressable min-h-11 rounded-xl bg-stone-950 px-3 text-sm font-black text-white disabled:opacity-60" disabled={isSavingDeviceName || !deviceName.trim()} onClick={() => void saveClaimedDeviceName()} type="button">{copy.saveDeviceName}</button>
+              </div>
+              {deviceNameState === "saved" ? <p className="mt-2 text-xs font-bold text-emerald-700">{copy.deviceNameSaved}</p> : null}
+              {deviceNameState === "error" ? <p className="mt-2 text-xs font-bold text-rose-700">{copy.deviceNameSaveError}</p> : null}
+            </div>
             <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">{t("open")}</Link>
           </div>
         ) : null}
