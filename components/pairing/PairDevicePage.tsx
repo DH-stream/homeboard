@@ -90,6 +90,11 @@ function PairDeviceContent() {
     if (session?.deviceMode === "mobile") return "mobile";
     return "generic";
   }, [session?.deviceMode]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    console.debug("[pairing]", { deviceMode: session?.deviceMode, pairDeviceKind });
+  }, [pairDeviceKind, session?.deviceMode]);
   const hasManualCode = manualCode.length === 6;
   const canEditClaimedDeviceName = Boolean(isClaimed && isSignedIn && session?.deviceId);
 

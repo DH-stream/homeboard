@@ -9,6 +9,7 @@ import { getDeviceProfile } from "@/lib/devicePreferences";
 import { enableLocalOnlyMode, forgetSelectedCloudHouseholdOnThisDevice, isLocalOnlyModeEnabled, LOCAL_ONLY_MODE_CHANGED_EVENT, saveSelectedHouseholdId } from "@/lib/households/selection";
 import { useActiveHousehold } from "@/lib/hooks/useActiveHousehold";
 import { useCloudDiagnostics } from "@/lib/hooks/useCloudDiagnostics";
+import { signOutParentLocally } from "@/lib/auth/parentAuth";
 import { useParentAuth } from "@/lib/hooks/useParentAuth";
 import { getLocale, useLanguage, type Language } from "@/lib/i18n";
 import { householdRepository } from "@/lib/repositories/householdRepository";
@@ -286,7 +287,7 @@ export function CloudStatusSettings() {
   }
 
   function forgetCloudHomeOnThisDevice() {
-    if (getDeviceProfile() === "wall") void signOut();
+    if (getDeviceProfile() === "wall") void signOutParentLocally();
     forgetSelectedCloudHouseholdOnThisDevice();
     enableLocalOnlyMode();
     refreshHouseholdId();

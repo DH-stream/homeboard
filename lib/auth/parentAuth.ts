@@ -70,6 +70,14 @@ export async function verifyParentEmailCode(email: string, token: string): Promi
   return mapSupabaseUser(data.user);
 }
 
+
+export async function signOutParentLocally() {
+  const client = createBrowserSupabaseClient();
+  if (!client) return;
+  await client.auth.signOut({ scope: "local" });
+  broadcastParentAuthChanged();
+}
+
 export async function signOutParent() {
   const client = createBrowserSupabaseClient();
   if (!client) return;

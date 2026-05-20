@@ -41,6 +41,10 @@ export function useWallDevicePairing(enabled: boolean, targetMode: "wall" | "mob
   }, [canPair, targetMode]);
 
   useEffect(() => {
+    setSession(null);
+  }, [targetMode]);
+
+  useEffect(() => {
     if (!canPair || session) return;
     createSession();
   }, [canPair, createSession, session]);
