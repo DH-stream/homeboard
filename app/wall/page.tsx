@@ -274,6 +274,7 @@ export default function WallPage() {
 
   const finishPairing = useCallback((nextHouseholdId: string) => {
     saveSelectedHouseholdId(nextHouseholdId);
+    saveDeviceStartView({ mode: "wall", route: "/wall" });
   }, []);
 
   if (!householdId && !useLocalWall && isCloudConfigured()) {
