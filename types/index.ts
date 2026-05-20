@@ -143,6 +143,8 @@ export type DevicePairingSession = {
   expiresAt: string;
   householdId?: string;
   claimedByMemberId?: string;
+  deviceMode?: "wall" | "mobile" | "admin";
+  deviceName?: string;
   createdAt: string;
   updatedAt: string;
 };

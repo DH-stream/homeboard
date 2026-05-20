@@ -25,7 +25,16 @@ type DevicePairingSessionRow = {
   household_id: string | null;
   created_at: string;
   updated_at: string;
+  devices?: JoinedDevice | JoinedDevice[] | null;
 };
+
+type JoinedDevice = { mode: Device["mode"]; name: string };
+
+function getJoinedDevice(row: DevicePairingSessionRow): JoinedDevice | null {
+  const joined = row.devices;
+  if (Array.isArray(joined)) return joined[0] ?? null;
+  return joined ?? null;
+}
 
 const PAIRING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const PAIRING_CODE_LENGTH = 6;
@@ -47,6 +56,7 @@ function isPossibleDuplicateCodeError(error: unknown) {
 
 function mapPairingSession(row: DevicePairingSessionRow): DevicePairingSession {
   const isExpired = row.status === "pending" && new Date(row.expires_at).getTime() <= Date.now();
+  const joinedDevice = getJoinedDevice(row);
   return {
     id: row.id,
     deviceId: row.device_id,
@@ -55,6 +65,8 @@ function mapPairingSession(row: DevicePairingSessionRow): DevicePairingSession {
     expiresAt: row.expires_at,
     householdId: row.household_id ?? undefined,
     claimedByMemberId: row.claimed_by_member_id ?? undefined,
+    deviceMode: joinedDevice?.mode,
+    deviceName: joinedDevice?.name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -123,7 +135,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
       const { data: session, error: sessionError } = await this.client
         .from("device_pairing_sessions")
         .insert({ device_id: device.id, pairing_code: createPairingCode(), status: "pending", expires_at: expiresAt })
-        .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
+        .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at, devices:device_id(mode,name)")
         .single();
 
       if (!sessionError) return mapPairingSession(session as DevicePairingSessionRow);
@@ -139,7 +151,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     const { data, error } = await this.client
       .from("device_pairing_sessions")
-      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
+      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at, devices:device_id(mode,name)")
       .eq("pairing_code", pairingCode.trim().toUpperCase())
       .order("created_at", { ascending: false })
       .limit(1)
@@ -162,7 +174,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
       .eq("id", session.id)
       .eq("status", "pending")
       .gt("expires_at", now)
-      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at")
+      .select("id, device_id, pairing_code, status, expires_at, claimed_by_member_id, household_id, created_at, updated_at, devices:device_id(mode,name)")
       .single();
 
     if (sessionError) throw sessionError;

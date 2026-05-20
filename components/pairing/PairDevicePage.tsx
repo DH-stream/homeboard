@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ParentAuthCard } from "@/components/auth/ParentAuthCard";
@@ -13,36 +13,41 @@ import { createHouseholdService } from "@/lib/services/householdService";
 import type { Household } from "@/types";
 
 const service = createHouseholdService(householdRepository);
-const pairingCopy: Record<Language, { claimFailed: string; successBody: string; chooseHome: string; confirmHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; connectTitle: string; manualTitle: string; connectWall: string; codeDetected: string; continueCta: string }> = {
+type PairingDeviceKind = "wall" | "mobile" | "generic";
+const pairingCopy: Record<Language, { claimFailed: string; chooseHome: string; noHomes: string; homesFailed: string; expiredHint: string; codeHelp: string; manualTitle: string; codeDetected: string; continueCta: string; deviceNames: Record<PairingDeviceKind, string>; connectTitle: Record<PairingDeviceKind, string>; confirmHome: Record<PairingDeviceKind, string>; connectSubmit: Record<PairingDeviceKind, string>; successDone: Record<PairingDeviceKind, string>; successBody: Record<PairingDeviceKind, string> }> = {
   en: {
     claimFailed: "Could not connect this device. Try again.",
-    successBody: "This device will open the selected home in a moment.",
     chooseHome: "Choose home",
-    confirmHome: "Connect this device to",
     noHomes: "No cloud homes found yet. Create a home in Settings first.",
     homesFailed: "Could not load your homes right now. Try again.",
     expiredHint: "The code expired. Return to the device to create a new code.",
-    codeHelp: "Enter the pairing code shown on the wall screen. This is not the sign-in code from your email.",
-    connectTitle: "Connect this wall screen to your home",
+    codeHelp: "Enter the pairing code shown on the other device. This is not the sign-in code from your email.",
     manualTitle: "Enter pairing code",
-    connectWall: "Connect wall screen",
     codeDetected: "Detected pairing code",
     continueCta: "Continue",
+    deviceNames: { wall: "wall screen", mobile: "phone", generic: "device" },
+    connectTitle: { wall: "Connect wall screen", mobile: "Connect phone", generic: "Connect device" },
+    confirmHome: { wall: "Do you want to connect this wall screen to", mobile: "Do you want to connect this phone to", generic: "Do you want to connect this device to" },
+    connectSubmit: { wall: "Connect wall screen", mobile: "Connect phone", generic: "Connect device" },
+    successDone: { wall: "Done! The wall screen is connected.", mobile: "Done! The phone is connected.", generic: "Done! The device is connected." },
+    successBody: { wall: "Connected! Opening wall view now.", mobile: "Connected! Opening HomeBoard now.", generic: "Connected! Opening HomeBoard now." },
   },
   sv: {
     claimFailed: "Kunde inte koppla den här enheten. Försök igen.",
-    successBody: "Den här enheten öppnar valt hem om en liten stund.",
     chooseHome: "Välj hem",
-    confirmHome: "Koppla den här enheten till",
     noHomes: "Inga molnhem hittades ännu. Skapa först ett hem i Inställningar.",
     homesFailed: "Kunde inte ladda dina hem just nu. Försök igen.",
     expiredHint: "Koden har gått ut. Gå tillbaka till enheten och skapa en ny kod.",
-    codeHelp: "Ange parkoden som visas på väggskärmen. Det är inte inloggningskoden från mejlet.",
-    connectTitle: "Koppla den här väggskärmen till ditt hem",
+    codeHelp: "Ange parkoden som visas på den andra enheten. Det är inte inloggningskoden från mejlet.",
     manualTitle: "Ange parkod",
-    connectWall: "Koppla väggskärm",
     codeDetected: "Upptäckt parkod",
     continueCta: "Fortsätt",
+    deviceNames: { wall: "väggskärmen", mobile: "mobilen", generic: "enheten" },
+    connectTitle: { wall: "Koppla väggskärm", mobile: "Koppla mobil", generic: "Koppla enhet" },
+    confirmHome: { wall: "Vill du koppla den här väggskärmen till", mobile: "Vill du koppla den här mobilen till", generic: "Vill du koppla den här enheten till" },
+    connectSubmit: { wall: "Koppla väggskärmen", mobile: "Koppla mobilen", generic: "Koppla enheten" },
+    successDone: { wall: "Klart! Väggskärmen är kopplad.", mobile: "Klart! Mobilen är kopplad.", generic: "Klart! Enheten är kopplad." },
+    successBody: { wall: "Kopplad! Nu öppnar vi väggvyn.", mobile: "Kopplad! Nu öppnar vi HomeBoard.", generic: "Kopplad! Nu öppnar vi HomeBoard." },
   },
 };
 
@@ -62,6 +67,11 @@ function PairDeviceContent() {
   const [manualCode, setManualCode] = useState(() => pairingCode?.trim().toUpperCase() ?? "");
   const isExpired = session?.status === "expired";
   const isClaimed = session?.status === "claimed";
+  const pairDeviceKind: PairingDeviceKind = useMemo(() => {
+    if (session?.deviceMode === "wall") return "wall";
+    if (session?.deviceMode === "mobile") return "mobile";
+    return "generic";
+  }, [session?.deviceMode]);
   const hasManualCode = manualCode.length === 6;
 
   useEffect(() => {
@@ -118,8 +128,8 @@ function PairDeviceContent() {
       <section className="surface-card relative w-full overflow-hidden rounded-[2.25rem] p-5 shadow-xl shadow-amber-900/5 sm:p-7">
         <div className="pointer-events-none absolute -right-12 top-6 h-36 w-36 rounded-full bg-amber-200/40 blur-3xl" />
         <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">{t("pairPhoneTitle")}</p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-stone-950">{pairingCode ? copy.connectTitle : copy.manualTitle}</h1>
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">{pairingCode ? copy.connectTitle[pairDeviceKind] : t("pairPhoneTitle")}</p>
+        <h1 className="mt-2 text-3xl font-black tracking-tight text-stone-950">{pairingCode ? copy.connectTitle[pairDeviceKind] : copy.manualTitle}</h1>
         <p className="mt-2 text-sm font-semibold leading-6 text-stone-600">{copy.codeHelp}</p>
         {pairingCode ? <p className="mt-4 inline-flex rounded-full bg-stone-100 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-stone-700">{copy.codeDetected}: <span className="ml-2 text-stone-900">{pairingCode.trim().toUpperCase()}</span></p> : null}
 
@@ -146,11 +156,11 @@ function PairDeviceContent() {
         <div className={`cloud-mode-card mt-4 rounded-2xl border p-4 ${isClaimed ? "cloud-mode-card--celebrating" : pairingCode ? "cloud-mode-card--active" : ""}`}>
           <div className="cloud-mode-card__shine" />
           <div className="cloud-milestone-stage">
-            <p className="cloud-connection-path">{t("deviceModeWall")} <i /><i /><i /> {t("home")}</p>
+            <p className="cloud-connection-path">{copy.deviceNames[pairDeviceKind]} <i /><i /><i /> {t("home")}</p>
             <ol className="cloud-milestone-steps">
-              <li className={`cloud-milestone-step ${pairStep >= 1 ? "cloud-milestone-step--active" : ""}`}><span />{copy.manualTitle}</li>
-              <li className={`cloud-milestone-step ${pairStep >= 2 ? "cloud-milestone-step--active" : ""}`}><span />{copy.connectTitle}</li>
-              <li className={`cloud-milestone-step ${pairStep >= 3 ? "cloud-milestone-step--active" : ""}`}><span />{t("pairComplete")}</li>
+                <li className={`cloud-milestone-step ${pairStep >= 1 ? "cloud-milestone-step--active" : ""}`}><span />{copy.manualTitle}</li>
+              <li className={`cloud-milestone-step ${pairStep >= 2 ? "cloud-milestone-step--active" : ""}`}><span />{copy.connectTitle[pairDeviceKind]}</li>
+              <li className={`cloud-milestone-step ${pairStep >= 3 ? "cloud-milestone-step--active" : ""}`}><span />{copy.successDone[pairDeviceKind]}</li>
             </ol>
           </div>
         </div>
@@ -163,8 +173,8 @@ function PairDeviceContent() {
 
         {isClaimed ? (
           <div className="cloud-success-copy cloud-success-copy--celebrating mt-5 space-y-4">
-            <StatusChip tone="emerald">{t("pairComplete")}</StatusChip>
-            <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody}</p>
+            <StatusChip tone="emerald">{copy.successDone[pairDeviceKind]}</StatusChip>
+            <p className="text-base font-bold leading-7 text-stone-600">{copy.successBody[pairDeviceKind]}</p>
             <Link className="pressable inline-flex min-h-12 items-center rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" href="/app">{t("open")}</Link>
           </div>
         ) : null}
@@ -186,8 +196,8 @@ function PairDeviceContent() {
                     {homes.map((home) => <option key={home.id} value={home.id}>{home.name}</option>)}
                   </select>
                 </label>
-                <p className="text-lg font-bold leading-8 text-stone-700">{copy.confirmHome} <span className="font-black text-stone-950">{selectedHome?.name ?? t("home")}</span>?</p>
-                <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isClaiming || !canClaim} onClick={claimPairing} type="button">{isClaiming ? t("saving") : copy.connectWall}</button>
+                <p className="text-lg font-bold leading-8 text-stone-700">{copy.confirmHome[pairDeviceKind]} <span className="font-black text-stone-950">{selectedHome?.name ?? t("home")}</span>?</p>
+                <button className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15 disabled:cursor-not-allowed disabled:opacity-60" disabled={isClaiming || !canClaim} onClick={claimPairing} type="button">{isClaiming ? t("saving") : copy.connectSubmit[pairDeviceKind]}</button>
               </>
             ) : null}
           </div>
