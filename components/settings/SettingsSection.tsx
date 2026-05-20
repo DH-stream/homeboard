@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 type SettingsSectionProps = {
   title: string;
@@ -11,8 +11,14 @@ type SettingsSectionProps = {
 };
 
 export function SettingsSection({ title, description, status, defaultOpen = false, children }: SettingsSectionProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  useEffect(() => {
+    setIsOpen(defaultOpen);
+  }, [defaultOpen]);
+
   return (
-    <details className="group rounded-[1.9rem] border border-stone-200/80 bg-white/95 shadow-[0_12px_30px_rgba(36,28,21,0.08)]" open={defaultOpen}>
+    <details className="group rounded-[1.9rem] border border-stone-200/80 bg-white/95 shadow-[0_12px_30px_rgba(36,28,21,0.08)]" onToggle={(event) => setIsOpen(event.currentTarget.open)} open={isOpen}>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-[1.9rem] px-4 py-4 sm:px-5">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">{title}</p>
