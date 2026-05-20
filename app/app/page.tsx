@@ -190,20 +190,33 @@ export default function MobileAppPage() {
     router.replace("/app");
   }, [router]);
 
+  if (isSetupMode) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4 py-8 text-stone-950 sm:px-8">
+        <section className="surface-card relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-amber-950/10">
+          <div className="pointer-events-none absolute -left-16 top-10 h-52 w-52 rounded-full bg-amber-200/40 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 right-16 h-64 w-64 rounded-full bg-orange-200/35 blur-3xl" />
+          <div className="relative rounded-[2rem] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100 p-8 shadow-inner shadow-white/60">
+            <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable absolute left-3 top-3 inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/75 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={() => router.push("/")} type="button">
+              <span aria-hidden="true">←</span>
+              <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
+            </button>
+            <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
+            <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{language === "sv" ? "Mobilvy" : "Mobile view"}</h1>
+            <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{language === "sv" ? "Använd den här enheten som mobilvy för HomeBoard. Här kan du se hemmet, uppgifter och inställningar från telefonen." : "Use this device as the mobile view for HomeBoard. From here you can view your home, tasks, and settings on your phone."}</p>
+            <p className="mt-3 text-sm font-semibold text-stone-600">{language === "sv" ? "Vill du hellre sätta upp en väggskärm kan du gå tillbaka och välja det istället." : "If you meant to set up a wall screen, go back and choose that instead."}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button className="pressable min-h-12 rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" onClick={finishMobileSetup} type="button">{language === "sv" ? "Använd mobilvy" : "Use mobile view"}</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
       <HouseholdSetupGate>
-      {isSetupMode ? (
-        <div className="mb-3 flex items-center gap-2">
-          <button aria-label={language === "sv" ? "Gå tillbaka och välj skärmtyp" : "Go back and choose screen type"} className="pressable inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-stone-200/80 bg-white/80 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={() => router.push("/")} type="button">
-            <span aria-hidden="true">←</span>
-            <span className="ml-1.5">{language === "sv" ? "Tillbaka" : "Back"}</span>
-          </button>
-          <button className="pressable inline-flex min-h-9 items-center rounded-full border border-stone-200/80 bg-white/80 px-3 text-xs font-bold text-stone-700 shadow-sm backdrop-blur-sm" onClick={finishMobileSetup} type="button">
-            {language === "sv" ? "Fortsätt" : "Continue"}
-          </button>
-        </div>
-      ) : null}
       <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
