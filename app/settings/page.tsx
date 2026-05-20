@@ -119,7 +119,7 @@ export default function SettingsPage() {
         {canShowWallTaskCreatorSettings ? (
           <SettingsSection
             description={language === "sv" ? "Val som påverkar hur väggskärmen visar och skapar uppgifter." : "Choices that affect how the wall screen displays and creates tasks."}
-              title={language === "sv" ? "Väggskärm" : "Wall screen"}
+            title={language === "sv" ? "Väggskärm" : "Wall screen"}
           >
             <WallTaskCreatorSettings />
           </SettingsSection>
