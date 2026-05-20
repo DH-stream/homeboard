@@ -31,6 +31,7 @@ export interface DeviceRepository {
   listDevices(householdId?: string | null): Promise<Device[]>;
   updateDeviceName(deviceId: string, name: string): Promise<Device>;
   unlinkDeviceFromHousehold(deviceId: string): Promise<Device>;
+  getDevice(deviceId: string): Promise<Device | null>;
 }
 
 export class SupabaseDeviceRepository implements DeviceRepository {
@@ -82,6 +83,20 @@ export class SupabaseDeviceRepository implements DeviceRepository {
       .eq("device_id", deviceId)
       .eq("status", "pending");
 
+    return mapDevice(data as DeviceRow);
+  }
+
+  async getDevice(deviceId: string) {
+    if (!this.client) return null;
+
+    const { data, error } = await this.client
+      .from("devices")
+      .select("id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, created_at, updated_at")
+      .eq("id", deviceId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return null;
     return mapDevice(data as DeviceRow);
   }
 }
