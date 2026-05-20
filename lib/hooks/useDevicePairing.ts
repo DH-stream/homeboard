@@ -10,7 +10,7 @@ import type { DevicePairingSession } from "@/types";
 const service = createDevicePairingService(devicePairingRepository);
 const WALL_POLL_INTERVAL_MS = 3000;
 
-export function useWallDevicePairing(enabled: boolean) {
+export function useWallDevicePairing(enabled: boolean, targetMode: "wall" | "mobile" = "wall") {
   const [session, setSession] = useState<DevicePairingSession | null>(null);
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,8 +24,8 @@ export function useWallDevicePairing(enabled: boolean) {
       const localIdentity = getOrCreateLocalDeviceIdentity();
       if (!localIdentity) throw new Error("Device identity unavailable.");
       const nextSession = await service.createWallPairingSession({
-        deviceName: "Väggskärm",
-        mode: "wall",
+        deviceName: targetMode === "mobile" ? "Mobil" : "Väggskärm",
+        mode: targetMode,
         localDeviceId: localIdentity.id,
         persistedDeviceId: getPersistedCloudDeviceId() ?? undefined,
       });
@@ -38,7 +38,7 @@ export function useWallDevicePairing(enabled: boolean) {
     } finally {
       setLoading(false);
     }
-  }, [canPair]);
+  }, [canPair, targetMode]);
 
   useEffect(() => {
     if (!canPair || session) return;
@@ -53,7 +53,7 @@ export function useWallDevicePairing(enabled: boolean) {
         const nextSession = await service.getPairingSession(session.pairingCode);
         if (nextSession) setSession(nextSession);
       } catch (unknownError) {
-        console.warn("HomeBoard could not refresh the wall pairing session.", unknownError);
+        console.warn("HomeBoard could not refresh the device pairing session.", unknownError);
       }
     }, WALL_POLL_INTERVAL_MS);
 

@@ -14,7 +14,7 @@ function getSecondsLeft(expiresAt?: string) {
 export function WallPairingCard({ onPaired, onUseLocal, onBack, targetMode = "wall" }: { onPaired: (householdId: string) => void; onUseLocal: () => void; onBack?: () => void; targetMode?: "wall" | "mobile" }) {
   const { t, language } = useLanguage();
   const [isPairingFlowActive, setPairingFlowActive] = useState(false);
-  const { canPair, createSession, error, isLoading, session } = useWallDevicePairing(isPairingFlowActive);
+  const { canPair, createSession, error, isLoading, session } = useWallDevicePairing(isPairingFlowActive, targetMode);
   const [qrCodeSvg, setQrCodeSvg] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(() => getSecondsLeft(session?.expiresAt));
 

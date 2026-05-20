@@ -41,6 +41,13 @@ const PAIRING_CODE_LENGTH = 6;
 const PAIRING_CODE_CREATE_ATTEMPTS = 3;
 const PAIRING_TTL_MINUTES = 2;
 
+const DEFAULT_DEVICE_NAMES = new Set(["Väggskärm", "Mobil"]);
+
+function shouldReplaceDeviceName(name: string | null, fallbackName: string) {
+  const normalized = name?.trim() ?? "";
+  return !normalized || DEFAULT_DEVICE_NAMES.has(normalized) || normalized === fallbackName;
+}
+
 function createPairingCode() {
   const cryptoApi = globalThis.crypto;
   if (!cryptoApi?.getRandomValues) throw new Error("Secure random values are not available in this browser.");
@@ -113,7 +120,12 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
     if (device) {
       const { data: updatedDevice, error: updateError } = await this.client
         .from("devices")
-        .update({ last_seen_at: now, updated_at: now })
+        .update({
+          last_seen_at: now,
+          updated_at: now,
+          mode: input.mode,
+          ...(shouldReplaceDeviceName(device.name, input.deviceName) ? { name: input.deviceName } : {}),
+        })
         .eq("id", device.id)
         .select(selectDeviceColumns)
         .single();
