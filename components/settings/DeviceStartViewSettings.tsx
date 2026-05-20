@@ -49,7 +49,7 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
       <div className="space-y-4">
         <p>{t("deviceStartViewCopy")}</p>
 
-        <dl className="rounded-2xl border border-stone-200/70 bg-stone-50 p-4 text-sm">
+        <dl className="rounded-2xl border border-stone-200/70 bg-stone-50 p-3.5 text-sm sm:p-4">
           <div className="flex justify-between gap-3">
             <dt className="font-bold text-stone-500">{t("defaultRoute")}</dt>
             <dd className="text-right font-black text-stone-900">{startView ? getDeviceModeLabel(startView.mode, t) : t("deviceModeUnset")}</dd>

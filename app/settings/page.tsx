@@ -25,7 +25,7 @@ export default function SettingsPage() {
   const { hasAdultAccess } = useAdultAccess();
   const hasHouseholdSettings = canManageHouseholdSettings(deviceProfile, hasAdultAccess);
   const hasDeviceLocalSettings = canManageDeviceLocalSettings(deviceProfile);
-  const canShowWallTaskCreatorSettings = hasDeviceLocalSettings || hasHouseholdSettings;
+  const canShowWallTaskCreatorSettings = hasDeviceLocalSettings;
   const showWallLimitedNotice = deviceProfile === "wall" && !hasHouseholdSettings;
 
   useEffect(() => {
@@ -48,12 +48,12 @@ export default function SettingsPage() {
 
   return (
     <AppShell eyebrow={t("settingsEyebrow")} revealActive={isFirstRunRevealActive} title={t("settings")}>
-      <div className={`space-y-4 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
+      <div className={`space-y-3 sm:space-y-4 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
         <SettingsSection
           defaultOpen
-          description={language === "sv" ? "Språk, startvy och val som bara gäller på den här enheten." : "Language, start view, and choices that only affect this device."}
+          description={language === "sv" ? "Språk, startvy och lokala val." : "Language, start view, and local choices."}
           eyebrow={language === "sv" ? "Inställningar" : "Settings"}
-          title={language === "sv" ? "Den här enheten" : "This device"}
+          title={language === "sv" ? "Enheten" : "Device"}
         >
           <SettingsCard status={t("localPreview")} title={t("language")}>
             <div className="space-y-3">

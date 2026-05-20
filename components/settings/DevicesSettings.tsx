@@ -25,6 +25,7 @@ const copy: Record<Language, Record<string, string>> = {
     cancel: "Cancel",
     loadError: "Could not load devices right now.",
     saveError: "Could not save the device name. Try again.",
+    addDevice: "Add device",
     addWallScreen: "Add wall screen",
     addWallIntro: "Start pairing from the wall/tablet screen. This phone scans or enters the code.",
     addWallStep1: "1. Open HomeBoard on the tablet/wall screen.",
@@ -55,6 +56,7 @@ const copy: Record<Language, Record<string, string>> = {
     cancel: "Avbryt",
     loadError: "Kunde inte ladda enheter just nu.",
     saveError: "Kunde inte spara enhetsnamnet. Försök igen.",
+    addDevice: "Lägg till enhet",
     addWallScreen: "Lägg till väggskärm",
     addWallIntro: "Starta parkopplingen från vägg-/surfplatteskärmen. Den här mobilen skannar eller skriver in koden.",
     addWallStep1: "1. Öppna HomeBoard på surfplattan/väggskärmen.",
@@ -91,6 +93,7 @@ export function DevicesSettings() {
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [isSaving, setSaving] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [showAddDevice, setShowAddDevice] = useState(false);
 
   const startEdit = (device: Device) => {
     setEditingId(device.id);
@@ -140,7 +143,10 @@ export function DevicesSettings() {
       <div className="space-y-4">
         <p>{t.helper}</p>
         {householdId ? (
-          <div className="cloud-mode-card cloud-mode-card--active reveal-item reveal-item--card reveal-stagger-3 relative overflow-hidden rounded-[1.6rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50/60 to-white p-4 shadow-[0_18px_44px_rgba(120,93,58,0.12)]">
+          <div className="space-y-3">
+            <button className="pressable min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-800" onClick={() => setShowAddDevice((current) => !current)} type="button">{t.addDevice}</button>
+            {showAddDevice ? (
+          <div className="cloud-mode-card cloud-mode-card--active reveal-item reveal-item--card reveal-stagger-3 relative overflow-hidden rounded-[1.4rem] border border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50/60 to-white p-3.5 shadow-[0_18px_44px_rgba(120,93,58,0.12)] sm:rounded-[1.6rem] sm:p-4">
             <div className="cloud-mode-card__shine" />
             <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-amber-200/45 blur-2xl" />
             <p className="relative text-sm font-black text-stone-900">{t.addWallScreen}</p>
@@ -150,6 +156,8 @@ export function DevicesSettings() {
               <li>{t.addWallStep1}</li><li>{t.addWallStep2}</li><li>{t.addWallStep3}</li><li>{t.addWallStep4}</li>
             </ol>
             <Link className="pressable mt-3 inline-flex min-h-11 items-center rounded-xl bg-stone-950 px-4 text-sm font-black text-white shadow-lg shadow-stone-900/15" href="/pair">{t.enterPairingCode}</Link>
+          </div>
+            ) : null}
           </div>
         ) : null}
         {!householdId ? <p>{t.needsHome}</p> : null}

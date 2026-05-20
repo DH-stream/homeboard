@@ -1807,3 +1807,23 @@ button:disabled {
   --balloon-sage: rgba(172, 195, 165, 0.86);
   --balloon-peach: rgba(239, 196, 170, 0.84);
 }
+
+
+.section-reveal {
+  opacity: 0;
+  transform: translateY(-3px);
+  transition: opacity 180ms var(--ease-out), transform 200ms var(--ease-out);
+}
+
+details[open] > .section-reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
