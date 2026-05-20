@@ -13,7 +13,8 @@ function getSecondsLeft(expiresAt?: string) {
 
 export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (householdId: string) => void; onUseLocal: () => void }) {
   const { t, language } = useLanguage();
-  const { canPair, createSession, error, isLoading, session } = useWallDevicePairing(true);
+  const [isPairingFlowActive, setPairingFlowActive] = useState(false);
+  const { canPair, createSession, error, isLoading, session } = useWallDevicePairing(isPairingFlowActive);
   const [qrCodeSvg, setQrCodeSvg] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(() => getSecondsLeft(session?.expiresAt));
 
@@ -60,6 +61,23 @@ export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (household
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-4 py-8 text-stone-950 sm:px-8">
+      {!isPairingFlowActive ? (
+        <section className="surface-card relative w-full max-w-3xl overflow-hidden rounded-[2.5rem] p-8 shadow-2xl shadow-amber-950/10">
+          <div className="pointer-events-none absolute -left-16 top-10 h-52 w-52 rounded-full bg-amber-200/40 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 right-16 h-64 w-64 rounded-full bg-orange-200/35 blur-3xl" />
+          <div className="relative rounded-[2rem] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100 p-8 shadow-inner shadow-white/60">
+            <div className="mb-5 h-1.5 w-16 rounded-full bg-amber-300" />
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">{t("pairWallTitle")}</p>
+            <h1 className="mt-3 max-w-2xl text-5xl font-black tracking-tight text-stone-950 md:text-6xl">{t("pairScanTitle")}</h1>
+            <p className="mt-4 max-w-xl text-xl font-bold leading-8 text-stone-600">{t("pairScanBody")}</p>
+            <p className="mt-3 text-sm font-semibold text-stone-600">{language === "sv" ? "Du kan fortsätta lokalt på den här enheten nu och aktivera molnsynk senare i Inställningar." : "You can continue only on this device now and turn on cloud sync later in Settings."}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button className="pressable min-h-12 rounded-2xl bg-stone-950 px-5 py-3 font-black text-white shadow-lg shadow-stone-950/15" onClick={() => setPairingFlowActive(true)} type="button">{t("pairScanTitle")}</button>
+              <button className="pressable min-h-12 rounded-2xl border border-stone-200 bg-white px-5 py-3 font-black text-stone-800 shadow-sm" onClick={onUseLocal} type="button">{t("pairOpenLocal")}</button>
+            </div>
+          </div>
+        </section>
+      ) : (
       <section className="surface-card relative grid w-full gap-6 overflow-hidden rounded-[2.5rem] p-5 shadow-2xl shadow-amber-950/10 md:grid-cols-[1fr_0.95fr] md:p-8">
         <div className="pointer-events-none absolute -left-16 top-10 h-52 w-52 rounded-full bg-amber-200/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 right-16 h-64 w-64 rounded-full bg-orange-200/35 blur-3xl" />
@@ -104,6 +122,7 @@ export function WallPairingCard({ onPaired, onUseLocal }: { onPaired: (household
           </div>
         </div>
       </section>
+      )}
     </main>
   );
 }
