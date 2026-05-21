@@ -1,4 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
 import type { Household, HouseholdMember, HouseholdMemberRole } from "@/types";
 
 type HouseholdRow = {
@@ -92,6 +93,27 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
 
   async getHousehold(householdId: string | null) {
     if (!this.client || !householdId) return null;
+
+    const deviceAccess = getDeviceAccessPayload();
+    if (deviceAccess) {
+      const { data, error } = await this.client.rpc("device_get_household_summary", {
+        p_household_id: householdId,
+        p_cloud_device_id: deviceAccess.cloudDeviceId,
+        p_local_device_id: deviceAccess.localDeviceId,
+      });
+      if (error) throw error;
+
+      const row = Array.isArray(data) ? data[0] : null;
+      if (row) {
+        return mapHousehold({
+          id: row.id,
+          name: row.name,
+          owner_user_id: null,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        });
+      }
+    }
 
     const { data, error } = await this.client.from("households").select("id, name, owner_user_id, created_at, updated_at").eq("id", householdId).maybeSingle();
 

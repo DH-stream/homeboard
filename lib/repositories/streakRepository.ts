@@ -1,4 +1,5 @@
 import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
 import { getLocalDateKey } from "@/lib/tasks/streak";
 import type { TaskInstance } from "@/types";
 
@@ -47,6 +48,17 @@ export function createStreakRepository() {
   return {
     async listCompletedTaskDays(householdId: string) {
       if (canUseSupabase && supabase) {
+        const deviceAccess = getDeviceAccessPayload();
+        if (deviceAccess) {
+          const { data, error } = await supabase.rpc("device_list_completed_task_days", {
+            p_household_id: householdId,
+            p_cloud_device_id: deviceAccess.cloudDeviceId,
+            p_local_device_id: deviceAccess.localDeviceId,
+          });
+          if (error) throw error;
+          return (data ?? []) as TaskDayStatusRow[];
+        }
+
         const { data, error } = await supabase
           .from("household_task_day_status")
           .select("id, household_id, date, status, completed_at, completed_task_count, required_task_count, created_at, updated_at")
@@ -80,6 +92,20 @@ export function createStreakRepository() {
 
       const date = todayDateKey();
       if (canUseSupabase && supabase) {
+        const deviceAccess = getDeviceAccessPayload();
+        if (deviceAccess) {
+          const { error } = await supabase.rpc("device_upsert_completed_task_day", {
+            p_household_id: householdId,
+            p_date: date,
+            p_completed_task_count: completedTaskCount,
+            p_required_task_count: requiredTaskCount,
+            p_cloud_device_id: deviceAccess.cloudDeviceId,
+            p_local_device_id: deviceAccess.localDeviceId,
+          });
+          if (error) throw error;
+          return true;
+        }
+
         const { error } = await supabase.from("household_task_day_status").upsert({
           household_id: householdId,
           date,
