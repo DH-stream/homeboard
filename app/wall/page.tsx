@@ -17,11 +17,8 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StreakFlameIndicator } from "@/components/ui/StreakFlameIndicator";
 import { isCloudConfigured } from "@/lib/cloud/config";
 import { signOutParentLocally } from "@/lib/auth/parentAuth";
-import { getPersistedCloudDeviceId } from "@/lib/devices/deviceIdentity";
-import { resetThisDeviceLocally } from "@/lib/devices/resetLocalDevice";
 import {
   enableLocalOnlyMode,
-  getLocalSelectedHouseholdId,
   isLocalOnlyModeEnabled,
   LOCAL_ONLY_MODE_CHANGED_EVENT,
   saveSelectedHouseholdId,
@@ -48,19 +45,15 @@ import {
   markStreakFlameSeenToday,
 } from "@/lib/tasks/streak";
 import { createStreakService } from "@/lib/services/streakService";
-import { createDeviceService } from "@/lib/services/deviceService";
 import {
   shouldShowInRemainingTasks,
   shouldShowTodayTask,
 } from "@/lib/tasks/visibility";
-import { deviceRepository } from "@/lib/repositories/deviceRepository";
 import type { TaskInstance } from "@/types";
 
 const QUICK_CREATOR_CLOSE_MS = 240;
 const QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS = 20;
 const MAX_WALL_STREAK_PREVIEW = 24;
-const DEVICE_VALIDATION_INTERVAL_MS = 20_000;
-const deviceService = createDeviceService(deviceRepository);
 
 function getFirstCreatedTaskId(created: unknown) {
   if (!Array.isArray(created)) return null;
@@ -278,45 +271,6 @@ export default function WallPage() {
     if (householdId || useLocalWall) consumePendingFirstRunReveal("wall");
   }, [householdId, useLocalWall]);
 
-  useEffect(() => {
-    if (useLocalWall) return;
-
-    let cancelled = false;
-
-    const validateCurrentDevice = async () => {
-      const persistedDeviceId = getPersistedCloudDeviceId();
-      if (!persistedDeviceId) return;
-
-      try {
-        const selectedHouseholdId = getLocalSelectedHouseholdId();
-        const cloudDevice = await deviceService.getDevice(persistedDeviceId);
-        const wasUnlinked =
-          !cloudDevice ||
-          !cloudDevice.householdId ||
-          (selectedHouseholdId ? cloudDevice.householdId !== selectedHouseholdId : true);
-
-        if (!wasUnlinked || cancelled) return;
-
-        await resetThisDeviceLocally();
-        if (!cancelled) router.replace("/?choose=1");
-      } catch (error) {
-        console.warn("Unable to validate wall device link status", error);
-      }
-    };
-
-    void validateCurrentDevice();
-    const interval = window.setInterval(() => void validateCurrentDevice(), DEVICE_VALIDATION_INTERVAL_MS);
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") void validateCurrentDevice();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [router, useLocalWall]);
   const closeQuickCreator = useCallback(() => {
     if (quickCreatorTimerRef.current)
       window.clearTimeout(quickCreatorTimerRef.current);
