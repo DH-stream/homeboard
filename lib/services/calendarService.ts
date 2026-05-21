@@ -12,6 +12,9 @@ export function createCalendarService(repository: CalendarRepository) {
     async updateSourceEnabled(sourceId: string, enabled: boolean) {
       return repository.updateSourceEnabled(sourceId, enabled);
     },
+    async removeSource(sourceId: string) {
+      return repository.removeSource(sourceId);
+    },
     async listEvents(householdId: string | null) {
       return repository.listEnabledEvents(householdId);
     },

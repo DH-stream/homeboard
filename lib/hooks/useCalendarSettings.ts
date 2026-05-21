@@ -49,6 +49,11 @@ export function useCalendarSettings() {
     return updated;
   }, [refresh]);
 
+  const removeSource = useCallback(async (sourceId: string) => {
+    await service.removeSource(sourceId);
+    await refresh();
+  }, [refresh]);
+
   const addIcsSource = useCallback(async (name: string, syncUrl: string, color: string, enabled: boolean) => {
     const trimmedName = name.trim();
     const trimmedUrl = syncUrl.trim();
@@ -148,5 +153,5 @@ export function useCalendarSettings() {
     }
   }, [addIcsSource, refresh]);
 
-  return { connections, sources, householdId, isLoading, isSyncing, syncError, setupState, updateSourceEnabled, refresh, addIcsSource, addSourceAndSync, syncSource, syncAll };
+  return { connections, sources, householdId, isLoading, isSyncing, syncError, setupState, updateSourceEnabled, removeSource, refresh, addIcsSource, addSourceAndSync, syncSource, syncAll };
 }

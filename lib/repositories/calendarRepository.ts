@@ -99,6 +99,7 @@ export interface CalendarRepository {
   listConnections(householdId: string | null): Promise<CalendarConnection[]>;
   listSources(householdId: string | null): Promise<CalendarSource[]>;
   updateSourceEnabled(sourceId: string, enabled: boolean): Promise<CalendarSource>;
+  removeSource(sourceId: string): Promise<void>;
   listEnabledEvents(householdId: string | null): Promise<CalendarEvent[]>;
 }
 
@@ -143,6 +144,14 @@ export class SupabaseCalendarRepository implements CalendarRepository {
 
     if (error) throw error;
     return mapSource(data as CalendarSourceRow);
+  }
+
+
+  async removeSource(sourceId: string) {
+    if (!this.client) throw new Error("Supabase is not configured.");
+
+    const { error } = await this.client.rpc("calendar_remove_source", { p_source_id: sourceId });
+    if (error) throw error;
   }
 
   async listEnabledEvents(householdId: string | null) {
