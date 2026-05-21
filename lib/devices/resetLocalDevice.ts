@@ -4,6 +4,7 @@ import { signOutParentLocally } from "@/lib/auth/parentAuth";
 import { resetDeviceProfile } from "@/lib/devicePreferences";
 import {
   clearPersistedCloudDeviceId,
+  clearPersistedDeviceAccessToken,
   resetLocalDeviceIdentity,
 } from "@/lib/devices/deviceIdentity";
 import {
@@ -19,6 +20,7 @@ export async function resetThisDeviceLocally(options?: {
   disableLocalOnlyMode();
   resetDeviceProfile();
   clearPersistedCloudDeviceId();
+  clearPersistedDeviceAccessToken();
 
   if (options?.clearLocalIdentity) {
     resetLocalDeviceIdentity();

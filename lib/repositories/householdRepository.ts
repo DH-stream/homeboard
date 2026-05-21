@@ -1,4 +1,7 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { getDeviceAccessPayload, hasIncompleteCloudDeviceAccess } from "@/lib/devices/deviceAccess";
+import { clearPersistedCloudDeviceId, clearPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
+import { forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
 import type { Household, HouseholdMember, HouseholdMemberRole } from "@/types";
 
 type HouseholdRow = {
@@ -76,6 +79,12 @@ export interface HouseholdRepository {
 export class SupabaseHouseholdRepository implements HouseholdRepository {
   private readonly client = createBrowserSupabaseClient();
 
+  private clearRevokedDeviceState() {
+    clearPersistedCloudDeviceId();
+    clearPersistedDeviceAccessToken();
+    forgetSelectedCloudHouseholdOnThisDevice();
+  }
+
   async createHousehold(input: CreateHouseholdInput) {
     if (!this.client) throw new Error("Supabase is not configured.");
 
@@ -92,6 +101,41 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
 
   async getHousehold(householdId: string | null) {
     if (!this.client || !householdId) return null;
+
+    if (hasIncompleteCloudDeviceAccess()) {
+      this.clearRevokedDeviceState();
+      return null;
+    }
+
+    const deviceAccess = getDeviceAccessPayload();
+    if (deviceAccess) {
+      const { data, error } = await this.client.rpc("device_get_household_summary", {
+        p_household_id: householdId,
+        p_cloud_device_id: deviceAccess.cloudDeviceId,
+        p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
+      });
+      if (error) {
+        if (String(error.message ?? "").includes("device is not linked to household")) {
+          this.clearRevokedDeviceState();
+          return null;
+        }
+        throw error;
+      }
+
+      const row = Array.isArray(data) ? data[0] : null;
+      if (row) {
+        return mapHousehold({
+          id: row.id,
+          name: row.name,
+          owner_user_id: null,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        });
+      }
+      this.clearRevokedDeviceState();
+      return null;
+    }
 
     const { data, error } = await this.client.from("households").select("id, name, owner_user_id, created_at, updated_at").eq("id", householdId).maybeSingle();
 

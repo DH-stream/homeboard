@@ -1,4 +1,7 @@
 import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { getDeviceAccessPayload, hasIncompleteCloudDeviceAccess } from "@/lib/devices/deviceAccess";
+import { clearPersistedCloudDeviceId, clearPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
+import { forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
 import { getLocalDateKey } from "@/lib/tasks/streak";
 import type { TaskInstance } from "@/types";
 
@@ -40,13 +43,42 @@ function todayDateKey() {
   return getLocalDateKey(new Date());
 }
 
+function clearRevokedDeviceState() {
+  clearPersistedCloudDeviceId();
+  clearPersistedDeviceAccessToken();
+  forgetSelectedCloudHouseholdOnThisDevice();
+}
+
 export function createStreakRepository() {
   const supabase = createBrowserSupabaseClient();
   const canUseSupabase = isSupabaseConfigured() && Boolean(supabase);
 
   return {
     async listCompletedTaskDays(householdId: string) {
+      if (hasIncompleteCloudDeviceAccess()) {
+        clearRevokedDeviceState();
+        return [];
+      }
+
       if (canUseSupabase && supabase) {
+        const deviceAccess = getDeviceAccessPayload();
+        if (deviceAccess) {
+          const { data, error } = await supabase.rpc("device_list_completed_task_days", {
+            p_household_id: householdId,
+            p_cloud_device_id: deviceAccess.cloudDeviceId,
+            p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
+          });
+          if (error) {
+            if (String(error.message ?? "").includes("device is not linked to household")) {
+              clearRevokedDeviceState();
+              return [];
+            }
+            throw error;
+          }
+          return (data ?? []) as TaskDayStatusRow[];
+        }
+
         const { data, error } = await supabase
           .from("household_task_day_status")
           .select("id, household_id, date, status, completed_at, completed_task_count, required_task_count, created_at, updated_at")
@@ -72,6 +104,11 @@ export function createStreakRepository() {
     },
 
     async maybeMarkTodayComplete(householdId: string, todayTasks: TaskInstance[]) {
+      if (hasIncompleteCloudDeviceAccess()) {
+        clearRevokedDeviceState();
+        return false;
+      }
+
       const requiredTaskCount = todayTasks.length;
       if (requiredTaskCount === 0) return false;
 
@@ -80,6 +117,27 @@ export function createStreakRepository() {
 
       const date = todayDateKey();
       if (canUseSupabase && supabase) {
+        const deviceAccess = getDeviceAccessPayload();
+        if (deviceAccess) {
+          const { error } = await supabase.rpc("device_upsert_completed_task_day", {
+            p_household_id: householdId,
+            p_date: date,
+            p_completed_task_count: completedTaskCount,
+            p_required_task_count: requiredTaskCount,
+            p_cloud_device_id: deviceAccess.cloudDeviceId,
+            p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
+          });
+          if (error) {
+            if (String(error.message ?? "").includes("device is not linked to household")) {
+              clearRevokedDeviceState();
+              return false;
+            }
+            throw error;
+          }
+          return true;
+        }
+
         const { error } = await supabase.from("household_task_day_status").upsert({
           household_id: householdId,
           date,

@@ -30,7 +30,7 @@ function mapDevice(row: DeviceRow): Device {
 export interface DeviceRepository {
   listDevices(householdId?: string | null): Promise<Device[]>;
   updateDeviceName(deviceId: string, name: string): Promise<Device>;
-  unlinkDeviceFromHousehold(deviceId: string): Promise<Device>;
+  unlinkDeviceFromHousehold(householdId: string, deviceId: string): Promise<Device>;
   getDevice(deviceId: string): Promise<Device | null>;
 }
 
@@ -39,12 +39,7 @@ export class SupabaseDeviceRepository implements DeviceRepository {
 
   async listDevices(householdId?: string | null) {
     if (!this.client || !householdId) return [];
-
-    const { data, error } = await this.client
-      .from("devices")
-      .select("id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, created_at, updated_at")
-      .eq("household_id", householdId)
-      .order("updated_at", { ascending: false });
+    const { data, error } = await this.client.rpc("device_list_household_devices", { p_household_id: householdId });
 
     if (error) throw error;
     return ((data ?? []) as DeviceRow[]).map(mapDevice);
@@ -53,51 +48,33 @@ export class SupabaseDeviceRepository implements DeviceRepository {
   async updateDeviceName(deviceId: string, name: string) {
     if (!this.client) throw new Error("Supabase client unavailable");
 
-    const { data, error } = await this.client
-      .from("devices")
-      .update({ name })
-      .eq("id", deviceId)
-      .select("id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, created_at, updated_at")
-      .single();
+    const { data, error } = await this.client.rpc("device_update_name", { p_device_id: deviceId, p_name: name });
 
     if (error) throw error;
-    return mapDevice(data as DeviceRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    return mapDevice(row as DeviceRow);
   }
 
-  async unlinkDeviceFromHousehold(deviceId: string) {
+  async unlinkDeviceFromHousehold(householdId: string, deviceId: string) {
     if (!this.client) throw new Error("Supabase client unavailable");
 
-    const now = new Date().toISOString();
-    const { data, error } = await this.client
-      .from("devices")
-      .update({ household_id: null, paired_at: null, updated_at: now })
-      .eq("id", deviceId)
-      .select("id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, created_at, updated_at")
-      .single();
+    const { data, error } = await this.client.rpc("device_unlink_from_household", { p_household_id: householdId, p_device_id: deviceId });
 
     if (error) throw error;
 
-    await this.client
-      .from("device_pairing_sessions")
-      .update({ status: "expired", updated_at: now })
-      .eq("device_id", deviceId)
-      .eq("status", "pending");
-
-    return mapDevice(data as DeviceRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    return mapDevice(row as DeviceRow);
   }
 
   async getDevice(deviceId: string) {
     if (!this.client) return null;
 
-    const { data, error } = await this.client
-      .from("devices")
-      .select("id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, created_at, updated_at")
-      .eq("id", deviceId)
-      .maybeSingle();
+    const { data, error } = await this.client.rpc("device_get", { p_device_id: deviceId });
 
     if (error) throw error;
-    if (!data) return null;
-    return mapDevice(data as DeviceRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+    return mapDevice(row as DeviceRow);
   }
 }
 
