@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
-import { CloudStatusSettings } from "@/components/settings/CloudStatusSettings";
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
@@ -29,8 +28,22 @@ export default function SettingsPage() {
   const { household } = useHousehold();
   const hasHouseholdSettings = canManageHouseholdSettings(deviceProfile, hasAdultAccess);
   const hasDeviceLocalSettings = canManageDeviceLocalSettings(deviceProfile);
-  const canShowWallTaskCreatorSettings = hasDeviceLocalSettings || hasHouseholdSettings;
+  const canShowWallTaskCreatorSettings = deviceProfile === "wall";
   const showWallLimitedNotice = deviceProfile === "wall" && !hasHouseholdSettings;
+  const notificationsCopy = language === "sv"
+    ? { title: "Notiser", status: "Kommer snart", action: "Aktivera notiser" }
+    : { title: "Notifications", status: "Coming soon", action: "Enable notifications" };
+  const homeSetupCopy = language === "sv"
+    ? {
+      status: "Endast på den här enheten",
+      body: "Skapa eller koppla ett hem för att synka uppgifter, kalender, medlemmar och väggskärmar.",
+      action: "Skapa eller koppla hem",
+    }
+    : {
+      status: "Local only",
+      body: "Create or connect a home to sync tasks, calendar, members, and wall screens.",
+      action: "Create or connect home",
+    };
 
   useEffect(() => {
     getOrCreateDeviceId();
@@ -70,6 +83,12 @@ export default function SettingsPage() {
             </div>
           </SettingsCard>
           <DeviceStartViewSettings onProfileChange={setDeviceProfileState} />
+          <SettingsCard status={notificationsCopy.status} title={notificationsCopy.title}>
+            <div className="flex items-center justify-between gap-2 rounded-2xl border border-stone-200/70 bg-stone-50/90 px-3 py-2">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-stone-500">{notificationsCopy.status}</p>
+              <button className="min-h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-[0.68rem] font-black text-stone-400 opacity-70" disabled type="button">{notificationsCopy.action}</button>
+            </div>
+          </SettingsCard>
           {showWallLimitedNotice ? (
             <p className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3 text-sm font-semibold leading-6 text-stone-700 md:col-span-2">{language === "sv" ? "Du ändrar bara den här väggskärmen. Logga in som vuxen för hem, medlemmar och kopplade enheter." : "You’re only changing this wall screen. Sign in as an adult to manage the home, members, and connected devices."}</p>
           ) : null}
@@ -91,14 +110,6 @@ export default function SettingsPage() {
           </div>
         ) : null}
 
-        <SettingsSection
-          description={language === "sv" ? "Se om hemmet är synkat i molnet eller bara används på den här enheten." : "See whether your home is synced in cloud or used only on this device."}
-          eyebrow={language === "sv" ? "Synk" : "Sync"}
-          title={language === "sv" ? "Moln & synk" : "Cloud & sync"}
-        >
-          <CloudStatusSettings />
-        </SettingsSection>
-
         {hasHouseholdSettings ? (
           <SettingsSection
             description={language === "sv" ? "Hantera familjens hem, medlemmar och enheter." : "Manage your family home, members, and connected devices."}
@@ -106,8 +117,23 @@ export default function SettingsPage() {
             title={language === "sv" ? "Hem" : "Home"}
           >
             <HouseholdSettings />
-            <MembersSettings />
             <DevicesSettings />
+            <MembersSettings />
+          </SettingsSection>
+        ) : null}
+
+        {!hasHouseholdSettings ? (
+          <SettingsSection
+            description={language === "sv" ? "Hantera familjens hem och synk när du är redo." : "Manage your family home and sync when you're ready."}
+            eyebrow={language === "sv" ? "Hushåll" : "Household"}
+            title={language === "sv" ? "Hem" : "Home"}
+          >
+            <SettingsCard status={homeSetupCopy.status} title={language === "sv" ? "Hem" : "Home"}>
+              <div className="space-y-3">
+                <p className="text-sm font-semibold leading-6 text-stone-700">{homeSetupCopy.body}</p>
+                <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => router.push("/setup/adult")} type="button">{homeSetupCopy.action}</button>
+              </div>
+            </SettingsCard>
           </SettingsSection>
         ) : null}
 
@@ -135,19 +161,7 @@ export default function SettingsPage() {
             title={language === "sv" ? "Integrationer" : "Integrations"}
           >
             <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}><p>{t("homeAssistantIntegrationCopy")}</p></SettingsCard>
-            <SettingsCard status={t("planned")} title={t("runaiApiTokens")}><p>{t("runaiApiTokensCopy")}</p></SettingsCard>
-          </SettingsSection>
-        ) : null}
-
-        {deviceProfile !== "wall" ? (
-          <SettingsSection
-            description={language === "sv" ? "Teknisk information för felsökning och utveckling." : "Technical information for troubleshooting and development."}
-            title={language === "sv" ? "Tekniskt" : "Technical"}
-          >
-            <SettingsCard status={t("localPreview")} title={language === "sv" ? "Förhandsläge" : "Preview mode"}>
-              <p>{language === "sv" ? "HomeBoard använder lokal lagring i förhandsläget. Delning mellan enheter kräver molnsynk." : "HomeBoard uses local storage in preview mode. Sharing across devices requires cloud sync."}</p>
-            </SettingsCard>
-          </SettingsSection>
+                      </SettingsSection>
         ) : null}
       </div>
     </AppShell>
