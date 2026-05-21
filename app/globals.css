@@ -26,7 +26,16 @@ html {
 
 html,
 body {
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
+}
+
+body,
+.smooth-scroll-surface {
+  -webkit-overflow-scrolling: touch;
+}
+
+.smooth-scroll-surface {
+  overscroll-behavior-y: auto;
 }
 
 body {
