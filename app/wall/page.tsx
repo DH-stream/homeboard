@@ -399,7 +399,7 @@ export default function WallPage() {
           >
             <div className="min-w-0">
               <p className="text-lg font-black uppercase tracking-[0.24em] text-amber-700">
-                {household?.name ?? "HomeBoard"}
+                {householdId && household?.name ? household.name : "HomeBoard"}
               </p>
               <h1 className="mt-2 text-6xl font-black tracking-tight text-stone-950 lg:text-8xl">
                 {formatShortDate(now, locale)}

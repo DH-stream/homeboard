@@ -15,6 +15,8 @@ import { DevicesSettings } from "@/components/settings/DevicesSettings";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { canManageDeviceLocalSettings, canManageHouseholdSettings, getDeviceProfile, getOrCreateDeviceId, resetDeviceProfile, setDeviceProfile as persistDeviceProfile, type DeviceMode } from "@/lib/devicePreferences";
 import { useAdultAccess } from "@/lib/hooks/useAdultAccess";
+import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
+import { useHousehold } from "@/lib/hooks/useMembers";
 import { useLanguage, type Language } from "@/lib/i18n";
 
 export default function SettingsPage() {
@@ -23,6 +25,8 @@ export default function SettingsPage() {
   const [isFirstRunRevealActive] = useState(() => hasPendingFirstRunReveal("settings"));
   const [deviceProfile, setDeviceProfileState] = useState<DeviceMode | null>(null);
   const { hasAdultAccess } = useAdultAccess();
+  const { householdId } = useResolvedHouseholdId();
+  const { household } = useHousehold();
   const hasHouseholdSettings = canManageHouseholdSettings(deviceProfile, hasAdultAccess);
   const hasDeviceLocalSettings = canManageDeviceLocalSettings(deviceProfile);
   const canShowWallTaskCreatorSettings = hasDeviceLocalSettings || hasHouseholdSettings;
@@ -47,7 +51,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppShell eyebrow={t("settingsEyebrow")} revealActive={isFirstRunRevealActive} title={t("settings")}>
+    <AppShell eyebrow={householdId && household?.name ? household.name : t("settingsEyebrow")} revealActive={isFirstRunRevealActive} title={t("settings")}>
       <div className={`space-y-3 sm:space-y-4 ${isFirstRunRevealActive ? "settings-reveal-grid" : ""}`}>
         <SettingsSection
           defaultOpen

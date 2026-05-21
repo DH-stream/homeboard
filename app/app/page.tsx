@@ -24,7 +24,7 @@ import {
 } from "@/lib/households/selection";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
-import { useMembers } from "@/lib/hooks/useMembers";
+import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useTasks } from "@/lib/hooks/useTasks";
 import { useLanguage } from "@/lib/i18n";
@@ -55,6 +55,7 @@ export default function MobileAppPage() {
   const { getCompletionEncouragement, language, t } = useLanguage();
   const { members } = useMembers();
   const { householdId } = useResolvedHouseholdId();
+  const { household } = useHousehold();
   const { todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted, updateTask, error: taskError, mode: taskMode } = useTasks();
   const [filter, setFilter] = useState<Filter>("open");
@@ -234,7 +235,7 @@ export default function MobileAppPage() {
   }
 
   return (
-    <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
+    <AppShell eyebrow={householdId && household?.name ? household.name : t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
       <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
