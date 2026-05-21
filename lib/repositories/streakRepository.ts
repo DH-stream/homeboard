@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
+import { getDeviceAccessPayload, hasIncompleteCloudDeviceAccess } from "@/lib/devices/deviceAccess";
 import { clearPersistedCloudDeviceId, clearPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
 import { forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
 import { getLocalDateKey } from "@/lib/tasks/streak";
@@ -55,6 +55,11 @@ export function createStreakRepository() {
 
   return {
     async listCompletedTaskDays(householdId: string) {
+      if (hasIncompleteCloudDeviceAccess()) {
+        clearRevokedDeviceState();
+        return [];
+      }
+
       if (canUseSupabase && supabase) {
         const deviceAccess = getDeviceAccessPayload();
         if (deviceAccess) {
@@ -99,6 +104,11 @@ export function createStreakRepository() {
     },
 
     async maybeMarkTodayComplete(householdId: string, todayTasks: TaskInstance[]) {
+      if (hasIncompleteCloudDeviceAccess()) {
+        clearRevokedDeviceState();
+        return false;
+      }
+
       const requiredTaskCount = todayTasks.length;
       if (requiredTaskCount === 0) return false;
 

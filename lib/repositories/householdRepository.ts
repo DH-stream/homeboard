@@ -1,5 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
+import { getDeviceAccessPayload, hasIncompleteCloudDeviceAccess } from "@/lib/devices/deviceAccess";
 import { clearPersistedCloudDeviceId, clearPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
 import { forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
 import type { Household, HouseholdMember, HouseholdMemberRole } from "@/types";
@@ -101,6 +101,11 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
 
   async getHousehold(householdId: string | null) {
     if (!this.client || !householdId) return null;
+
+    if (hasIncompleteCloudDeviceAccess()) {
+      this.clearRevokedDeviceState();
+      return null;
+    }
 
     const deviceAccess = getDeviceAccessPayload();
     if (deviceAccess) {
