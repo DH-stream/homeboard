@@ -70,6 +70,13 @@ function getFirstCreatedTaskId(created: unknown) {
   return firstTask?.id ?? null;
 }
 
+
+function shouldEnableCloudDebug() {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get("debugCloud") === "1" || process.env.NODE_ENV !== "production";
+}
+
 function getWallStreakPreviewOverride() {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
@@ -90,8 +97,8 @@ export default function WallPage() {
   );
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
-  const { householdId } = useResolvedHouseholdId();
-  const { household } = useHousehold(householdId);
+  const { householdId, selectedHouseholdId } = useResolvedHouseholdId();
+  const { household, error: householdError } = useHousehold(householdId);
   const { members } = useMembers();
   const { events, todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted } = useTasks();
@@ -120,6 +127,7 @@ export default function WallPage() {
   const [streakPreviewOverride] = useState(() =>
     getWallStreakPreviewOverride(),
   );
+  const [debugCloudEnabled] = useState(() => shouldEnableCloudDebug());
   const quickCreatorTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -164,6 +172,47 @@ export default function WallPage() {
   const displayStreak = streakPreviewOverride ?? streak;
   const [showStreakIntro, setShowStreakIntro] = useState(false);
   const streakService = useMemo(() => createStreakService(), []);
+
+  useEffect(() => {
+    if (!debugCloudEnabled) return;
+
+    const completedTodayTasks = todayTasks.filter((task) => task.completedAt);
+    let cancelled = false;
+
+    const logDiagnostics = async () => {
+      const payload: Record<string, unknown> = {
+        resolvedHouseholdId: householdId,
+        selectedHouseholdId,
+        localOnlyModeEnabled: isLocalOnlyModeEnabled(),
+        householdIdFromRow: household?.id ?? null,
+        householdName: household?.name ?? null,
+        tasksLength: tasks.length,
+        todayTasksLength: todayTasks.length,
+        completedTodayTasksLength: completedTodayTasks.length,
+      };
+
+      try {
+        if (householdId) {
+          payload.completedTaskDays = await streakService.listCompletedTaskDays(householdId);
+          payload.householdTaskStreak = await streakService.getHouseholdTaskStreak(householdId, now);
+        } else {
+          payload.completedTaskDays = [];
+          payload.householdTaskStreak = 0;
+        }
+      } catch (error) {
+        payload.streakRepositoryError = error;
+      }
+
+      if (householdError) payload.useHouseholdError = householdError;
+      if (!cancelled) console.log("[HomeBoard wall cloud debug]", payload);
+    };
+
+    void logDiagnostics();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debugCloudEnabled, household?.id, household?.name, householdError, householdId, now, selectedHouseholdId, streakService, tasks.length, todayTasks]);
 
   useEffect(() => {
     if (!householdId) {

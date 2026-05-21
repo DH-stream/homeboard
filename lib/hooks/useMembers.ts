@@ -11,21 +11,26 @@ export function useHousehold(providedHouseholdId?: string | null) {
   const householdId = providedHouseholdId ?? resolvedHouseholdId;
   const [household, setHousehold] = useState<Household | null>(null);
   const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
     const service = createMemberService(getMemberRepository(householdId));
     setLoading(true);
     service
       .getHousehold(householdId)
-      .then(setHousehold)
+      .then((nextHousehold) => {
+        setHousehold(nextHousehold);
+        setError(null);
+      })
       .catch((error) => {
+        setError(error);
         console.warn("HomeBoard household could not be loaded from cloud; using device data.", error);
         return createMemberService(getMemberRepository(null)).getHousehold(null).then(setHousehold);
       })
       .finally(() => setLoading(false));
   }, [householdId]);
 
-  return { household, isLoading };
+  return { household, isLoading, error };
 }
 
 export function useMembers() {
