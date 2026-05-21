@@ -79,5 +79,9 @@ end;
 $$;
 
 revoke all on function public.device_request_adult_access(uuid, text) from public;
+revoke all on function public.device_request_adult_access(uuid, text) from anon;
+revoke all on function public.device_request_adult_access(uuid, text) from authenticated;
+drop function if exists public.device_request_adult_access(uuid, text);
+
 revoke all on function public.device_request_adult_access(uuid, uuid, text, text) from public;
 grant execute on function public.device_request_adult_access(uuid, uuid, text, text) to anon, authenticated;
