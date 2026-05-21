@@ -244,7 +244,7 @@ export default function MobileAppPage() {
         <div className={`min-w-0 rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-3 text-center shadow-sm transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] sm:p-4 ${completionFeedback ? "shadow-emerald-200/80" : ""}`}>
           <p className="text-3xl font-black text-emerald-700">{stats.completed}</p>
           <p className="min-h-4 text-[0.68rem] font-black uppercase tracking-[0.12em] text-emerald-500 sm:text-xs sm:tracking-[0.16em] flex items-center justify-center gap-2"><span className="truncate">{completionFeedback?.message ?? t("todaysProgress")}</span>
-            <StreakFlameIndicator streak={streak} animateIntro={showStreakIntro} /></p>
+            <StreakFlameIndicator streak={streak} animateIntro={showStreakIntro} variant="mobileBoost" /></p>
         </div>
         {showDebugNavigation ? (
           <Link className="pressable min-w-0 rounded-[1.5rem] bg-stone-950 p-3 text-center text-white shadow-sm sm:p-4" href="/wall">
