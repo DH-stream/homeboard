@@ -1,4 +1,5 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
 import type { CalendarConnection, CalendarEvent, CalendarSource } from "@/types";
 
 type CalendarConnectionRow = {
@@ -98,6 +99,7 @@ function mapEvent(row: CalendarEventRow): CalendarEvent {
 export interface CalendarRepository {
   listConnections(householdId: string | null): Promise<CalendarConnection[]>;
   listSources(householdId: string | null): Promise<CalendarSource[]>;
+  createIcsSource(householdId: string, name: string, syncUrl: string, color: string, enabled: boolean): Promise<CalendarSource>;
   updateSourceEnabled(sourceId: string, enabled: boolean): Promise<CalendarSource>;
   removeSource(sourceId: string): Promise<void>;
   listEnabledEvents(householdId: string | null): Promise<CalendarEvent[]>;
@@ -109,11 +111,7 @@ export class SupabaseCalendarRepository implements CalendarRepository {
   async listConnections(householdId: string | null) {
     if (!this.client || !householdId) return [];
 
-    const { data, error } = await this.client
-      .from("calendar_connections")
-      .select("id, household_id, connected_by_member_id, provider, account_label, account_email, status, last_synced_at, created_at, updated_at")
-      .eq("household_id", householdId)
-      .order("created_at", { ascending: true });
+    const { data, error } = await this.client.rpc("calendar_list_connections", { p_household_id: householdId });
 
     if (error) throw error;
     return ((data ?? []) as CalendarConnectionRow[]).map(mapConnection);
@@ -122,25 +120,34 @@ export class SupabaseCalendarRepository implements CalendarRepository {
   async listSources(householdId: string | null) {
     if (!this.client || !householdId) return [];
 
-    const { data, error } = await this.client
-      .from("calendar_sources")
-      .select("id, household_id, connection_id, provider_calendar_id, name, color, enabled, visibility, sync_mode, sync_url, last_synced_at, last_error, created_at, updated_at")
-      .eq("household_id", householdId)
-      .order("name", { ascending: true });
+    const { data, error } = await this.client.rpc("calendar_list_sources", { p_household_id: householdId });
 
     if (error) throw error;
     return ((data ?? []) as CalendarSourceRow[]).map(mapSource);
   }
 
+
+  async createIcsSource(householdId: string, name: string, syncUrl: string, color: string, enabled: boolean) {
+    if (!this.client) throw new Error("Supabase is not configured.");
+
+    const { data, error } = await this.client.rpc("calendar_create_ics_source", {
+      p_household_id: householdId,
+      p_name: name,
+      p_sync_url: syncUrl,
+      p_color: color,
+      p_enabled: enabled,
+    });
+
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("calendar_create_failed");
+    return mapSource(row as CalendarSourceRow);
+  }
+
   async updateSourceEnabled(sourceId: string, enabled: boolean) {
     if (!this.client) throw new Error("Supabase is not configured.");
 
-    const { data, error } = await this.client
-      .from("calendar_sources")
-      .update({ enabled, updated_at: new Date().toISOString() })
-      .eq("id", sourceId)
-      .select("id, household_id, connection_id, provider_calendar_id, name, color, enabled, visibility, sync_mode, sync_url, last_synced_at, last_error, created_at, updated_at")
-      .single();
+    const { data, error } = await this.client.rpc("calendar_update_source_enabled", { p_source_id: sourceId, p_enabled: enabled });
 
     if (error) throw error;
     return mapSource(data as CalendarSourceRow);
@@ -157,23 +164,26 @@ export class SupabaseCalendarRepository implements CalendarRepository {
   async listEnabledEvents(householdId: string | null) {
     if (!this.client || !householdId) return [];
 
-    const sources = await this.listSources(householdId);
-    if (sources.length > 0 && !sources.some((source) => source.enabled)) return [];
-    const enabledSourceIds = sources.filter((source) => source.enabled).map((source) => source.id);
+    const deviceAccess = getDeviceAccessPayload();
+    if (deviceAccess) {
+      const { data, error } = await this.client.rpc("calendar_device_list_enabled_events", {
+        p_household_id: householdId,
+        p_cloud_device_id: deviceAccess.cloudDeviceId,
+        p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
+      });
+      if (error) throw error;
+      return ((data ?? []) as CalendarEventRow[]).map(mapEvent);
+    }
 
-    let query = this.client
-      .from("calendar_events")
-      .select("id, household_id, source_id, external_event_id, title, description, location, start_at, end_at, all_day, color")
-      .eq("household_id", householdId)
-      .order("start_at", { ascending: true });
+    const { data: authData } = await this.client.auth.getSession();
+    if (!authData.session) return [];
 
-    if (enabledSourceIds.length) query = query.in("source_id", enabledSourceIds);
-
-    const { data, error } = await query;
-
+    const { data, error } = await this.client.rpc("calendar_adult_list_enabled_events", { p_household_id: householdId });
     if (error) throw error;
     return ((data ?? []) as CalendarEventRow[]).map(mapEvent);
   }
+
 }
 
 export const calendarRepository = new SupabaseCalendarRepository();

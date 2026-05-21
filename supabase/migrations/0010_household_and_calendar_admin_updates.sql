@@ -248,3 +248,160 @@ end;
 $$;
 revoke all on function public.calendar_remove_source(uuid) from public;
 grant execute on function public.calendar_remove_source(uuid) to authenticated;
+
+create or replace function public.calendar_list_connections(p_household_id uuid)
+returns table (
+  id uuid,
+  household_id uuid,
+  connected_by_member_id uuid,
+  provider text,
+  account_label text,
+  account_email text,
+  status text,
+  last_synced_at timestamptz,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language sql security definer set search_path = public stable
+as $$
+  select c.id, c.household_id, c.connected_by_member_id, c.provider, c.account_label, c.account_email, c.status, c.last_synced_at, c.created_at, c.updated_at
+  from public.calendar_connections c
+  where c.household_id = p_household_id
+    and public.is_household_adult(p_household_id)
+  order by c.created_at asc;
+$$;
+revoke all on function public.calendar_list_connections(uuid) from public;
+grant execute on function public.calendar_list_connections(uuid) to authenticated;
+
+create or replace function public.calendar_list_sources(p_household_id uuid)
+returns table (
+  id uuid,
+  household_id uuid,
+  connection_id uuid,
+  provider_calendar_id text,
+  name text,
+  color text,
+  enabled boolean,
+  visibility text,
+  sync_mode text,
+  sync_url text,
+  last_synced_at timestamptz,
+  last_error text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language sql security definer set search_path = public stable
+as $$
+  select s.id, s.household_id, s.connection_id, s.provider_calendar_id, s.name, s.color, s.enabled, s.visibility, s.sync_mode, s.sync_url, s.last_synced_at, s.last_error, s.created_at, s.updated_at
+  from public.calendar_sources s
+  where s.household_id = p_household_id
+    and public.is_household_adult(p_household_id)
+  order by s.name asc;
+$$;
+revoke all on function public.calendar_list_sources(uuid) from public;
+grant execute on function public.calendar_list_sources(uuid) to authenticated;
+
+create or replace function public.calendar_create_ics_source(p_household_id uuid, p_name text, p_sync_url text, p_color text, p_enabled boolean)
+returns table (
+  id uuid,
+  household_id uuid,
+  connection_id uuid,
+  provider_calendar_id text,
+  name text,
+  color text,
+  enabled boolean,
+  visibility text,
+  sync_mode text,
+  sync_url text,
+  last_synced_at timestamptz,
+  last_error text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql security definer set search_path = public
+as $$
+declare v_connection_id uuid;
+declare v_name text;
+declare v_sync_url text;
+begin
+  if not public.is_household_adult(p_household_id) then raise exception 'adult access required'; end if;
+  v_name := left(trim(coalesce(p_name, '')), 80);
+  v_sync_url := trim(coalesce(p_sync_url, ''));
+  if v_name = '' or v_sync_url = '' then raise exception 'missing calendar fields'; end if;
+
+  select c.id into v_connection_id from public.calendar_connections c where c.household_id = p_household_id and c.provider = 'ics' order by c.created_at asc limit 1;
+  if v_connection_id is null then
+    insert into public.calendar_connections(household_id, provider, account_label, status)
+    values (p_household_id, 'ics', 'Calendar link', 'connected')
+    returning id into v_connection_id;
+  end if;
+
+  return query
+  insert into public.calendar_sources(household_id, connection_id, provider_calendar_id, name, color, enabled, sync_url)
+  values (p_household_id, v_connection_id, 'ics:' || replace(gen_random_uuid()::text, '-', ''), v_name, p_color, p_enabled, v_sync_url)
+  returning calendar_sources.id, calendar_sources.household_id, calendar_sources.connection_id, calendar_sources.provider_calendar_id, calendar_sources.name, calendar_sources.color, calendar_sources.enabled, calendar_sources.visibility, calendar_sources.sync_mode, calendar_sources.sync_url, calendar_sources.last_synced_at, calendar_sources.last_error, calendar_sources.created_at, calendar_sources.updated_at;
+end;
+$$;
+revoke all on function public.calendar_create_ics_source(uuid, text, text, text, boolean) from public;
+grant execute on function public.calendar_create_ics_source(uuid, text, text, text, boolean) to authenticated;
+
+create or replace function public.calendar_update_source_enabled(p_source_id uuid, p_enabled boolean)
+returns table (
+  id uuid,
+  household_id uuid,
+  connection_id uuid,
+  provider_calendar_id text,
+  name text,
+  color text,
+  enabled boolean,
+  visibility text,
+  sync_mode text,
+  sync_url text,
+  last_synced_at timestamptz,
+  last_error text,
+  created_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql security definer set search_path = public
+as $$
+declare v_household_id uuid;
+begin
+  select s.household_id into v_household_id from public.calendar_sources s where s.id = p_source_id;
+  if v_household_id is null then raise exception 'calendar source not found'; end if;
+  if not public.is_household_adult(v_household_id) then raise exception 'adult access required'; end if;
+
+  return query
+  update public.calendar_sources s
+  set enabled = p_enabled, updated_at = now()
+  where s.id = p_source_id
+  returning s.id, s.household_id, s.connection_id, s.provider_calendar_id, s.name, s.color, s.enabled, s.visibility, s.sync_mode, s.sync_url, s.last_synced_at, s.last_error, s.created_at, s.updated_at;
+end;
+$$;
+revoke all on function public.calendar_update_source_enabled(uuid, boolean) from public;
+grant execute on function public.calendar_update_source_enabled(uuid, boolean) to authenticated;
+
+create or replace function public.calendar_adult_list_enabled_events(p_household_id uuid)
+returns table (
+  id uuid,
+  household_id uuid,
+  source_id uuid,
+  external_event_id text,
+  title text,
+  description text,
+  location text,
+  start_at timestamptz,
+  end_at timestamptz,
+  all_day boolean,
+  color text
+)
+language sql security definer set search_path = public stable
+as $$
+  select e.id, e.household_id, e.source_id, e.external_event_id, e.title, e.description, e.location, e.start_at, e.end_at, e.all_day, e.color
+  from public.calendar_events e
+  where e.household_id = p_household_id
+    and public.is_household_adult(p_household_id)
+    and exists (select 1 from public.calendar_sources s where s.id = e.source_id and s.enabled)
+  order by e.start_at asc;
+$$;
+revoke all on function public.calendar_adult_list_enabled_events(uuid) from public;
+grant execute on function public.calendar_adult_list_enabled_events(uuid) to authenticated;

@@ -9,6 +9,9 @@ export function createCalendarService(repository: CalendarRepository) {
     async listSources(householdId: string | null) {
       return repository.listSources(householdId);
     },
+    async createIcsSource(householdId: string, name: string, syncUrl: string, color: string, enabled: boolean) {
+      return repository.createIcsSource(householdId, name, syncUrl, color, enabled);
+    },
     async updateSourceEnabled(sourceId: string, enabled: boolean) {
       return repository.updateSourceEnabled(sourceId, enabled);
     },
