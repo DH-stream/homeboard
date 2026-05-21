@@ -114,6 +114,7 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
           updated_at: row.updated_at,
         });
       }
+      return null;
     }
 
     const { data, error } = await this.client.from("households").select("id, name, owner_user_id, created_at, updated_at").eq("id", householdId).maybeSingle();

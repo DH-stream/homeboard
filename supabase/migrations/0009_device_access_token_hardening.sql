@@ -1,5 +1,10 @@
 create extension if not exists pgcrypto;
 
+drop function if exists public.device_get_household_summary(uuid, uuid, text);
+drop function if exists public.device_list_completed_task_days(uuid, uuid, text);
+drop function if exists public.device_upsert_completed_task_day(uuid, date, integer, integer, uuid, text);
+drop function if exists public.device_is_linked_to_household(uuid, uuid, text);
+
 alter table public.devices
   add column if not exists access_token_hash text;
 
