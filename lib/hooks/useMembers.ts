@@ -6,8 +6,9 @@ import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { createMemberService } from "@/lib/services/memberService";
 import type { Household, HouseholdMember } from "@/types";
 
-export function useHousehold() {
-  const { householdId } = useResolvedHouseholdId();
+export function useHousehold(providedHouseholdId?: string | null) {
+  const { householdId: resolvedHouseholdId } = useResolvedHouseholdId();
+  const householdId = providedHouseholdId ?? resolvedHouseholdId;
   const [household, setHousehold] = useState<Household | null>(null);
   const [isLoading, setLoading] = useState(true);
 

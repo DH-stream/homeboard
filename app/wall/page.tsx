@@ -91,7 +91,7 @@ export default function WallPage() {
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
   const { householdId } = useResolvedHouseholdId();
-  const { household } = useHousehold();
+  const { household } = useHousehold(householdId);
   const { members } = useMembers();
   const { events, todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted } = useTasks();
@@ -318,7 +318,7 @@ export default function WallPage() {
   }, []);
 
   useEffect(() => {
-    if (wallTaskCreatorMode !== "docked" && isQuickCreatorMounted)
+    if (wallTaskCreatorMode !== "panel" && isQuickCreatorMounted)
       closeQuickCreator();
   }, [closeQuickCreator, isQuickCreatorMounted, wallTaskCreatorMode]);
 
@@ -368,6 +368,11 @@ export default function WallPage() {
     );
   }
 
+  const householdDisplayName =
+    householdId && household?.id === householdId && household?.name
+      ? household.name
+      : "HomeBoard";
+
   async function toggleTask(task: TaskInstance) {
     const willComplete = !task.completedAt;
     try {
@@ -399,7 +404,7 @@ export default function WallPage() {
           >
             <div className="min-w-0">
               <p className="text-lg font-black uppercase tracking-[0.24em] text-amber-700">
-                {householdId && household?.name ? household.name : "HomeBoard"}
+                {householdDisplayName}
               </p>
               <h1 className="mt-2 text-6xl font-black tracking-tight text-stone-950 lg:text-8xl">
                 {formatShortDate(now, locale)}
@@ -456,10 +461,12 @@ export default function WallPage() {
             >
               <div className="flex items-center justify-between gap-4">
                 <SectionHeader eyebrow={t("tasks")} title={todayTitle} />
-                <WallQuickTaskButton
-                  isOpen={isQuickCreatorOpen}
-                  onToggle={toggleQuickCreator}
-                />
+                {wallTaskCreatorMode === "panel" ? (
+                  <WallQuickTaskButton
+                    isOpen={isQuickCreatorOpen}
+                    onToggle={toggleQuickCreator}
+                  />
+                ) : null}
               </div>
               {wallTaskCreatorMode === "docked" ? (
                 <WallQuickTaskCreator
@@ -467,6 +474,15 @@ export default function WallPage() {
                   onCreateTask={createTask}
                   onCreated={handleTaskCreated}
                   variant="panel"
+                />
+              ) : null}
+              {wallTaskCreatorMode === "panel" && isQuickCreatorMounted ? (
+                <WallQuickTaskCreator
+                  members={members}
+                  onCancel={closeQuickCreator}
+                  onCreateTask={createTask}
+                  onCreated={handleTaskCreated}
+                  variant="popover"
                 />
               ) : null}
               <div className="smooth-scroll-surface mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
