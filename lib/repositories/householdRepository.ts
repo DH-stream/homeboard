@@ -1,5 +1,7 @@
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
+import { clearPersistedCloudDeviceId, clearPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
+import { forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
 import type { Household, HouseholdMember, HouseholdMemberRole } from "@/types";
 
 type HouseholdRow = {
@@ -77,6 +79,12 @@ export interface HouseholdRepository {
 export class SupabaseHouseholdRepository implements HouseholdRepository {
   private readonly client = createBrowserSupabaseClient();
 
+  private clearRevokedDeviceState() {
+    clearPersistedCloudDeviceId();
+    clearPersistedDeviceAccessToken();
+    forgetSelectedCloudHouseholdOnThisDevice();
+  }
+
   async createHousehold(input: CreateHouseholdInput) {
     if (!this.client) throw new Error("Supabase is not configured.");
 
@@ -102,7 +110,13 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
         p_local_device_id: deviceAccess.localDeviceId,
         p_device_access_token: deviceAccess.accessToken,
       });
-      if (error) throw error;
+      if (error) {
+        if (String(error.message ?? "").includes("device is not linked to household")) {
+          this.clearRevokedDeviceState();
+          return null;
+        }
+        throw error;
+      }
 
       const row = Array.isArray(data) ? data[0] : null;
       if (row) {
@@ -114,6 +128,7 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
           updated_at: row.updated_at,
         });
       }
+      this.clearRevokedDeviceState();
       return null;
     }
 

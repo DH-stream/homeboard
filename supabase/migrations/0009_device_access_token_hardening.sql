@@ -212,7 +212,7 @@ as $$
 declare v_household_id uuid;
 begin
   select d.household_id into v_household_id from public.devices d where d.id = p_device_id;
-  if v_household_id is not null and not public.is_household_adult(v_household_id) then
+  if v_household_id is null or not public.is_household_adult(v_household_id) then
     raise exception 'adult access required';
   end if;
 
@@ -226,7 +226,7 @@ begin
 end;
 $$;
 revoke all on function public.device_update_name(uuid, text) from public;
-grant execute on function public.device_update_name(uuid, text) to anon, authenticated;
+grant execute on function public.device_update_name(uuid, text) to authenticated;
 
 drop function if exists public.device_unlink_from_household(uuid);
 
@@ -267,11 +267,23 @@ revoke all on function public.device_unlink_from_household(uuid, uuid) from publ
 grant execute on function public.device_unlink_from_household(uuid, uuid) to authenticated;
 
 create or replace function public.device_get_pairing_session(p_pairing_code text)
-returns setof public.device_pairing_sessions
+returns table (
+  id uuid,
+  device_id uuid,
+  pairing_code text,
+  status text,
+  expires_at timestamptz,
+  household_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz,
+  device_mode text,
+  device_name text
+)
 language sql security definer set search_path = public stable
 as $$
-  select s.*
+  select s.id, s.device_id, s.pairing_code, s.status, s.expires_at, s.household_id, s.created_at, s.updated_at, d.mode, d.name
   from public.device_pairing_sessions s
+  join public.devices d on d.id = s.device_id
   where s.pairing_code = upper(trim(p_pairing_code))
   order by s.created_at desc
   limit 1;
