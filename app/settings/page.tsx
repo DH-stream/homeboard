@@ -84,7 +84,7 @@ export default function SettingsPage() {
             </div>
           </SettingsCard>
           <DeviceStartViewSettings onProfileChange={setDeviceProfileState} />
-          <AdultAccessRequestCard householdId={householdId} isWallDevice={deviceProfile === "wall"} language={language} />
+          <AdultAccessRequestCard hasAdultAccess={hasAdultAccess} householdId={householdId} isWallDevice={deviceProfile === "wall"} language={language} />
           <SettingsCard status={notificationsCopy.status} title={notificationsCopy.title}>
             <div className="flex items-center justify-between gap-2 rounded-2xl border border-stone-200/70 bg-stone-50/90 px-3 py-2">
               <p className="text-xs font-bold uppercase tracking-[0.08em] text-stone-500">{notificationsCopy.status}</p>

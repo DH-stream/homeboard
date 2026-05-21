@@ -7,11 +7,12 @@ type Props = {
   householdId: string | null;
   language: "en" | "sv";
   isWallDevice: boolean;
+  hasAdultAccess: boolean;
 };
 
 type RequestState = "idle" | "loading" | "enabled" | "requesting" | "requested" | "error";
 
-export function AdultAccessRequestCard({ householdId, language, isWallDevice }: Props) {
+export function AdultAccessRequestCard({ householdId, language, isWallDevice, hasAdultAccess }: Props) {
   const [state, setState] = useState<RequestState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -45,6 +46,11 @@ export function AdultAccessRequestCard({ householdId, language, isWallDevice }: 
 
   useEffect(() => {
     if (isWallDevice) return;
+    if (hasAdultAccess) {
+      setState("enabled");
+      setErrorMessage(null);
+      return;
+    }
     let mounted = true;
     setState("loading");
     setErrorMessage(null);
@@ -64,11 +70,11 @@ export function AdultAccessRequestCard({ householdId, language, isWallDevice }: 
     return () => {
       mounted = false;
     };
-  }, [householdId, isWallDevice]);
+  }, [hasAdultAccess, householdId, isWallDevice]);
 
   if (isWallDevice) return null;
 
-  const canRequest = Boolean(householdId) && state !== "enabled" && state !== "requested" && state !== "loading";
+  const canRequest = Boolean(householdId) && !hasAdultAccess && state !== "enabled" && state !== "requested" && state !== "loading";
 
   async function onRequest() {
     if (!canRequest || state === "requesting") return;
