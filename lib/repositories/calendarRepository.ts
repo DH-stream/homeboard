@@ -150,7 +150,9 @@ export class SupabaseCalendarRepository implements CalendarRepository {
     const { data, error } = await this.client.rpc("calendar_update_source_enabled", { p_source_id: sourceId, p_enabled: enabled });
 
     if (error) throw error;
-    return mapSource(data as CalendarSourceRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("calendar_update_failed");
+    return mapSource(row as CalendarSourceRow);
   }
 
 

@@ -405,3 +405,35 @@ as $$
 $$;
 revoke all on function public.calendar_adult_list_enabled_events(uuid) from public;
 grant execute on function public.calendar_adult_list_enabled_events(uuid) to authenticated;
+
+
+create or replace function public.calendar_device_list_enabled_events(
+  p_household_id uuid,
+  p_cloud_device_id uuid,
+  p_local_device_id text,
+  p_device_access_token text
+)
+returns table (
+  id uuid,
+  household_id uuid,
+  source_id uuid,
+  external_event_id text,
+  title text,
+  description text,
+  location text,
+  start_at timestamptz,
+  end_at timestamptz,
+  all_day boolean,
+  color text
+)
+language sql security definer set search_path = public stable
+as $$
+  select e.id, e.household_id, e.source_id, e.external_event_id, e.title, e.description, e.location, e.start_at, e.end_at, e.all_day, e.color
+  from public.calendar_events e
+  where e.household_id = p_household_id
+    and public.device_is_linked_to_household(p_household_id, p_cloud_device_id, p_local_device_id, p_device_access_token)
+    and exists (select 1 from public.calendar_sources s where s.id = e.source_id and s.enabled)
+  order by e.start_at asc;
+$$;
+revoke all on function public.calendar_device_list_enabled_events(uuid, uuid, text, text) from public;
+grant execute on function public.calendar_device_list_enabled_events(uuid, uuid, text, text) to anon, authenticated;
