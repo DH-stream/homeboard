@@ -75,7 +75,6 @@ export function CalendarSourcesSettings() {
     autoNote: language === "sv" ? "Uppdateras automatiskt när HomeBoard hämtar kalendern." : "Updates automatically when HomeBoard fetches the calendar.",
     chooseColor: language === "sv" ? "Välj färg" : "Choose color",
     chooseProvider: language === "sv" ? "Vilken kalender vill du lägga till?" : "Which calendar do you want to add?",
-    connected: language === "sv" ? "Ansluten och aktiv" : "Connected and active",
     connectedCalendar: language === "sv" ? "Kalender" : "Calendar",
     customColor: language === "sv" ? "Annan färg" : "Custom",
     helperEyebrow: language === "sv" ? "Så funkar det" : "How it works",
@@ -194,45 +193,11 @@ export function CalendarSourcesSettings() {
   }
 
   return (
-    <SettingsCard status={setupState !== "ready" ? t("planned") : t("cloudReady")} title={t("calendarSources")}>
+    <SettingsCard status={`${enabledSourcesCount}`} title={t("calendarSources")}>
       <div className="space-y-4">
-        {setupState === "ready" ? (
-          <div className={`cloud-mode-card ${isCalendarMilestoneCelebrating ? `cloud-mode-card--celebrating cloud-mode-card--stage-${calendarMilestoneStage}` : "cloud-mode-card--local"}`}>
-            <div className="cloud-mode-card__shine" />
-            <div className="relative flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">{isCalendarMilestoneCelebrating ? t("calendarSources") : enabledSourcesCount ? text.connected : text.ready}</p>
-                <h3 className="mt-1 text-xl font-black tracking-tight text-stone-950">{isCalendarMilestoneCelebrating ? calendarMilestoneStageCopy : enabledSourcesCount ? t("calendarAutoUpdating") : t("calendarEmptyState")}</h3>
-              </div>
-              <StatusChip tone={isCalendarMilestoneCelebrating && calendarMilestoneStage >= 3 ? "emerald" : enabledSourcesCount ? "emerald" : "amber"}>{isCalendarMilestoneCelebrating && calendarMilestoneStage >= 3 ? text.syncedOk : enabledSourcesCount ? text.connected : text.ready}</StatusChip>
-            </div>
-            <p className="relative mt-2 text-sm font-semibold leading-6 text-stone-700">{isCalendarMilestoneCelebrating ? calendarMilestoneBody : enabledSourcesCount ? `${enabledSourcesCount} ${text.activeSource}` : t("calendarProviderSoon")}</p>
-            {isCalendarMilestoneCelebrating ? (
-              <div className="cloud-milestone-stage" aria-live="polite">
-                <div className="cloud-connection-path" aria-hidden="true">
-                  <span>{text.connectedCalendar}</span>
-                  <i />
-                  <i />
-                  <i />
-                  <span>{text.homeBoardAgenda}</span>
-                </div>
-                <ol className="cloud-milestone-steps">
-                  {calendarMilestoneSteps.map((step, index) => (
-                    <li className={index <= calendarMilestoneStage ? "cloud-milestone-step cloud-milestone-step--active" : "cloud-milestone-step"} key={step}>
-                      <span />
-                      {step}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {setupState === "ready" && !sources.length ? <p className="text-sm font-semibold leading-6 text-stone-600">{t("calendarEmptyState")}</p> : null}
+        <p className="text-sm font-semibold leading-6 text-stone-600">{enabledSourcesCount === 0 ? (language === "sv" ? "Inga aktiva kalendrar" : "No active calendar sources") : enabledSourcesCount === 1 ? (language === "sv" ? "1 aktiv kalender" : "1 active calendar source") : (language === "sv" ? `${enabledSourcesCount} aktiva kalendrar` : `${enabledSourcesCount} active calendar sources`)}</p>
         <div className="flex flex-wrap gap-2">
           {setupState === "ready" ? <button className="pressable rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-900 shadow-sm disabled:opacity-60" disabled={controlsDisabled} onClick={() => setShowAdd((prev) => !prev)} type="button">{showAdd ? t("cancel") : t("calendarAdd")}</button> : null}
-          {setupState === "ready" && sources.length > 1 ? <button className="pressable rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-900 shadow-sm disabled:opacity-60" disabled={controlsDisabled} onClick={handleSyncAll} type="button">{isWaterfallRunning ? t("calendarSyncing") : t("calendarSyncAll")}</button> : null}
         </div>
         {syncError ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{t(syncError)}</p> : null}
         {removeFeedback ? <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{removeFeedback}</p> : null}

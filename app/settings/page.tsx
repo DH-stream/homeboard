@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
-import { CloudStatusSettings } from "@/components/settings/CloudStatusSettings";
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
@@ -29,7 +28,7 @@ export default function SettingsPage() {
   const { household } = useHousehold();
   const hasHouseholdSettings = canManageHouseholdSettings(deviceProfile, hasAdultAccess);
   const hasDeviceLocalSettings = canManageDeviceLocalSettings(deviceProfile);
-  const canShowWallTaskCreatorSettings = hasDeviceLocalSettings || hasHouseholdSettings;
+  const canShowWallTaskCreatorSettings = deviceProfile === "wall";
   const showWallLimitedNotice = deviceProfile === "wall" && !hasHouseholdSettings;
 
   useEffect(() => {
@@ -91,14 +90,6 @@ export default function SettingsPage() {
           </div>
         ) : null}
 
-        <SettingsSection
-          description={language === "sv" ? "Se om hemmet är synkat i molnet eller bara används på den här enheten." : "See whether your home is synced in cloud or used only on this device."}
-          eyebrow={language === "sv" ? "Synk" : "Sync"}
-          title={language === "sv" ? "Moln & synk" : "Cloud & sync"}
-        >
-          <CloudStatusSettings />
-        </SettingsSection>
-
         {hasHouseholdSettings ? (
           <SettingsSection
             description={language === "sv" ? "Hantera familjens hem, medlemmar och enheter." : "Manage your family home, members, and connected devices."}
@@ -106,8 +97,8 @@ export default function SettingsPage() {
             title={language === "sv" ? "Hem" : "Home"}
           >
             <HouseholdSettings />
-            <MembersSettings />
             <DevicesSettings />
+            <MembersSettings />
           </SettingsSection>
         ) : null}
 
@@ -135,19 +126,7 @@ export default function SettingsPage() {
             title={language === "sv" ? "Integrationer" : "Integrations"}
           >
             <SettingsCard status={t("planned")} title={t("homeAssistantIntegration")}><p>{t("homeAssistantIntegrationCopy")}</p></SettingsCard>
-            <SettingsCard status={t("planned")} title={t("runaiApiTokens")}><p>{t("runaiApiTokensCopy")}</p></SettingsCard>
-          </SettingsSection>
-        ) : null}
-
-        {deviceProfile !== "wall" ? (
-          <SettingsSection
-            description={language === "sv" ? "Teknisk information för felsökning och utveckling." : "Technical information for troubleshooting and development."}
-            title={language === "sv" ? "Tekniskt" : "Technical"}
-          >
-            <SettingsCard status={t("localPreview")} title={language === "sv" ? "Förhandsläge" : "Preview mode"}>
-              <p>{language === "sv" ? "HomeBoard använder lokal lagring i förhandsläget. Delning mellan enheter kräver molnsynk." : "HomeBoard uses local storage in preview mode. Sharing across devices requires cloud sync."}</p>
-            </SettingsCard>
-          </SettingsSection>
+                      </SettingsSection>
         ) : null}
       </div>
     </AppShell>
