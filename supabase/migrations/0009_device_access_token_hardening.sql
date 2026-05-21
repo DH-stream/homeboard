@@ -1,5 +1,21 @@
 create extension if not exists pgcrypto;
 
+create or replace function public.is_household_adult(p_household_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.household_members hm
+    where hm.household_id = p_household_id
+      and hm.user_id = auth.uid()
+      and hm.role = 'adult'
+  );
+$$;
+
 drop function if exists public.device_get_household_summary(uuid, uuid, text);
 drop function if exists public.device_list_completed_task_days(uuid, uuid, text);
 drop function if exists public.device_upsert_completed_task_day(uuid, date, integer, integer, uuid, text);
@@ -131,58 +147,124 @@ drop policy if exists "deny all pairing sessions" on public.device_pairing_sessi
 create policy "deny all pairing sessions" on public.device_pairing_sessions for all to anon, authenticated using (false) with check (false);
 
 create or replace function public.device_get(p_device_id uuid)
-returns setof public.devices
+returns table (
+  id uuid,
+  household_id uuid,
+  name text,
+  mode text,
+  last_seen_at timestamptz,
+  paired_at timestamptz,
+  paired_by_user_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz
+)
 language sql
 security definer
 set search_path = public
 stable
 as $$
-  select d.* from public.devices d where d.id = p_device_id;
+  select d.id, d.household_id, d.name, d.mode, d.last_seen_at, d.paired_at, d.paired_by_user_id, d.created_at, d.updated_at
+  from public.devices d
+  where d.id = p_device_id
+    and d.household_id is not null
+    and public.is_household_adult(d.household_id);
 $$;
 revoke all on function public.device_get(uuid) from public;
-grant execute on function public.device_get(uuid) to anon, authenticated;
+grant execute on function public.device_get(uuid) to authenticated;
 
 create or replace function public.device_list_household_devices(p_household_id uuid)
-returns setof public.devices
+returns table (
+  id uuid,
+  household_id uuid,
+  name text,
+  mode text,
+  last_seen_at timestamptz,
+  paired_at timestamptz,
+  paired_by_user_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz
+)
 language sql security definer set search_path = public stable
 as $$
-  select d.* from public.devices d where d.household_id = p_household_id order by d.updated_at desc;
+  select d.id, d.household_id, d.name, d.mode, d.last_seen_at, d.paired_at, d.paired_by_user_id, d.created_at, d.updated_at
+  from public.devices d
+  where d.household_id = p_household_id
+    and public.is_household_adult(p_household_id)
+  order by d.updated_at desc;
 $$;
 revoke all on function public.device_list_household_devices(uuid) from public;
-grant execute on function public.device_list_household_devices(uuid) to anon, authenticated;
+grant execute on function public.device_list_household_devices(uuid) to authenticated;
 
 create or replace function public.device_update_name(p_device_id uuid, p_name text)
-returns setof public.devices
+returns table (
+  id uuid,
+  household_id uuid,
+  name text,
+  mode text,
+  last_seen_at timestamptz,
+  paired_at timestamptz,
+  paired_by_user_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz
+)
 language plpgsql security definer set search_path = public
 as $$
+declare v_household_id uuid;
 begin
+  select d.household_id into v_household_id from public.devices d where d.id = p_device_id;
+  if v_household_id is not null and not public.is_household_adult(v_household_id) then
+    raise exception 'adult access required';
+  end if;
+
   update public.devices
   set name = left(trim(p_name), 40), updated_at = now()
   where id = p_device_id;
-  return query select d.* from public.devices d where d.id = p_device_id;
+  return query
+  select d.id, d.household_id, d.name, d.mode, d.last_seen_at, d.paired_at, d.paired_by_user_id, d.created_at, d.updated_at
+  from public.devices d
+  where d.id = p_device_id;
 end;
 $$;
 revoke all on function public.device_update_name(uuid, text) from public;
 grant execute on function public.device_update_name(uuid, text) to anon, authenticated;
 
-create or replace function public.device_unlink_from_household(p_device_id uuid)
-returns setof public.devices
+drop function if exists public.device_unlink_from_household(uuid);
+
+create or replace function public.device_unlink_from_household(p_household_id uuid, p_device_id uuid)
+returns table (
+  id uuid,
+  household_id uuid,
+  name text,
+  mode text,
+  last_seen_at timestamptz,
+  paired_at timestamptz,
+  paired_by_user_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz
+)
 language plpgsql security definer set search_path = public
 as $$
 begin
+  if not public.is_household_adult(p_household_id) then
+    raise exception 'adult access required';
+  end if;
+
   update public.devices
   set household_id = null, paired_at = null, access_token_hash = null, updated_at = now()
-  where id = p_device_id;
+  where id = p_device_id and household_id = p_household_id;
 
   update public.device_pairing_sessions
   set status = 'expired', updated_at = now()
   where device_id = p_device_id and status = 'pending';
 
-  return query select d.* from public.devices d where d.id = p_device_id;
+  return query
+  select d.id, d.household_id, d.name, d.mode, d.last_seen_at, d.paired_at, d.paired_by_user_id, d.created_at, d.updated_at
+  from public.devices d
+  where d.id = p_device_id;
 end;
 $$;
-revoke all on function public.device_unlink_from_household(uuid) from public;
-grant execute on function public.device_unlink_from_household(uuid) to anon, authenticated;
+revoke all on function public.device_unlink_from_household(uuid, uuid) from public;
+grant execute on function public.device_unlink_from_household(uuid, uuid) to authenticated;
 
 create or replace function public.device_get_pairing_session(p_pairing_code text)
 returns setof public.device_pairing_sessions
@@ -203,6 +285,16 @@ language plpgsql security definer set search_path = public
 as $$
 declare v_session public.device_pairing_sessions%rowtype;
 begin
+  if not public.is_household_adult(p_household_id) then
+    raise exception 'adult access required';
+  end if;
+
+  if p_member_id is not null and not exists (
+    select 1 from public.household_members hm where hm.id = p_member_id and hm.household_id = p_household_id
+  ) then
+    raise exception 'member does not belong to household';
+  end if;
+
   select * into v_session
   from public.device_pairing_sessions
   where pairing_code = upper(trim(p_pairing_code))
@@ -227,7 +319,7 @@ begin
 end;
 $$;
 revoke all on function public.device_claim_pairing_session(text, uuid, uuid) from public;
-grant execute on function public.device_claim_pairing_session(text, uuid, uuid) to anon, authenticated;
+grant execute on function public.device_claim_pairing_session(text, uuid, uuid) to authenticated;
 
 create or replace function public.device_create_pairing_session(
   p_device_name text,

@@ -30,7 +30,7 @@ function mapDevice(row: DeviceRow): Device {
 export interface DeviceRepository {
   listDevices(householdId?: string | null): Promise<Device[]>;
   updateDeviceName(deviceId: string, name: string): Promise<Device>;
-  unlinkDeviceFromHousehold(deviceId: string): Promise<Device>;
+  unlinkDeviceFromHousehold(householdId: string, deviceId: string): Promise<Device>;
   getDevice(deviceId: string): Promise<Device | null>;
 }
 
@@ -51,17 +51,19 @@ export class SupabaseDeviceRepository implements DeviceRepository {
     const { data, error } = await this.client.rpc("device_update_name", { p_device_id: deviceId, p_name: name });
 
     if (error) throw error;
-    return mapDevice(data as DeviceRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    return mapDevice(row as DeviceRow);
   }
 
-  async unlinkDeviceFromHousehold(deviceId: string) {
+  async unlinkDeviceFromHousehold(householdId: string, deviceId: string) {
     if (!this.client) throw new Error("Supabase client unavailable");
 
-    const { data, error } = await this.client.rpc("device_unlink_from_household", { p_device_id: deviceId });
+    const { data, error } = await this.client.rpc("device_unlink_from_household", { p_household_id: householdId, p_device_id: deviceId });
 
     if (error) throw error;
 
-    return mapDevice(data as DeviceRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    return mapDevice(row as DeviceRow);
   }
 
   async getDevice(deviceId: string) {
@@ -70,8 +72,9 @@ export class SupabaseDeviceRepository implements DeviceRepository {
     const { data, error } = await this.client.rpc("device_get", { p_device_id: deviceId });
 
     if (error) throw error;
-    if (!data) return null;
-    return mapDevice(data as DeviceRow);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+    return mapDevice(row as DeviceRow);
   }
 }
 

@@ -23,26 +23,6 @@ function getJoinedDevice(row: DevicePairingSessionRow): JoinedDevice | null {
   return joined ?? null;
 }
 
-const PAIRING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const PAIRING_CODE_LENGTH = 6;
-const PAIRING_CODE_CREATE_ATTEMPTS = 3;
-const PAIRING_TTL_MINUTES = 2;
-
-const DEFAULT_DEVICE_NAMES = new Set(["Väggskärm", "Mobil"]);
-
-function shouldReplaceDeviceName(name: string | null, fallbackName: string) {
-  const normalized = name?.trim() ?? "";
-  return !normalized || DEFAULT_DEVICE_NAMES.has(normalized) || normalized === fallbackName;
-}
-
-function createPairingCode() {
-  const cryptoApi = globalThis.crypto;
-  if (!cryptoApi?.getRandomValues) throw new Error("Secure random values are not available in this browser.");
-
-  const values = new Uint32Array(PAIRING_CODE_LENGTH);
-  cryptoApi.getRandomValues(values);
-  return Array.from(values, (value) => PAIRING_CODE_ALPHABET[value % PAIRING_CODE_ALPHABET.length]).join("");
-}
 
 function createDeviceAccessToken() {
   const cryptoApi = globalThis.crypto;
@@ -50,10 +30,6 @@ function createDeviceAccessToken() {
   const bytes = new Uint8Array(32);
   cryptoApi.getRandomValues(bytes);
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-function isPossibleDuplicateCodeError(error: unknown) {
-  return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "23505");
 }
 
 function mapPairingSession(row: DevicePairingSessionRow): DevicePairingSession {
@@ -111,7 +87,8 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
     const { data, error } = await this.client.rpc("device_get_pairing_session", { p_pairing_code: pairingCode.trim().toUpperCase() });
 
     if (error) throw error;
-    return data ? mapPairingSession(data as DevicePairingSessionRow) : null;
+    const row = Array.isArray(data) ? data[0] : data;
+    return row ? mapPairingSession(row as DevicePairingSessionRow) : null;
   }
 
   async claimPairingSession(pairingCode: string, householdId: string, memberId?: string) {

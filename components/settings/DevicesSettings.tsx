@@ -127,7 +127,8 @@ export function DevicesSettings() {
     setRemovingId(deviceId);
     setDevices((current) => current.filter((device) => device.id !== deviceId));
     try {
-      await service.unlinkDeviceFromHousehold(deviceId);
+      if (!householdId) throw new Error("Household required");
+      await service.unlinkDeviceFromHousehold(householdId, deviceId);
     } catch {
       setDevices(previous);
       setRemoveError(t.removeError);
