@@ -30,6 +30,9 @@ export default function SettingsPage() {
   const hasDeviceLocalSettings = canManageDeviceLocalSettings(deviceProfile);
   const canShowWallTaskCreatorSettings = deviceProfile === "wall";
   const showWallLimitedNotice = deviceProfile === "wall" && !hasHouseholdSettings;
+  const notificationsCopy = language === "sv"
+    ? { title: "Notiser", status: "Kommer snart", action: "Aktivera notiser" }
+    : { title: "Notifications", status: "Coming soon", action: "Enable notifications" };
 
   useEffect(() => {
     getOrCreateDeviceId();
@@ -69,6 +72,12 @@ export default function SettingsPage() {
             </div>
           </SettingsCard>
           <DeviceStartViewSettings onProfileChange={setDeviceProfileState} />
+          <SettingsCard status={notificationsCopy.status} title={notificationsCopy.title}>
+            <div className="flex items-center justify-between gap-2 rounded-2xl border border-stone-200/70 bg-stone-50/90 px-3 py-2">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-stone-500">{notificationsCopy.status}</p>
+              <button className="min-h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-[0.68rem] font-black text-stone-400 opacity-70" disabled type="button">{notificationsCopy.action}</button>
+            </div>
+          </SettingsCard>
           {showWallLimitedNotice ? (
             <p className="rounded-2xl border border-stone-200/80 bg-stone-50 px-4 py-3 text-sm font-semibold leading-6 text-stone-700 md:col-span-2">{language === "sv" ? "Du ändrar bara den här väggskärmen. Logga in som vuxen för hem, medlemmar och kopplade enheter." : "You’re only changing this wall screen. Sign in as an adult to manage the home, members, and connected devices."}</p>
           ) : null}
