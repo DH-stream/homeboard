@@ -74,6 +74,7 @@ export interface HouseholdRepository {
   createHouseholdMembers(householdId: string, members: CreateHouseholdMemberInput[]): Promise<HouseholdMember[]>;
   listHouseholdMembers(householdId: string): Promise<HouseholdMember[]>;
   updateHouseholdMember(memberId: string, patch: UpdateHouseholdMemberInput): Promise<HouseholdMember>;
+  updateHouseholdName(householdId: string, name: string): Promise<Household>;
 }
 
 export class SupabaseHouseholdRepository implements HouseholdRepository {
@@ -202,6 +203,24 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
 
     if (error) throw error;
     return mapHouseholdMember(data as HouseholdMemberRow);
+  }
+
+  async updateHouseholdName(householdId: string, name: string) {
+    if (!this.client) throw new Error("Supabase is not configured.");
+
+    const trimmedName = name.trim();
+    if (!trimmedName) throw new Error("household_name_required");
+
+    const { data, error } = await this.client.rpc("household_update_name", {
+      p_household_id: householdId,
+      p_name: trimmedName,
+    });
+
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("household_update_failed");
+
+    return mapHousehold(row as HouseholdRow);
   }
 
 }

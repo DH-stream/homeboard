@@ -47,7 +47,7 @@ function waitForMinimumSyncVisualDuration() {
 
 export function CalendarSourcesSettings() {
   const { language, t } = useLanguage();
-  const { sources, setupState, isLoading, isSyncing, syncError, addSourceAndSync, updateSourceEnabled, syncSource } = useCalendarSettings();
+  const { sources, setupState, isLoading, isSyncing, syncError, addSourceAndSync, updateSourceEnabled, removeSource, syncSource } = useCalendarSettings();
   const [showAdd, setShowAdd] = useState(false);
   const [provider, setProvider] = useState<ProviderChoice>("apple");
   const [name, setName] = useState("");
@@ -59,6 +59,9 @@ export function CalendarSourcesSettings() {
   const [isWaterfallRunning, setWaterfallRunning] = useState(false);
   const [isCalendarMilestoneCelebrating, setCalendarMilestoneCelebrating] = useState(false);
   const [calendarMilestoneStage, setCalendarMilestoneStage] = useState(0);
+  const [pendingRemovalSourceId, setPendingRemovalSourceId] = useState<string | null>(null);
+  const [isRemovingSourceId, setRemovingSourceId] = useState<string | null>(null);
+  const [removeFeedback, setRemoveFeedback] = useState<string | null>(null);
 
   const providerHelpByChoice = {
     apple: t("calendarProviderAppleHelp"),
@@ -86,6 +89,13 @@ export function CalendarSourcesSettings() {
     setupSubtitle: language === "sv" ? "Välj kalendern du använder. HomeBoard visar händelserna på väggen och i mobilen." : "Choose the calendar you use. HomeBoard will show events on the wall and mobile view.",
     syncedOk: language === "sv" ? "Kalendern fungerar" : "Calendar is working",
     working: language === "sv" ? "Hämtar kalendern…" : "Fetching calendar…",
+    removeCalendar: language === "sv" ? "Ta bort kalender" : "Remove calendar",
+    removeTitle: language === "sv" ? "Ta bort kalender?" : "Remove calendar?",
+    removeBody: language === "sv" ? "Den här kalendern tas bort från HomeBoard. Händelser från kalendern visas inte längre." : "This calendar will be removed from HomeBoard. Events from this calendar will no longer be shown.",
+    removeConfirm: language === "sv" ? "Ta bort" : "Remove",
+    removeCancel: language === "sv" ? "Avbryt" : "Cancel",
+    removeSuccess: language === "sv" ? "Kalendern togs bort." : "Calendar removed.",
+    removeError: language === "sv" ? "Kunde inte ta bort kalendern." : "Could not remove calendar.",
   };
   const calendarMilestoneTitle = language === "sv" ? "Kalendern är kopplad till HomeBoard" : "Calendar is connected to HomeBoard";
   const calendarMilestoneBody = language === "sv" ? "Familjens dagar hämtas nu automatiskt och visas på väggen och i mobilen." : "Your family days now update automatically and show on the wall and mobile view.";
@@ -161,6 +171,21 @@ export function CalendarSourcesSettings() {
     }
   }
 
+
+  async function handleRemoveSource(sourceId: string) {
+    setRemovingSourceId(sourceId);
+    setRemoveFeedback(null);
+    try {
+      await removeSource(sourceId);
+      setPendingRemovalSourceId(null);
+      setRemoveFeedback(text.removeSuccess);
+    } catch (error) {
+      console.warn("HomeBoard calendar source could not be removed.", error);
+      setRemoveFeedback(text.removeError);
+    } finally {
+      setRemovingSourceId(null);
+    }
+  }
   function getSyncVisualPhase(sourceId: string): SyncVisualPhase {
     if (activeSyncSourceId === sourceId) return "syncing";
     if (successSyncSourceIds.includes(sourceId)) return "success";
@@ -210,6 +235,7 @@ export function CalendarSourcesSettings() {
           {setupState === "ready" && sources.length > 1 ? <button className="pressable rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-900 shadow-sm disabled:opacity-60" disabled={controlsDisabled} onClick={handleSyncAll} type="button">{isWaterfallRunning ? t("calendarSyncing") : t("calendarSyncAll")}</button> : null}
         </div>
         {syncError ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{t(syncError)}</p> : null}
+        {removeFeedback ? <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{removeFeedback}</p> : null}
         {sources.map((source: CalendarSource) => {
           const syncVisualPhase = getSyncVisualPhase(source.id);
           const sourceIsSyncing = syncVisualPhase === "syncing";
@@ -242,8 +268,19 @@ export function CalendarSourcesSettings() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button className="pressable rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-black text-stone-800 shadow-sm disabled:opacity-60" disabled={controlsDisabled} onClick={() => handleSyncSource(source.id)} type="button">{sourceIsSyncing ? t("calendarSyncing") : t("calendarSyncNow")}</button>
                   <button className="pressable rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-black text-stone-800 shadow-sm disabled:opacity-60" disabled={controlsDisabled} onClick={() => updateSourceEnabled(source.id, !source.enabled)} type="button">{source.enabled ? t("calendarDisable") : t("calendarEnable")}</button>
+                  <button className="pressable rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-800 shadow-sm disabled:opacity-60" disabled={controlsDisabled || isRemovingSourceId === source.id} onClick={() => setPendingRemovalSourceId(source.id)} type="button">{text.removeCalendar}</button>
                 </div>
               </div>
+                {pendingRemovalSourceId === source.id ? (
+                  <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 p-3">
+                    <p className="text-sm font-black text-rose-900">{text.removeTitle}</p>
+                    <p className="mt-1 text-xs font-semibold text-rose-800">{text.removeBody}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button className="pressable rounded-xl bg-rose-700 px-3 py-2 text-xs font-black text-white disabled:opacity-60" disabled={isRemovingSourceId === source.id} onClick={() => handleRemoveSource(source.id)} type="button">{isRemovingSourceId === source.id ? t("calendarSyncing") : text.removeConfirm}</button>
+                      <button className="pressable rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-black text-stone-800" disabled={isRemovingSourceId === source.id} onClick={() => setPendingRemovalSourceId(null)} type="button">{text.removeCancel}</button>
+                    </div>
+                  </div>
+                ) : null}
             </div>
           );
         })}

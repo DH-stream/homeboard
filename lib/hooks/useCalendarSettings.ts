@@ -5,7 +5,6 @@ import { calendarRepository } from "@/lib/repositories/calendarRepository";
 import { createCalendarService } from "@/lib/services/calendarService";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getParentAccessToken } from "@/lib/auth/parentAuth";
 import type { CalendarConnection, CalendarSource } from "@/types";
 
@@ -49,35 +48,22 @@ export function useCalendarSettings() {
     return updated;
   }, [refresh]);
 
+  const removeSource = useCallback(async (sourceId: string) => {
+    await service.removeSource(sourceId);
+    await refresh();
+  }, [refresh]);
+
   const addIcsSource = useCallback(async (name: string, syncUrl: string, color: string, enabled: boolean) => {
     const trimmedName = name.trim();
     const trimmedUrl = syncUrl.trim();
     if (!trimmedName || !trimmedUrl) throw new Error("missing_calendar_fields");
     if (!isSupportedCalendarUrl(trimmedUrl)) throw new Error("invalid_calendar_url");
+    if (!householdId) throw new Error("missing_client");
 
-    const client = createBrowserSupabaseClient();
-    if (!client || !householdId) throw new Error("missing_client");
-    let connectionId = connections.find((connection) => connection.provider === "ics")?.id;
-    if (!connectionId) {
-      const { data: connection, error: connectionError } = await client
-        .from("calendar_connections")
-        .insert({ household_id: householdId, provider: "ics", account_label: "Calendar link", status: "connected" })
-        .select("id")
-        .single();
-      if (connectionError) throw connectionError;
-      connectionId = connection?.id;
-    }
-    if (!connectionId) throw new Error("missing_calendar_connection");
-
-    const { data: source, error: sourceError } = await client
-      .from("calendar_sources")
-      .insert({ household_id: householdId, connection_id: connectionId, provider_calendar_id: `ics:${Date.now()}`, name: trimmedName, color, enabled, sync_url: trimmedUrl })
-      .select("id")
-      .single();
-    if (sourceError) throw sourceError;
+    const source = await service.createIcsSource(householdId, trimmedName, trimmedUrl, color, enabled);
     await refresh();
-    return source?.id as string | undefined;
-  }, [connections, householdId, refresh]);
+    return source.id;
+  }, [householdId, refresh]);
 
   const syncSource = useCallback(async (sourceId: string) => {
     const token = await getParentAccessToken();
@@ -148,5 +134,5 @@ export function useCalendarSettings() {
     }
   }, [addIcsSource, refresh]);
 
-  return { connections, sources, householdId, isLoading, isSyncing, syncError, setupState, updateSourceEnabled, refresh, addIcsSource, addSourceAndSync, syncSource, syncAll };
+  return { connections, sources, householdId, isLoading, isSyncing, syncError, setupState, updateSourceEnabled, removeSource, refresh, addIcsSource, addSourceAndSync, syncSource, syncAll };
 }
