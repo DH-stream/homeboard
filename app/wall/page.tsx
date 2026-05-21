@@ -349,7 +349,7 @@ export default function WallPage() {
     saveDeviceStartView({ mode: "wall", route: "/wall" });
   }, []);
 
-  if (!householdId && !useLocalWall && isCloudConfigured()) {
+  if (isSetupMode || (!householdId && !useLocalWall && isCloudConfigured())) {
     return (
       <WallPairingCard
         onPaired={finishPairing}
@@ -362,6 +362,7 @@ export default function WallPage() {
           saveDeviceStartView({ mode: "wall", route: "/wall" });
           enableLocalOnlyMode();
           setUseLocalWall(true);
+          router.replace("/wall");
         }}
       />
     );
