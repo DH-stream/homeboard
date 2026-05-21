@@ -469,7 +469,7 @@ export default function WallPage() {
                   variant="panel"
                 />
               ) : null}
-              <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
+              <div className="smooth-scroll-surface mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
                 {allVisibleTasksDone ? (
                   <EmptyState title={allDoneTitle}>{allDoneBody}</EmptyState>
                 ) : (
