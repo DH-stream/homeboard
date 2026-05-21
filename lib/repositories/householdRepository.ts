@@ -100,6 +100,7 @@ export class SupabaseHouseholdRepository implements HouseholdRepository {
         p_household_id: householdId,
         p_cloud_device_id: deviceAccess.cloudDeviceId,
         p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
       });
       if (error) throw error;
 

@@ -1,4 +1,4 @@
-import { getPersistedCloudDeviceId, setPersistedCloudDeviceId } from "@/lib/devices/deviceIdentity";
+import { getPersistedCloudDeviceId, setPersistedCloudDeviceId, setPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { CreateDevicePairingSessionInput, Device, DevicePairingSession, DevicePairingSessionStatus } from "@/types";
 
@@ -13,6 +13,7 @@ type DeviceRow = {
   updated_at: string;
   paired_by_user_id: string | null;
   local_device_id: string | null;
+  access_token_hash: string | null;
 };
 
 type DevicePairingSessionRow = {
@@ -57,6 +58,14 @@ function createPairingCode() {
   return Array.from(values, (value) => PAIRING_CODE_ALPHABET[value % PAIRING_CODE_ALPHABET.length]).join("");
 }
 
+function createDeviceAccessToken() {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.getRandomValues) throw new Error("Secure random values are not available in this browser.");
+  const bytes = new Uint8Array(32);
+  cryptoApi.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function isPossibleDuplicateCodeError(error: unknown) {
   return Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "23505");
 }
@@ -94,7 +103,11 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
 
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + PAIRING_TTL_MINUTES * 60 * 1000).toISOString();
-    const selectDeviceColumns = "id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, local_device_id, created_at, updated_at";
+    const selectDeviceColumns = "id, household_id, name, mode, last_seen_at, paired_at, paired_by_user_id, local_device_id, access_token_hash, created_at, updated_at";
+    const rawAccessToken = createDeviceAccessToken();
+    const { data: tokenHashData, error: tokenHashError } = await this.client.rpc("device_hash_access_token", { p_access_token: rawAccessToken });
+    if (tokenHashError) throw tokenHashError;
+    if (typeof tokenHashData !== "string" || !tokenHashData) throw new Error("Could not create device token hash.");
 
     const resolvedPersistedId = input.persistedDeviceId ?? getPersistedCloudDeviceId();
     let device: DeviceRow | null = null;
@@ -125,6 +138,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
           updated_at: now,
           mode: input.mode,
           ...(shouldReplaceDeviceName(device.name, input.deviceName) ? { name: input.deviceName } : {}),
+          access_token_hash: tokenHashData,
         })
         .eq("id", device.id)
         .select(selectDeviceColumns)
@@ -134,7 +148,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
     } else {
       const { data: createdDevice, error: deviceError } = await this.client
         .from("devices")
-        .insert({ name: input.deviceName, mode: input.mode, last_seen_at: now, local_device_id: input.localDeviceId })
+        .insert({ name: input.deviceName, mode: input.mode, last_seen_at: now, local_device_id: input.localDeviceId, access_token_hash: tokenHashData })
         .select(selectDeviceColumns)
         .single();
       if (deviceError) throw deviceError;
@@ -142,6 +156,7 @@ export class SupabaseDevicePairingRepository implements DevicePairingRepository 
     }
 
     setPersistedCloudDeviceId(device.id);
+    setPersistedDeviceAccessToken(rawAccessToken);
 
     let lastError: unknown = null;
     for (let attempt = 0; attempt < PAIRING_CODE_CREATE_ATTEMPTS; attempt += 1) {

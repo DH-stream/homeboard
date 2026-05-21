@@ -54,6 +54,7 @@ export function createStreakRepository() {
             p_household_id: householdId,
             p_cloud_device_id: deviceAccess.cloudDeviceId,
             p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
           });
           if (error) throw error;
           return (data ?? []) as TaskDayStatusRow[];
@@ -101,6 +102,7 @@ export function createStreakRepository() {
             p_required_task_count: requiredTaskCount,
             p_cloud_device_id: deviceAccess.cloudDeviceId,
             p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
           });
           if (error) throw error;
           return true;

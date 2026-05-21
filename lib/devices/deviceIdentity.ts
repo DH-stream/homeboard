@@ -9,6 +9,7 @@ const DEVICE_ID_STORAGE_KEY = "homeboard.deviceId.v1";
 const DEVICE_CREATED_AT_STORAGE_KEY = "homeboard.deviceCreatedAt.v1";
 const DEVICE_ID_PREFIX = "device";
 const CLOUD_DEVICE_ID_STORAGE_KEY = "homeboard.cloudDeviceId.v1";
+const DEVICE_ACCESS_TOKEN_STORAGE_KEY = "homeboard.deviceAccessToken.v1";
 
 function createDeviceId() {
   const cryptoApi = globalThis.crypto;
@@ -65,6 +66,22 @@ export function clearPersistedCloudDeviceId() {
   window.localStorage.removeItem(CLOUD_DEVICE_ID_STORAGE_KEY);
 }
 
+export function getPersistedDeviceAccessToken() {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(DEVICE_ACCESS_TOKEN_STORAGE_KEY)?.trim() || null;
+}
+
+export function setPersistedDeviceAccessToken(token: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(DEVICE_ACCESS_TOKEN_STORAGE_KEY, token);
+}
+
+export function clearPersistedDeviceAccessToken() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(DEVICE_ACCESS_TOKEN_STORAGE_KEY);
+}
+
 export function resetCurrentCloudDeviceIdentity() {
   clearPersistedCloudDeviceId();
+  clearPersistedDeviceAccessToken();
 }
