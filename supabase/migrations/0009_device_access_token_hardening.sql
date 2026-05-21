@@ -335,13 +335,23 @@ declare
   v_device public.devices%rowtype;
   v_session public.device_pairing_sessions%rowtype;
   v_code text;
+  i integer;
 begin
   if p_persisted_device_id is not null then
-    select * into v_device from public.devices where id = p_persisted_device_id;
+    select * into v_device
+    from public.devices
+    where id = p_persisted_device_id
+      and household_id is null
+      and paired_at is null;
   end if;
 
   if v_device.id is null then
-    select * into v_device from public.devices where local_device_id = p_local_device_id limit 1;
+    select * into v_device
+    from public.devices
+    where local_device_id = p_local_device_id
+      and household_id is null
+      and paired_at is null
+    limit 1;
   end if;
 
   if v_device.id is null then
@@ -360,10 +370,20 @@ begin
     returning * into v_device;
   end if;
 
-  v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
-  insert into public.device_pairing_sessions(device_id, pairing_code, status, expires_at)
-  values (v_device.id, v_code, 'pending', now() + interval '2 minutes')
-  returning * into v_session;
+  for i in 1..5 loop
+    v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
+    begin
+      insert into public.device_pairing_sessions(device_id, pairing_code, status, expires_at)
+      values (v_device.id, v_code, 'pending', now() + interval '2 minutes')
+      returning * into v_session;
+      exit;
+    exception
+      when unique_violation then
+        if i = 5 then
+          raise;
+        end if;
+    end;
+  end loop;
 
   return query select s.* from public.device_pairing_sessions s where s.id = v_session.id;
 end;
