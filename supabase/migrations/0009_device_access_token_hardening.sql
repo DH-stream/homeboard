@@ -355,7 +355,18 @@ create or replace function public.device_create_pairing_session(
   p_persisted_device_id uuid,
   p_access_token text
 )
-returns setof public.device_pairing_sessions
+returns table (
+  id uuid,
+  device_id uuid,
+  pairing_code text,
+  status text,
+  expires_at timestamptz,
+  household_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz,
+  device_mode text,
+  device_name text
+)
 language plpgsql security definer set search_path = public
 as $$
 declare
