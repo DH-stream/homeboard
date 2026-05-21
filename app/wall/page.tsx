@@ -22,6 +22,8 @@ import { resetThisDeviceLocally } from "@/lib/devices/resetLocalDevice";
 import {
   enableLocalOnlyMode,
   getLocalSelectedHouseholdId,
+  isLocalOnlyModeEnabled,
+  LOCAL_ONLY_MODE_CHANGED_EVENT,
   saveSelectedHouseholdId,
 } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
@@ -82,7 +84,10 @@ function getWallStreakPreviewOverride() {
 
 export default function WallPage() {
   const router = useRouter();
-  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isSetupMode, setIsSetupMode] = useState(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("setup") === "1",
+  );
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
   const { householdId } = useResolvedHouseholdId();
@@ -109,14 +114,25 @@ export default function WallPage() {
     useState<WallTaskCreatorMode | null>(null);
   const [isQuickCreatorOpen, setQuickCreatorOpen] = useState(false);
   const [isQuickCreatorMounted, setQuickCreatorMounted] = useState(false);
-  const [useLocalWall, setUseLocalWall] = useState(false);
+  const [useLocalWall, setUseLocalWall] = useState(() =>
+    isLocalOnlyModeEnabled(),
+  );
   const [streakPreviewOverride] = useState(() =>
     getWallStreakPreviewOverride(),
   );
   const quickCreatorTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setIsSetupMode(new URLSearchParams(window.location.search).get("setup") === "1");
+    const syncLocalOnlyMode = () => setUseLocalWall(isLocalOnlyModeEnabled());
+
+    syncLocalOnlyMode();
+    window.addEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, syncLocalOnlyMode);
+    window.addEventListener("storage", syncLocalOnlyMode);
+
+    return () => {
+      window.removeEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, syncLocalOnlyMode);
+      window.removeEventListener("storage", syncLocalOnlyMode);
+    };
   }, []);
 
   const todayTasks = useMemo(
@@ -333,16 +349,20 @@ export default function WallPage() {
     saveDeviceStartView({ mode: "wall", route: "/wall" });
   }, []);
 
-  if (!householdId && !useLocalWall && isCloudConfigured()) {
+  if (isSetupMode || (!householdId && !useLocalWall && isCloudConfigured())) {
     return (
       <WallPairingCard
         onPaired={finishPairing}
-        onBack={isSetupMode ? () => { resetDeviceStartView(); router.replace("/?choose=1"); } : undefined}
+        onBack={isSetupMode ? () => {
+          resetDeviceStartView();
+          router.replace("/?choose=1");
+        } : undefined}
         onUseLocal={() => {
           void signOutParentLocally();
           saveDeviceStartView({ mode: "wall", route: "/wall" });
           enableLocalOnlyMode();
           setUseLocalWall(true);
+          router.replace("/wall");
         }}
       />
     );

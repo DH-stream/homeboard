@@ -264,8 +264,8 @@ export default function HomePage() {
       return;
     }
 
+    saveDeviceStartView(startView);
     const isDirectlyFinalizingMode = startView.mode === "admin";
-    if (isDirectlyFinalizingMode) saveDeviceStartView(startView);
     setPendingFirstRunReveal(revealRouteByMode[startView.mode]);
     setSelectedStartView(startView);
 

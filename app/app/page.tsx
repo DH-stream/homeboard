@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TodayAgenda } from "@/components/calendar/TodayAgenda";
-import { HouseholdSetupGate } from "@/components/households/HouseholdSetupGate";
 import { AppShell } from "@/components/layout/AppShell";
 import { MemberFilterPills } from "@/components/members/MemberFilterPills";
 import { WallPairingCard } from "@/components/pairing/WallPairingCard";
@@ -17,7 +16,12 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { consumePendingFirstRunReveal, hasPendingFirstRunReveal } from "@/lib/firstRunReveal";
 import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { isCloudConfigured } from "@/lib/cloud/config";
-import { enableLocalOnlyMode, saveSelectedHouseholdId } from "@/lib/households/selection";
+import {
+  enableLocalOnlyMode,
+  isLocalOnlyModeEnabled,
+  LOCAL_ONLY_MODE_CHANGED_EVENT,
+  saveSelectedHouseholdId,
+} from "@/lib/households/selection";
 import { shouldShowDebugNavigation } from "@/lib/devicePreferences";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useMembers } from "@/lib/hooks/useMembers";
@@ -44,7 +48,10 @@ function getFirstCreatedTaskId(created: unknown) {
 
 export default function MobileAppPage() {
   const router = useRouter();
-  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [isSetupMode, setIsSetupMode] = useState(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("setup") === "1",
+  );
   const { getCompletionEncouragement, language, t } = useLanguage();
   const { members } = useMembers();
   const { householdId } = useResolvedHouseholdId();
@@ -58,7 +65,9 @@ export default function MobileAppPage() {
   const [createSuccessMessage, setCreateSuccessMessage] = useState<string | null>(null);
   const [recentlyCreatedTaskId, setRecentlyCreatedTaskId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
-  const [useLocalMobile, setUseLocalMobile] = useState(false);
+  const [useLocalMobile, setUseLocalMobile] = useState(() =>
+    isLocalOnlyModeEnabled(),
+  );
   const showDebugNavigation = shouldShowDebugNavigation();
 
   useEffect(() => {
@@ -71,8 +80,16 @@ export default function MobileAppPage() {
   }, []);
 
   useEffect(() => {
-    const setupMode = new URLSearchParams(window.location.search).get("setup") === "1";
-    setIsSetupMode(setupMode);
+    const syncLocalOnlyMode = () => setUseLocalMobile(isLocalOnlyModeEnabled());
+
+    syncLocalOnlyMode();
+    window.addEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, syncLocalOnlyMode);
+    window.addEventListener("storage", syncLocalOnlyMode);
+
+    return () => {
+      window.removeEventListener(LOCAL_ONLY_MODE_CHANGED_EVENT, syncLocalOnlyMode);
+      window.removeEventListener("storage", syncLocalOnlyMode);
+    };
   }, []);
 
   const todayTasks = useMemo(() => tasks.filter((task) => shouldShowTodayTask(task, now)), [now, tasks]);
@@ -190,35 +207,34 @@ export default function MobileAppPage() {
     completed: t("filtersCompleted"),
   };
 
-  if (isSetupMode) {
-    if (!householdId && !useLocalMobile && isCloudConfigured()) {
-      return (
-        <WallPairingCard
-          targetMode="mobile"
-          onBack={() => { resetDeviceStartView(); router.replace("/?choose=1"); }}
-          onPaired={(nextHouseholdId) => {
-            saveSelectedHouseholdId(nextHouseholdId);
-            saveDeviceStartView({ mode: "mobile", route: "/app" });
-            setIsSetupMode(false);
-            router.replace("/app");
-          }}
-          onUseLocal={() => {
-            saveDeviceStartView({ mode: "mobile", route: "/app" });
-            enableLocalOnlyMode();
-            setUseLocalMobile(true);
-            setIsSetupMode(false);
-            router.replace("/app");
-          }}
-        />
-      );
-    }
-    router.replace("/app");
-    return null;
+  if (isSetupMode || (!householdId && !useLocalMobile && isCloudConfigured())) {
+    return (
+      <WallPairingCard
+        targetMode="mobile"
+        onBack={() => {
+          resetDeviceStartView();
+          router.replace("/?choose=1");
+        }}
+        onPaired={(nextHouseholdId) => {
+          saveSelectedHouseholdId(nextHouseholdId);
+          saveDeviceStartView({ mode: "mobile", route: "/app" });
+          setUseLocalMobile(false);
+          setIsSetupMode(false);
+          router.replace("/app");
+        }}
+        onUseLocal={() => {
+          saveDeviceStartView({ mode: "mobile", route: "/app" });
+          enableLocalOnlyMode();
+          setUseLocalMobile(true);
+          setIsSetupMode(false);
+          router.replace("/app");
+        }}
+      />
+    );
   }
 
   return (
     <AppShell eyebrow={t("appEyebrow")} revealActive={isFirstRunRevealActive} title={t("appTitle")}>
-      <HouseholdSetupGate>
       <section className={`mb-4 grid grid-cols-3 gap-2 sm:gap-3 ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-2" : ""}`}>
         <div className="surface-card min-w-0 rounded-[1.5rem] p-3 text-center sm:p-4">
           <p className="text-3xl font-black text-stone-950">{stats.total}</p>
@@ -315,7 +331,6 @@ export default function MobileAppPage() {
           </section>
         </div>
       ) : null}
-      </HouseholdSetupGate>
     </AppShell>
   );
 }
