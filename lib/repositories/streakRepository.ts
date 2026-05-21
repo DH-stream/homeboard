@@ -1,5 +1,7 @@
 import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
+import { clearPersistedCloudDeviceId, clearPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
+import { forgetSelectedCloudHouseholdOnThisDevice } from "@/lib/households/selection";
 import { getLocalDateKey } from "@/lib/tasks/streak";
 import type { TaskInstance } from "@/types";
 
@@ -41,6 +43,12 @@ function todayDateKey() {
   return getLocalDateKey(new Date());
 }
 
+function clearRevokedDeviceState() {
+  clearPersistedCloudDeviceId();
+  clearPersistedDeviceAccessToken();
+  forgetSelectedCloudHouseholdOnThisDevice();
+}
+
 export function createStreakRepository() {
   const supabase = createBrowserSupabaseClient();
   const canUseSupabase = isSupabaseConfigured() && Boolean(supabase);
@@ -56,7 +64,13 @@ export function createStreakRepository() {
             p_local_device_id: deviceAccess.localDeviceId,
         p_device_access_token: deviceAccess.accessToken,
           });
-          if (error) throw error;
+          if (error) {
+            if (String(error.message ?? "").includes("device is not linked to household")) {
+              clearRevokedDeviceState();
+              return [];
+            }
+            throw error;
+          }
           return (data ?? []) as TaskDayStatusRow[];
         }
 
@@ -104,7 +118,13 @@ export function createStreakRepository() {
             p_local_device_id: deviceAccess.localDeviceId,
         p_device_access_token: deviceAccess.accessToken,
           });
-          if (error) throw error;
+          if (error) {
+            if (String(error.message ?? "").includes("device is not linked to household")) {
+              clearRevokedDeviceState();
+              return false;
+            }
+            throw error;
+          }
           return true;
         }
 

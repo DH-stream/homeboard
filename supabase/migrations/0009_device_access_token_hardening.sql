@@ -292,7 +292,18 @@ revoke all on function public.device_get_pairing_session(text) from public;
 grant execute on function public.device_get_pairing_session(text) to anon, authenticated;
 
 create or replace function public.device_claim_pairing_session(p_pairing_code text, p_household_id uuid, p_member_id uuid)
-returns setof public.device_pairing_sessions
+returns table (
+  id uuid,
+  device_id uuid,
+  pairing_code text,
+  status text,
+  expires_at timestamptz,
+  household_id uuid,
+  created_at timestamptz,
+  updated_at timestamptz,
+  device_mode text,
+  device_name text
+)
 language plpgsql security definer set search_path = public
 as $$
 declare v_session public.device_pairing_sessions%rowtype;
@@ -327,7 +338,11 @@ begin
   set household_id = p_household_id, paired_at = now(), last_seen_at = now(), updated_at = now()
   where id = v_session.device_id;
 
-  return query select s.* from public.device_pairing_sessions s where s.id = v_session.id;
+  return query
+  select s.id, s.device_id, s.pairing_code, s.status, s.expires_at, s.household_id, s.created_at, s.updated_at, d.mode, d.name
+  from public.device_pairing_sessions s
+  join public.devices d on d.id = s.device_id
+  where s.id = v_session.id;
 end;
 $$;
 revoke all on function public.device_claim_pairing_session(text, uuid, uuid) from public;
@@ -397,7 +412,11 @@ begin
     end;
   end loop;
 
-  return query select s.* from public.device_pairing_sessions s where s.id = v_session.id;
+  return query
+  select s.id, s.device_id, s.pairing_code, s.status, s.expires_at, s.household_id, s.created_at, s.updated_at, d.mode, d.name
+  from public.device_pairing_sessions s
+  join public.devices d on d.id = s.device_id
+  where s.id = v_session.id;
 end;
 $$;
 revoke all on function public.device_create_pairing_session(text, text, text, uuid, text) from public;

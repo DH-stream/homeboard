@@ -12,12 +12,17 @@ type DevicePairingSessionRow = {
   household_id: string | null;
   created_at: string;
   updated_at: string;
+  device_mode?: Device["mode"];
+  device_name?: string;
   devices?: JoinedDevice | JoinedDevice[] | null;
 };
 
 type JoinedDevice = { mode: Device["mode"]; name: string };
 
 function getJoinedDevice(row: DevicePairingSessionRow): JoinedDevice | null {
+  if (row.device_mode || row.device_name) {
+    return { mode: row.device_mode ?? "wall", name: row.device_name ?? "" };
+  }
   const joined = row.devices;
   if (Array.isArray(joined)) return joined[0] ?? null;
   return joined ?? null;
