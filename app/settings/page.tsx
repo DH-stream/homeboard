@@ -33,6 +33,17 @@ export default function SettingsPage() {
   const notificationsCopy = language === "sv"
     ? { title: "Notiser", status: "Kommer snart", action: "Aktivera notiser" }
     : { title: "Notifications", status: "Coming soon", action: "Enable notifications" };
+  const homeSetupCopy = language === "sv"
+    ? {
+      status: "Endast på den här enheten",
+      body: "Skapa eller koppla ett hem för att synka uppgifter, kalender, medlemmar och väggskärmar.",
+      action: "Skapa eller koppla hem",
+    }
+    : {
+      status: "Local only",
+      body: "Create or connect a home to sync tasks, calendar, members, and wall screens.",
+      action: "Create or connect home",
+    };
 
   useEffect(() => {
     getOrCreateDeviceId();
@@ -108,6 +119,21 @@ export default function SettingsPage() {
             <HouseholdSettings />
             <DevicesSettings />
             <MembersSettings />
+          </SettingsSection>
+        ) : null}
+
+        {!hasHouseholdSettings ? (
+          <SettingsSection
+            description={language === "sv" ? "Hantera familjens hem och synk när du är redo." : "Manage your family home and sync when you're ready."}
+            eyebrow={language === "sv" ? "Hushåll" : "Household"}
+            title={language === "sv" ? "Hem" : "Home"}
+          >
+            <SettingsCard status={homeSetupCopy.status} title={language === "sv" ? "Hem" : "Home"}>
+              <div className="space-y-3">
+                <p className="text-sm font-semibold leading-6 text-stone-700">{homeSetupCopy.body}</p>
+                <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => router.push("/setup/adult")} type="button">{homeSetupCopy.action}</button>
+              </div>
+            </SettingsCard>
           </SettingsSection>
         ) : null}
 
