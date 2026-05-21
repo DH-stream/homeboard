@@ -192,12 +192,19 @@ export function CalendarSourcesSettings() {
     return "idle";
   }
 
+  const activeCountStatus = enabledSourcesCount === 0
+    ? (language === "sv" ? "Inga aktiva" : "None active")
+    : enabledSourcesCount === 1
+      ? (language === "sv" ? "1 aktiv" : "1 active")
+      : (language === "sv" ? `${enabledSourcesCount} aktiva` : `${enabledSourcesCount} active`);
+
   return (
-    <SettingsCard status={`${enabledSourcesCount}`} title={t("calendarSources")}>
+    <SettingsCard status={activeCountStatus} title={t("calendarSources")}>
       <div className="space-y-4">
         <p className="text-sm font-semibold leading-6 text-stone-600">{enabledSourcesCount === 0 ? (language === "sv" ? "Inga aktiva kalendrar" : "No active calendar sources") : enabledSourcesCount === 1 ? (language === "sv" ? "1 aktiv kalender" : "1 active calendar source") : (language === "sv" ? `${enabledSourcesCount} aktiva kalendrar` : `${enabledSourcesCount} active calendar sources`)}</p>
         <div className="flex flex-wrap gap-2">
           {setupState === "ready" ? <button className="pressable rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-900 shadow-sm disabled:opacity-60" disabled={controlsDisabled} onClick={() => setShowAdd((prev) => !prev)} type="button">{showAdd ? t("cancel") : t("calendarAdd")}</button> : null}
+          {setupState === "ready" && sources.length > 1 ? <button className="pressable rounded-2xl border border-stone-200 bg-white px-4 py-2 text-sm font-black text-stone-900 shadow-sm disabled:opacity-60" disabled={controlsDisabled} onClick={handleSyncAll} type="button">{isWaterfallRunning ? t("calendarSyncing") : t("calendarSyncAll")}</button> : null}
         </div>
         {syncError ? <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{t(syncError)}</p> : null}
         {removeFeedback ? <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">{removeFeedback}</p> : null}

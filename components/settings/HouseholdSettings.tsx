@@ -24,6 +24,9 @@ const copy: Record<Language, Record<string, string>> = {
     cloudSync: "Cloud sync",
     checkAgain: "Check again",
     deviceArea: "This device",
+    notifications: "Notifications",
+    notificationsSoon: "Coming soon",
+    enableNotifications: "Enable notifications",
     forget: "Forget cloud home on this device",
     confirm: "This only forgets the selected cloud home on this device. The home is not deleted in cloud sync.",
     members: "Members",
@@ -40,6 +43,9 @@ const copy: Record<Language, Record<string, string>> = {
     cloudSync: "Molnsynk",
     checkAgain: "Kontrollera igen",
     deviceArea: "Den här enheten",
+    notifications: "Notiser",
+    notificationsSoon: "Kommer snart",
+    enableNotifications: "Aktivera notiser",
     forget: "Glöm molnhem på den här enheten",
     confirm: "Detta glömmer bara valt molnhem på den här enheten. Hemmet raderas inte i molnsynk.",
     members: "Medlemmar",
@@ -139,6 +145,13 @@ export function HouseholdSettings() {
         {selectedHouseholdId ? (
           <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-3">
             <p className="text-[0.7rem] font-black uppercase tracking-[0.14em] text-amber-700">{labels.deviceArea}</p>
+            <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-amber-200/60 bg-white/65 px-2.5 py-2">
+              <div>
+                <p className="text-xs font-black text-amber-950">{labels.notifications}</p>
+                <p className="text-[0.68rem] font-bold uppercase tracking-[0.08em] text-amber-700">{labels.notificationsSoon}</p>
+              </div>
+              <button className="min-h-8 rounded-lg border border-stone-200 bg-white px-2.5 text-[0.68rem] font-black text-stone-400 opacity-70" disabled type="button">{labels.enableNotifications}</button>
+            </div>
             {isConfirming ? (
               <div className="mt-2 space-y-2">
                 <p className="text-xs font-semibold text-amber-900">{labels.confirm}</p>
