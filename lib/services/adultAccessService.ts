@@ -11,6 +11,13 @@ export type AdultAccessRequestResult = {
 };
 
 export type AdultAccessRequestErrorKind = "missing_context" | "cooldown" | "unavailable" | "unknown";
+export type AdultAccessRequestStatus = "pending" | "approved" | "denied";
+export type AdultAccessRequestRecord = {
+  requestId: string;
+  status: AdultAccessRequestStatus;
+  requestedAt: string | null;
+  deviceName: string | null;
+};
 
 export class AdultAccessRequestError extends Error {
   kind: AdultAccessRequestErrorKind;
@@ -71,4 +78,54 @@ export async function requestAdultAccess(householdId: string | null): Promise<Ad
   if (hasPendingHint(message)) return { status: "pending" };
   if (hasCooldownHint(message)) throw new AdultAccessRequestError("cooldown", message);
   throw new AdultAccessRequestError("unknown", message);
+}
+
+export async function listAdultAccessRequests(householdId: string | null): Promise<AdultAccessRequestRecord[]> {
+  if (!householdId) return [];
+  const client = createBrowserSupabaseClient();
+  if (!client) throw new AdultAccessRequestError("unavailable", "Cloud is unavailable.");
+
+  const { data, error } = await client.rpc("adult_list_access_requests", {
+    p_household_id: householdId,
+  });
+
+  if (error) throw new AdultAccessRequestError("unknown", error.message || "Could not list access requests.");
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const requestId = typeof record.request_id === "string" ? record.request_id : null;
+      if (!requestId) return null;
+      const statusValue = typeof record.status === "string" ? record.status : "pending";
+      const status: AdultAccessRequestStatus = statusValue === "approved" || statusValue === "denied" ? statusValue : "pending";
+      return {
+        requestId,
+        status,
+        requestedAt: typeof record.requested_at === "string" ? record.requested_at : null,
+        deviceName: typeof record.device_name === "string" ? record.device_name : null,
+      } satisfies AdultAccessRequestRecord;
+    })
+    .filter((item): item is AdultAccessRequestRecord => Boolean(item));
+}
+
+export async function approveAdultAccessRequest(requestId: string): Promise<void> {
+  const client = createBrowserSupabaseClient();
+  if (!client) throw new AdultAccessRequestError("unavailable", "Cloud is unavailable.");
+
+  const { error } = await client.rpc("adult_approve_access_request", {
+    p_request_id: requestId,
+  });
+  if (error) throw new AdultAccessRequestError("unknown", error.message || "Could not approve access request.");
+}
+
+export async function denyAdultAccessRequest(requestId: string): Promise<void> {
+  const client = createBrowserSupabaseClient();
+  if (!client) throw new AdultAccessRequestError("unavailable", "Cloud is unavailable.");
+
+  const { error } = await client.rpc("adult_deny_access_request", {
+    p_request_id: requestId,
+  });
+  if (error) throw new AdultAccessRequestError("unknown", error.message || "Could not deny access request.");
 }
