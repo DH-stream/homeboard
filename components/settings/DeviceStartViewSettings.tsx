@@ -48,17 +48,6 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
     <SettingsCard status={t("local")} title={t("deviceStartViewTitle")}>
       <div className="space-y-3 sm:space-y-4">
         <p>{t("deviceStartViewCopy")}</p>
-
-        <dl className="rounded-2xl border border-stone-200/70 bg-stone-50 p-3.5 text-sm sm:p-4">
-          <div className="flex justify-between gap-3">
-            <dt className="font-bold text-stone-500">{t("defaultRoute")}</dt>
-            <dd className="text-right font-black text-stone-900">{startView ? getDeviceModeLabel(startView.mode, t) : t("deviceModeUnset")}</dd>
-          </div>
-        </dl>
-
-        <label className="block text-xs font-black uppercase tracking-[0.18em] text-stone-500" htmlFor="device-mode-select">
-          {t("defaultRoute")}
-        </label>
         <select
           className="min-h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 py-3 font-bold text-stone-900 outline-none transition-colors duration-150 ease-[var(--ease-out)] focus:border-amber-500"
           id="device-mode-select"
@@ -82,11 +71,6 @@ export function DeviceStartViewSettings({ onProfileChange }: { onProfileChange?:
             <p className="mt-2 text-sm font-semibold leading-6 text-stone-700">{t("adultViewLockedHelper")}</p>
           </div>
         ) : null}
-
-        <div className="rounded-2xl bg-amber-50 p-3.5 text-amber-950 ring-1 ring-amber-100 sm:p-4">
-          <p className="font-black">{t("deviceStartViewSaved")}</p>
-          <p className="mt-1 text-sm leading-6">{t("deviceStartViewResetCopy")}</p>
-        </div>
 
         <button
           className="pressable min-h-12 w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-black text-white shadow-sm disabled:opacity-45"
