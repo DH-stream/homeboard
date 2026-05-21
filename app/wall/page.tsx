@@ -25,7 +25,8 @@ import {
 } from "@/lib/households/selection";
 import { useCalendarEvents } from "@/lib/hooks/useCalendarEvents";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
-import { useHousehold, useMembers } from "@/lib/hooks/useMembers";
+import { useMembers } from "@/lib/hooks/useMembers";
+import { householdRepository } from "@/lib/repositories/householdRepository";
 import {
   consumePendingFirstRunReveal,
   hasPendingFirstRunReveal,
@@ -91,7 +92,9 @@ export default function WallPage() {
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
   const { householdId, selectedHouseholdId } = useResolvedHouseholdId();
-  const { household, error: householdError } = useHousehold(householdId);
+  const [householdName, setHouseholdName] = useState<string | null>(null);
+  const [householdSummaryError, setHouseholdSummaryError] = useState<unknown>(null);
+
   const { members } = useMembers();
   const { events, todayEvents } = useCalendarEvents();
   const { tasks, createTask, setTaskCompleted } = useTasks();
@@ -136,6 +139,34 @@ export default function WallPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!householdId) {
+      setHouseholdName(null);
+      setHouseholdSummaryError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    householdRepository
+      .getHousehold(householdId)
+      .then((summary) => {
+        if (cancelled) return;
+        setHouseholdName(summary?.name ?? null);
+        setHouseholdSummaryError(null);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setHouseholdName(null);
+        setHouseholdSummaryError(error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [householdId]);
+
+
   const todayTasks = useMemo(
     () => tasks.filter((task) => shouldShowTodayTask(task, now)),
     [now, tasks],
@@ -177,8 +208,8 @@ export default function WallPage() {
         resolvedHouseholdId: householdId,
         selectedHouseholdId,
         localOnlyModeEnabled: isLocalOnlyModeEnabled(),
-        householdIdFromRow: household?.id ?? null,
-        householdName: household?.name ?? null,
+        householdIdFromRow: householdId ?? null,
+        householdName,
         tasksLength: tasks.length,
         todayTasksLength: todayTasks.length,
         completedTodayTasksLength: completedTodayTasks.length,
@@ -196,7 +227,7 @@ export default function WallPage() {
         payload.streakRepositoryError = error;
       }
 
-      if (householdError) payload.useHouseholdError = householdError;
+      if (householdSummaryError) payload.useHouseholdError = householdSummaryError;
       if (!cancelled) console.log("[HomeBoard wall cloud debug]", payload);
     };
 
@@ -205,7 +236,7 @@ export default function WallPage() {
     return () => {
       cancelled = true;
     };
-  }, [debugCloudEnabled, household?.id, household?.name, householdError, householdId, now, selectedHouseholdId, streakService, tasks.length, todayTasks]);
+  }, [debugCloudEnabled, householdId, householdName, householdSummaryError, now, selectedHouseholdId, streakService, tasks.length, todayTasks]);
 
   useEffect(() => {
     if (!householdId) {
@@ -372,8 +403,8 @@ export default function WallPage() {
   }
 
   const householdDisplayName =
-    householdId && household?.id === householdId && household?.name
-      ? household.name
+    householdId && householdName
+      ? householdName
       : "HomeBoard";
 
   async function toggleTask(task: TaskInstance) {
