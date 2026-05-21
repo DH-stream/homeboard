@@ -1,7 +1,6 @@
 "use client";
 
 import { getLocalDeviceId, getPersistedCloudDeviceId, getPersistedDeviceAccessToken } from "@/lib/devices/deviceIdentity";
-import { getLocalSelectedHouseholdId } from "@/lib/households/selection";
 
 export type DeviceAccessPayload = {
   cloudDeviceId: string;
@@ -19,7 +18,6 @@ export function getDeviceAccessPayload(): DeviceAccessPayload | null {
 
 export function hasIncompleteCloudDeviceAccess() {
   const cloudDeviceId = getPersistedCloudDeviceId();
-  const selectedHouseholdId = getLocalSelectedHouseholdId();
   const accessToken = getPersistedDeviceAccessToken();
-  return Boolean((cloudDeviceId || selectedHouseholdId) && !accessToken);
+  return Boolean(cloudDeviceId && !accessToken);
 }
