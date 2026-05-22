@@ -21,6 +21,14 @@ type TaskDayStatusRow = {
 
 type LocalStore = Record<string, { date: string; completedAt: string; completedTaskCount: number; requiredTaskCount: number }[]>;
 
+type HouseholdStreakRow = {
+  household_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_completed_date: string | null;
+  updated_at: string;
+};
+
 function canUseStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
 }
@@ -103,6 +111,38 @@ export function createStreakRepository() {
       }));
     },
 
+
+
+    async getHouseholdStreak(householdId: string) {
+      if (hasIncompleteCloudDeviceAccess()) {
+        clearRevokedDeviceState();
+        return null;
+      }
+
+      if (canUseSupabase && supabase) {
+        const deviceAccess = getDeviceAccessPayload();
+        if (deviceAccess) {
+          const { data, error } = await supabase.rpc("device_get_household_streak", {
+            p_household_id: householdId,
+            p_cloud_device_id: deviceAccess.cloudDeviceId,
+            p_local_device_id: deviceAccess.localDeviceId,
+            p_device_access_token: deviceAccess.accessToken,
+          });
+          if (error) {
+            if (String(error.message ?? "").includes("device is not linked to household")) {
+              clearRevokedDeviceState();
+              return null;
+            }
+            throw error;
+          }
+          return ((data ?? [])[0] ?? null) as HouseholdStreakRow | null;
+        }
+
+        return null;
+      }
+
+      return null;
+    },
     async maybeMarkTodayComplete(householdId: string, todayTasks: TaskInstance[]) {
       if (hasIncompleteCloudDeviceAccess()) {
         clearRevokedDeviceState();
@@ -148,6 +188,11 @@ export function createStreakRepository() {
           updated_at: new Date().toISOString(),
         }, { onConflict: "household_id,date" });
         if (error) throw error;
+        const { error: streakError } = await supabase.rpc("upsert_household_streak_completion", {
+          p_household_id: householdId,
+          p_completed_date: date,
+        });
+        if (streakError) throw streakError;
         return true;
       }
 
