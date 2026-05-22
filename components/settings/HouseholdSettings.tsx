@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
+import { useEffect, useMemo, useState } from "react";
+import { getDeviceAccessPayload, type DeviceAccessPayload } from "@/lib/devices/deviceAccess";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -55,15 +55,15 @@ const copy: Record<Language, Record<string, string>> = {
   },
 };
 
-const supabase = createBrowserSupabaseClient();
-
 export function HouseholdSettings() {
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const { household, householdId, refresh, refreshHouseholdId, selectedHouseholdId } = useActiveHousehold();
   const { diagnostics, refresh: refreshCloudDiagnostics } = useCloudDiagnostics();
   const { language } = useLanguage();
   const labels = copy[language];
   const hasCloudHousehold = Boolean(householdId);
-  const deviceAccess = getDeviceAccessPayload();
+  const [deviceAccess, setDeviceAccess] = useState<DeviceAccessPayload | null>(null);
+  const [hasLoadedDeviceAccess, setHasLoadedDeviceAccess] = useState(false);
   const cloudDeviceId = deviceAccess?.cloudDeviceId ?? null;
   const localDeviceId = deviceAccess?.localDeviceId ?? null;
   const deviceAccessToken = deviceAccess?.accessToken ?? null;
@@ -88,6 +88,10 @@ export function HouseholdSettings() {
   const [requestNotice, setRequestNotice] = useState<string | null>(null);
   const [busyRequestId, setBusyRequestId] = useState<string | null>(null);
 
+  useEffect(() => {
+    setDeviceAccess(getDeviceAccessPayload());
+    setHasLoadedDeviceAccess(true);
+  }, []);
   useEffect(() => setHomeNameDraft(household?.name ?? ""), [household?.name]);
   useEffect(() => {
     if (!householdId || !cloudDeviceId || !localDeviceId || !deviceAccessToken || !supabase) {
@@ -128,7 +132,7 @@ export function HouseholdSettings() {
     return () => {
       mounted = false;
     };
-  }, [householdId, cloudDeviceId, localDeviceId, deviceAccessToken, labels.thisDeviceRenameError]);
+  }, [householdId, cloudDeviceId, localDeviceId, deviceAccessToken, labels.thisDeviceRenameError, supabase]);
   useEffect(() => {
     if (!householdId) {
       setRequests([]);
@@ -290,7 +294,11 @@ export function HouseholdSettings() {
             <p className="text-[0.7rem] font-black uppercase tracking-[0.14em] text-amber-700">{labels.deviceArea}</p>
             <div className="mt-2 rounded-xl border border-amber-200/70 bg-white/70 p-2.5">
               <p className="text-[0.68rem] font-black uppercase tracking-[0.12em] text-amber-800">{labels.thisDeviceName}</p>
-              {!deviceAccess ? (
+              {!hasLoadedDeviceAccess ? (
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <p className="text-sm font-black text-stone-700">—</p>
+                </div>
+              ) : !deviceAccess ? (
                 <div className="mt-1.5 flex items-center justify-between gap-2">
                   <p className="text-sm font-black text-stone-700">{labels.notPaired}</p>
                 </div>
