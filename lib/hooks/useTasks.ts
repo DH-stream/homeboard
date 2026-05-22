@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createTaskService } from "@/lib/services/taskService";
 import { getTaskRepository } from "@/lib/repositories/taskRepository";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useLanguage, type Language } from "@/lib/i18n";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { CreateTaskInput, TaskInstance, UpdateTaskInstanceInput } from "@/types";
 
 function mergeTaskInstances(current: TaskInstance[], next: TaskInstance[]) {
@@ -12,6 +13,15 @@ function mergeTaskInstances(current: TaskInstance[], next: TaskInstance[]) {
   for (const task of next) byId.set(task.id, task);
   return Array.from(byId.values()).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }
+
+
+
+const TASK_REALTIME_TABLES = [
+  "tasks",
+  "task_instances",
+  "household_task_day_status",
+  "household_streaks",
+] as const;
 
 const taskErrorCopy: Record<Language, { load: string; save: string }> = {
   en: {
@@ -33,6 +43,7 @@ export function useTasks() {
   const [tasks, setTasks] = useState<TaskInstance[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const refreshTimeoutRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -50,6 +61,47 @@ export function useTasks() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase || !householdId || mode !== "supabase") return;
+
+    const queueRefresh = () => {
+      if (refreshTimeoutRef.current) window.clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = window.setTimeout(() => {
+        refreshTimeoutRef.current = null;
+        void refresh();
+      }, 350);
+    };
+
+    const channel = supabase.channel(`tasks-realtime-${householdId}`);
+
+    for (const table of TASK_REALTIME_TABLES) {
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table, filter: `household_id=eq.${householdId}` },
+        queueRefresh,
+      );
+    }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") queueRefresh();
+    };
+
+    channel.subscribe();
+    window.addEventListener("focus", queueRefresh);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      if (refreshTimeoutRef.current) {
+        window.clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
+      }
+      window.removeEventListener("focus", queueRefresh);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      void supabase.removeChannel(channel);
+    };
+  }, [householdId, mode, refresh]);
 
   useEffect(() => {
     if (!repository.flushPendingWrites) return;
