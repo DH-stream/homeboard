@@ -309,6 +309,12 @@ export default function WallPage() {
       : "Completed tasks remain available in the mobile Done view.";
   const todayTitle = language === "sv" ? "Idag" : "Today";
   const celebrationTitle = language === "sv" ? "Dagen är klar" : "Day complete";
+  const celebrationBody =
+    language === "sv"
+      ? "Allt är gjort. Njut av lugnet."
+      : "Everything is done. Enjoy the calm.";
+  const celebrationNote =
+    language === "sv" ? "Bra jobbat idag." : "Nice work today.";
 
   useEffect(() => {
     if (!allVisibleTasksDone) {
@@ -322,9 +328,14 @@ export default function WallPage() {
 
     const dateKey = getLocalDateKey(now);
     const householdKey = householdId ?? "local";
-    const storageKey = `homeboard.wall.day-complete:${householdKey}:${dateKey}`;
+    const storageKey = `homeboard.wall.dayCompleteCelebrationSeen.v1:${householdKey}:${dateKey}`;
     const hasSeenIntro = window.localStorage.getItem(storageKey) === "1";
-    if (hasSeenIntro || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (hasSeenIntro) {
+      setCompletionCelebrationPhase("calm");
+      return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.localStorage.setItem(storageKey, "1");
       setCompletionCelebrationPhase("calm");
       return;
     }
@@ -512,7 +523,11 @@ export default function WallPage() {
               </>
             ) : null}
             <div className="wall-complete-overlay__title-wrap">
-              <p className="wall-complete-overlay__title">{celebrationTitle}</p>
+              <div className="wall-complete-overlay__copy">
+                <p className="wall-complete-overlay__title">{celebrationTitle}</p>
+                <p className="wall-complete-overlay__body">{celebrationBody}</p>
+                <p className="wall-complete-overlay__note">{celebrationNote}</p>
+              </div>
             </div>
           </div>
         ) : null}

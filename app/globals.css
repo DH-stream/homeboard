@@ -734,12 +734,36 @@ button:disabled {
   text-shadow: 0 10px 42px rgba(255, 250, 230, 0.85);
 }
 
+.wall-complete-overlay__copy {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  text-align: center;
+}
+
+.wall-complete-overlay__body {
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  font-weight: 700;
+  color: rgba(68, 64, 60, 0.82);
+}
+
+.wall-complete-overlay__note {
+  font-size: clamp(0.9rem, 1.6vw, 1.1rem);
+  font-weight: 700;
+  color: rgba(87, 83, 78, 0.76);
+}
+
 .wall-complete-overlay--intro .wall-complete-overlay__glow {
   animation: wall-complete-glow-intro 3200ms var(--ease-out) both;
 }
 
 .wall-complete-overlay--intro .wall-complete-overlay__title {
   animation: wall-complete-title-intro 1100ms var(--ease-out) both;
+}
+
+.wall-complete-overlay--intro .wall-complete-overlay__body,
+.wall-complete-overlay--intro .wall-complete-overlay__note {
+  animation: wall-complete-copy-intro 900ms var(--ease-out) both;
 }
 
 .wall-complete-overlay__burst,
@@ -772,6 +796,12 @@ button:disabled {
   transform: translateY(-0.15rem);
 }
 
+.wall-complete-overlay--calm .wall-complete-overlay__body,
+.wall-complete-overlay--calm .wall-complete-overlay__note {
+  opacity: 0.56;
+  transform: translateY(-0.12rem);
+}
+
 .wall-progress-card--celebrate {
   animation: wall-complete-card-celebrate 1200ms var(--ease-out);
 }
@@ -796,6 +826,11 @@ button:disabled {
   0% { opacity: 0; transform: translateY(1.5rem) scale(0.86); }
   52% { opacity: 1; transform: translateY(0) scale(1.03); }
   100% { opacity: 0.78; transform: translateY(-0.08rem) scale(1); }
+}
+
+@keyframes wall-complete-copy-intro {
+  0% { opacity: 0; transform: translateY(0.8rem); }
+  100% { opacity: 0.72; transform: translateY(0); }
 }
 
 @keyframes wall-complete-glow-intro {
