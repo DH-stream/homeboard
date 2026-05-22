@@ -40,6 +40,7 @@ import {
 import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
+import { isSameLocalDay } from "@/lib/utils/date";
 import {
   getLocalDateKey,
   hasSeenStreakFlameToday,
@@ -50,6 +51,7 @@ import {
   shouldShowInRemainingTasks,
   shouldShowTodayTask,
 } from "@/lib/tasks/visibility";
+import { getSequentialWallRemainingTasks } from "@/lib/tasks/wallVisibility";
 import type { TaskInstance } from "@/types";
 
 const QUICK_CREATOR_CLOSE_MS = 240;
@@ -172,17 +174,25 @@ export default function WallPage() {
     () => tasks.filter((task) => shouldShowTodayTask(task, now)),
     [now, tasks],
   );
+  const allSameDayTasks = useMemo(
+    () => tasks.filter((task) => isSameLocalDay(task.dueDate, now)),
+    [now, tasks],
+  );
   const remainingTodayTasks = useMemo(
     () => todayTasks.filter((task) => shouldShowInRemainingTasks(task, now)),
     [now, todayTasks],
   );
+  const sequentialRemainingTodayTasks = useMemo(
+    () => getSequentialWallRemainingTasks(allSameDayTasks, remainingTodayTasks),
+    [allSameDayTasks, remainingTodayTasks],
+  );
   const filteredTodayTasks = useMemo(() => {
-    if (!selectedMemberId) return remainingTodayTasks;
-    return remainingTodayTasks.filter(
+    if (!selectedMemberId) return sequentialRemainingTodayTasks;
+    return sequentialRemainingTodayTasks.filter(
       (task) =>
         task.assignedToMemberId === selectedMemberId || !task.assignedToMemberId,
     );
-  }, [selectedMemberId, remainingTodayTasks]);
+  }, [selectedMemberId, sequentialRemainingTodayTasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return {
