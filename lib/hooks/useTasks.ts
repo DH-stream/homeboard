@@ -6,6 +6,7 @@ import { getTaskRepository } from "@/lib/repositories/taskRepository";
 import { useResolvedHouseholdId } from "@/lib/hooks/useResolvedHouseholdId";
 import { useLanguage, type Language } from "@/lib/i18n";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { readTaskCache, writeTaskCache } from "@/lib/tasks/taskCache";
 import type { CreateTaskInput, TaskInstance, UpdateTaskInstanceInput } from "@/types";
 
 function mergeTaskInstances(current: TaskInstance[], next: TaskInstance[]) {
@@ -46,9 +47,10 @@ export function useTasks() {
   const refreshTimeoutRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
     try {
-      setTasks(await service.listTodayTasks(householdId));
+      const freshTasks = await service.listTodayTasks(householdId);
+      setTasks(freshTasks);
+      writeTaskCache(householdId, freshTasks);
       setError(null);
     } catch (unknownError) {
       console.error(unknownError);
@@ -59,8 +61,16 @@ export function useTasks() {
   }, [copy.load, householdId, service]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    const cached = readTaskCache(householdId);
+    if (cached) {
+      setTasks(cached.tasks);
+      setLoading(false);
+    } else {
+      setTasks([]);
+      setLoading(true);
+    }
+    void refresh();
+  }, [householdId, refresh]);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();

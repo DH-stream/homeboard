@@ -178,7 +178,8 @@ export default function WallPage() {
   const filteredTodayTasks = useMemo(() => {
     if (!selectedMemberId) return remainingTodayTasks;
     return remainingTodayTasks.filter(
-      (task) => task.assignedToMemberId === selectedMemberId,
+      (task) =>
+        task.assignedToMemberId === selectedMemberId || !task.assignedToMemberId,
     );
   }, [selectedMemberId, remainingTodayTasks]);
   const stats = useMemo(() => {
