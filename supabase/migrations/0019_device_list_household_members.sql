@@ -10,7 +10,7 @@ returns table (
   display_name text,
   color text,
   avatar_url text,
-  role public.household_member_role,
+  role text,
   user_id uuid,
   created_at timestamptz,
   updated_at timestamptz
@@ -32,7 +32,7 @@ begin
     hm.display_name,
     hm.color,
     hm.avatar_url,
-    hm.role,
+    hm.role::text as role,
     hm.user_id,
     hm.created_at,
     hm.updated_at
