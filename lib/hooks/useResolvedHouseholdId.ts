@@ -10,10 +10,12 @@ export function useResolvedHouseholdId() {
   const [hasResolvedHouseholdId, setHasResolvedHouseholdId] = useState(Boolean(overrideHouseholdId));
 
   const refresh = useCallback(() => {
-    setHouseholdId(resolveCurrentHouseholdId());
-    setSelectedHouseholdId(getLocalSelectedHouseholdId());
+    const nextHouseholdId = resolveCurrentHouseholdId();
+    const nextSelectedHouseholdId = overrideHouseholdId ?? getLocalSelectedHouseholdId();
+    setHouseholdId(nextHouseholdId);
+    setSelectedHouseholdId(nextSelectedHouseholdId);
     setHasResolvedHouseholdId(true);
-  }, []);
+  }, [overrideHouseholdId]);
 
   useEffect(() => {
     refresh();
