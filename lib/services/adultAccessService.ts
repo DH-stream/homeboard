@@ -96,7 +96,11 @@ export async function listAdultAccessRequests(householdId: string | null): Promi
     .map((item) => {
       if (!item || typeof item !== "object") return null;
       const record = item as Record<string, unknown>;
-      const requestId = typeof record.request_id === "string" ? record.request_id : null;
+      const requestId = typeof record.request_id === "string"
+        ? record.request_id
+        : typeof record.id === "string"
+          ? record.id
+          : null;
       if (!requestId) return null;
       const statusValue = typeof record.status === "string" ? record.status : "pending";
       const status: AdultAccessRequestStatus = statusValue === "approved" || statusValue === "denied" ? statusValue : "pending";
