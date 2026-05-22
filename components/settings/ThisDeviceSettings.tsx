@@ -12,7 +12,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 const copy: Record<Language, Record<string, string>> = {
   en: {
-    title: "This device",
+    title: "Device name",
     active: "Cloud sync active",
     thisDeviceName: "Device name",
     edit: "Edit",
@@ -25,7 +25,7 @@ const copy: Record<Language, Record<string, string>> = {
     confirm: "This only forgets the selected cloud home on this device. The home is not deleted in cloud sync.",
   },
   sv: {
-    title: "Den här enheten",
+    title: "Enhetsnamn",
     active: "Molnsynk aktiv",
     thisDeviceName: "Enhetsnamn",
     edit: "Ändra",
