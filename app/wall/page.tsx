@@ -91,7 +91,8 @@ export default function WallPage() {
   );
   const { getCompletionEncouragement, language, t } = useLanguage();
   const locale = getLocale(language);
-  const { householdId, selectedHouseholdId } = useResolvedHouseholdId();
+  const { householdId, selectedHouseholdId, hasResolvedHouseholdId } =
+    useResolvedHouseholdId();
   const [householdName, setHouseholdName] = useState<string | null>(null);
   const [householdSummaryError, setHouseholdSummaryError] = useState<unknown>(null);
 
@@ -384,7 +385,29 @@ export default function WallPage() {
     saveDeviceStartView({ mode: "wall", route: "/wall" });
   }, []);
 
-  if (isSetupMode || (!householdId && !useLocalWall && isCloudConfigured())) {
+  const shouldShowCloudResolutionLoading =
+    !hasResolvedHouseholdId &&
+    !useLocalWall &&
+    !isSetupMode &&
+    isCloudConfigured();
+
+  const shouldShowPairing =
+    isSetupMode ||
+    (hasResolvedHouseholdId && !householdId && !useLocalWall && isCloudConfigured());
+
+  if (shouldShowCloudResolutionLoading) {
+    return (
+      <WallShell revealActive={false}>
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-base font-semibold text-stone-600">
+            {language === "sv" ? "Laddar hem…" : "Loading home..."}
+          </p>
+        </div>
+      </WallShell>
+    );
+  }
+
+  if (shouldShowPairing) {
     return (
       <WallPairingCard
         onPaired={finishPairing}
