@@ -1,5 +1,6 @@
 import { mockHousehold } from "@/data/mockHousehold";
 import { mockMembers } from "@/data/mockMembers";
+import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
 import { createBrowserSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Household, HouseholdMember, HouseholdMemberRole } from "@/types";
 
@@ -74,14 +75,34 @@ export class SupabaseMemberRepository implements MemberRepository {
   async listMembers(householdId?: string | null) {
     if (!this.client || !householdId) return [];
 
-    const { data, error } = await this.client
-      .from("household_members")
-      .select("id, household_id, display_name, color, avatar_url, role, user_id, created_at, updated_at")
-      .eq("household_id", householdId)
-      .order("created_at", { ascending: true });
+    const client = this.client;
 
-    if (error) throw error;
-    return ((data ?? []) as HouseholdMemberRow[]).map(mapHouseholdMember);
+    const directQuery = async () => {
+      const { data, error } = await client
+        .from("household_members")
+        .select("id, household_id, display_name, color, avatar_url, role, user_id, created_at, updated_at")
+        .eq("household_id", householdId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return ((data ?? []) as HouseholdMemberRow[]).map(mapHouseholdMember);
+    };
+
+    const deviceAccess = getDeviceAccessPayload();
+    if (deviceAccess) {
+      const { data, error } = await client.rpc("device_list_household_members", {
+        p_household_id: householdId,
+        p_cloud_device_id: deviceAccess.cloudDeviceId,
+        p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
+      });
+
+      if (!error) {
+        return ((data ?? []) as HouseholdMemberRow[]).map(mapHouseholdMember);
+      }
+    }
+
+    return directQuery();
   }
 }
 
