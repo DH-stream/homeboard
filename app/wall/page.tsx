@@ -40,6 +40,7 @@ import {
 import { resetDeviceStartView, saveDeviceStartView } from "@/lib/devicePreferences";
 import { getLocale, useLanguage } from "@/lib/i18n";
 import { formatShortDate } from "@/lib/utils/date";
+import { isSameLocalDay } from "@/lib/utils/date";
 import {
   getLocalDateKey,
   hasSeenStreakFlameToday,
@@ -173,13 +174,17 @@ export default function WallPage() {
     () => tasks.filter((task) => shouldShowTodayTask(task, now)),
     [now, tasks],
   );
+  const allSameDayTasks = useMemo(
+    () => tasks.filter((task) => isSameLocalDay(task.dueDate, now)),
+    [now, tasks],
+  );
   const remainingTodayTasks = useMemo(
     () => todayTasks.filter((task) => shouldShowInRemainingTasks(task, now)),
     [now, todayTasks],
   );
   const sequentialRemainingTodayTasks = useMemo(
-    () => getSequentialWallRemainingTasks(remainingTodayTasks),
-    [remainingTodayTasks],
+    () => getSequentialWallRemainingTasks(allSameDayTasks, remainingTodayTasks),
+    [allSameDayTasks, remainingTodayTasks],
   );
   const filteredTodayTasks = useMemo(() => {
     if (!selectedMemberId) return sequentialRemainingTodayTasks;

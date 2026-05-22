@@ -1,6 +1,10 @@
 import { toLocalDateKey } from "@/lib/utils/date";
 import type { TaskInstance } from "@/types";
 
+function isScheduledOccurrence(task: TaskInstance) {
+  return Boolean(task.scheduleId || task.scheduleType || task.occurrenceKey);
+}
+
 function buildStableGroupKey(task: TaskInstance) {
   if (task.scheduleId) return `schedule:${task.scheduleId}`;
   if (task.taskId) return `task:${task.taskId}`;
@@ -13,17 +17,12 @@ function buildFallbackGroupKey(task: TaskInstance) {
   return `fallback:${normalizedTitle}::${assignee}::${toLocalDateKey(task.dueDate)}`;
 }
 
-export function getSequentialWallRemainingTasks(tasks: TaskInstance[]) {
+export function getSequentialWallRemainingTasks(allTodayTasks: TaskInstance[], revealedRemainingTasks: TaskInstance[]) {
   const groups = new Map<string, TaskInstance[]>();
-  const passthrough: TaskInstance[] = [];
+  const passthrough = revealedRemainingTasks.filter((task) => !isScheduledOccurrence(task));
 
-  for (const task of tasks) {
-    const isScheduledOccurrence = Boolean(task.scheduleId || task.scheduleType || task.occurrenceKey);
-
-    if (!isScheduledOccurrence) {
-      passthrough.push(task);
-      continue;
-    }
+  for (const task of allTodayTasks) {
+    if (!isScheduledOccurrence(task)) continue;
 
     const key = buildStableGroupKey(task) ?? buildFallbackGroupKey(task);
     const current = groups.get(key);
