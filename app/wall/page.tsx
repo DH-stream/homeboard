@@ -178,7 +178,8 @@ export default function WallPage() {
   const filteredTodayTasks = useMemo(() => {
     if (!selectedMemberId) return remainingTodayTasks;
     return remainingTodayTasks.filter(
-      (task) => task.assignedToMemberId === selectedMemberId,
+      (task) =>
+        task.assignedToMemberId === selectedMemberId || !task.assignedToMemberId,
     );
   }, [selectedMemberId, remainingTodayTasks]);
   const stats = useMemo(() => {
@@ -192,10 +193,6 @@ export default function WallPage() {
 
   const allVisibleTasksDone =
     todayTasks.length > 0 && filteredTodayTasks.length === 0;
-  const hasHiddenTasksFromFilter =
-    selectedMemberId !== null &&
-    filteredTodayTasks.length === 0 &&
-    remainingTodayTasks.length > 0;
   const [streak, setStreak] = useState(0);
   const displayStreak = streakPreviewOverride ?? streak;
   const [showStreakIntro, setShowStreakIntro] = useState(false);
@@ -296,13 +293,6 @@ export default function WallPage() {
       ? "Klara uppgifter finns kvar i mobilvyn under Klart."
       : "Completed tasks remain available in the mobile Done view.";
   const todayTitle = language === "sv" ? "Idag" : "Today";
-  const filterHiddenTitle =
-    language === "sv" ? "Filtret döljer uppgifter" : "Filter hides tasks";
-  const filterHiddenBody =
-    language === "sv"
-      ? "Det finns uppgifter som inte visas för vald person."
-      : "There are tasks not shown for the selected person.";
-  const filterHiddenAction = language === "sv" ? "Visa alla" : "Show all";
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
@@ -532,21 +522,7 @@ export default function WallPage() {
               ) : null}
               <div className="smooth-scroll-surface mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
                 {allVisibleTasksDone ? (
-                  hasHiddenTasksFromFilter ? (
-                    <div className="rounded-[1.75rem] border border-dashed border-stone-300/80 bg-white/65 p-8 text-center shadow-inner shadow-white/50">
-                      <p className="text-lg font-black text-stone-800">{filterHiddenTitle}</p>
-                      <p className="mt-2 text-sm font-medium leading-6 text-stone-500">{filterHiddenBody}</p>
-                      <button
-                        className="mt-4 inline-flex items-center justify-center rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white transition-colors duration-150 hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                        onClick={() => setSelectedMemberId(null)}
-                        type="button"
-                      >
-                        {filterHiddenAction}
-                      </button>
-                    </div>
-                  ) : (
-                    <EmptyState title={allDoneTitle}>{allDoneBody}</EmptyState>
-                  )
+                  <EmptyState title={allDoneTitle}>{allDoneBody}</EmptyState>
                 ) : (
                   <TaskList
                     animationKey="wall-tasks"
