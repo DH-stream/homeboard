@@ -57,7 +57,7 @@ const copy: Record<Language, Record<string, string>> = {
 
 export function HouseholdSettings() {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const { household, householdId, refresh, refreshHouseholdId, selectedHouseholdId } = useActiveHousehold();
+  const { household, householdId, refresh, refreshHouseholdId } = useActiveHousehold();
   const { diagnostics, refresh: refreshCloudDiagnostics } = useCloudDiagnostics();
   const { language } = useLanguage();
   const labels = copy[language];
@@ -289,7 +289,7 @@ export function HouseholdSettings() {
           </div>
         ) : null}
 
-        {selectedHouseholdId ? (
+        {hasCloudHousehold ? (
           <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-3">
             <p className="text-[0.7rem] font-black uppercase tracking-[0.14em] text-amber-700">{labels.deviceArea}</p>
             <div className="mt-2 rounded-xl border border-amber-200/70 bg-white/70 p-2.5">
