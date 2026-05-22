@@ -510,18 +510,16 @@ export default function WallPage() {
   return (
     <WallShell revealActive={isFirstRunRevealActive}>
       <div className="relative flex flex-1 flex-col">
-        {completionCelebrationPhase !== "idle" ? (
+        {completionCelebrationPhase === "intro" ? (
           <div
             aria-hidden
-            className={`wall-complete-overlay ${completionCelebrationPhase === "intro" ? "wall-complete-overlay--intro" : "wall-complete-overlay--calm"}`}
+            className="wall-complete-overlay wall-complete-overlay--intro"
           >
             <div className="wall-complete-overlay__glow" />
-            {completionCelebrationPhase === "intro" ? (
-              <>
-                <div className="wall-complete-overlay__burst" />
-                <div className="wall-complete-overlay__confetti" />
-              </>
-            ) : null}
+            <>
+              <div className="wall-complete-overlay__burst" />
+              <div className="wall-complete-overlay__confetti" />
+            </>
             <div className="wall-complete-overlay__title-wrap">
               <div className="wall-complete-overlay__copy">
                 <p className="wall-complete-overlay__title">{celebrationTitle}</p>
