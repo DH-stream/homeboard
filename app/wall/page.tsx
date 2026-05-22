@@ -50,6 +50,7 @@ import {
   shouldShowInRemainingTasks,
   shouldShowTodayTask,
 } from "@/lib/tasks/visibility";
+import { getSequentialWallRemainingTasks } from "@/lib/tasks/wallVisibility";
 import type { TaskInstance } from "@/types";
 
 const QUICK_CREATOR_CLOSE_MS = 240;
@@ -176,13 +177,17 @@ export default function WallPage() {
     () => todayTasks.filter((task) => shouldShowInRemainingTasks(task, now)),
     [now, todayTasks],
   );
+  const sequentialRemainingTodayTasks = useMemo(
+    () => getSequentialWallRemainingTasks(remainingTodayTasks),
+    [remainingTodayTasks],
+  );
   const filteredTodayTasks = useMemo(() => {
-    if (!selectedMemberId) return remainingTodayTasks;
-    return remainingTodayTasks.filter(
+    if (!selectedMemberId) return sequentialRemainingTodayTasks;
+    return sequentialRemainingTodayTasks.filter(
       (task) =>
         task.assignedToMemberId === selectedMemberId || !task.assignedToMemberId,
     );
-  }, [selectedMemberId, remainingTodayTasks]);
+  }, [selectedMemberId, sequentialRemainingTodayTasks]);
   const stats = useMemo(() => {
     const completed = todayTasks.filter((task) => task.completedAt).length;
     return {
