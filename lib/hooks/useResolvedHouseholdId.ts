@@ -4,10 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { getHouseholdIdOverride, getLocalSelectedHouseholdId, resolveCurrentHouseholdId, SELECTED_HOUSEHOLD_CHANGED_EVENT } from "@/lib/households/selection";
 
 export function useResolvedHouseholdId() {
-  const [householdId, setHouseholdId] = useState<string | null>(() => resolveCurrentHouseholdId());
+  const overrideHouseholdId = getHouseholdIdOverride();
+  const [householdId, setHouseholdId] = useState<string | null>(() => overrideHouseholdId ?? null);
+  const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(() => overrideHouseholdId ?? null);
+  const [hasResolvedHouseholdId, setHasResolvedHouseholdId] = useState(Boolean(overrideHouseholdId));
 
   const refresh = useCallback(() => {
     setHouseholdId(resolveCurrentHouseholdId());
+    setSelectedHouseholdId(getLocalSelectedHouseholdId());
+    setHasResolvedHouseholdId(true);
   }, []);
 
   useEffect(() => {
@@ -22,8 +27,9 @@ export function useResolvedHouseholdId() {
 
   return {
     householdId,
-    isDevOverride: Boolean(getHouseholdIdOverride()),
-    selectedHouseholdId: getLocalSelectedHouseholdId(),
+    hasResolvedHouseholdId,
+    isDevOverride: Boolean(overrideHouseholdId),
+    selectedHouseholdId,
     refresh,
   };
 }
