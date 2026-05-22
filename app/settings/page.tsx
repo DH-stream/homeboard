@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { CalendarSourcesSettings } from "@/components/settings/CalendarSourcesSettings";
 import { DeviceStartViewSettings } from "@/components/settings/DeviceStartViewSettings";
 import { HouseholdSettings } from "@/components/settings/HouseholdSettings";
+import { ThisDeviceSettings } from "@/components/settings/ThisDeviceSettings";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { WallTaskCreatorSettings } from "@/components/settings/WallTaskCreatorSettings";
@@ -35,16 +36,28 @@ export default function SettingsPage() {
     ? { title: "Notiser", status: "Kommer snart", action: "Aktivera notiser" }
     : { title: "Notifications", status: "Coming soon", action: "Enable notifications" };
   const homeSetupCopy = language === "sv"
-    ? {
-      status: "Endast på den här enheten",
-      body: "Skapa eller koppla ett hem för att synka uppgifter, kalender, medlemmar och väggskärmar.",
-      action: "Skapa eller koppla hem",
-    }
-    : {
-      status: "Local only",
-      body: "Create or connect a home to sync tasks, calendar, members, and wall screens.",
-      action: "Create or connect home",
-    };
+    ? householdId
+      ? {
+        status: "Molnhem aktivt",
+        body: "Den här väggskärmen är kopplad till hemmet. Logga in som vuxen för att ändra hem, medlemmar och kopplade enheter.",
+        action: "",
+      }
+      : {
+        status: "Endast på den här enheten",
+        body: "Skapa eller koppla ett hem för att synka uppgifter, kalender, medlemmar och väggskärmar.",
+        action: "Skapa eller koppla hem",
+      }
+    : householdId
+      ? {
+        status: "Cloud home active",
+        body: "This wall screen is connected to the home. Sign in as an adult to manage home, members, and connected devices.",
+        action: "",
+      }
+      : {
+        status: "Local only",
+        body: "Create or connect a home to sync tasks, calendar, members, and wall screens.",
+        action: "Create or connect home",
+      };
 
   useEffect(() => {
     getOrCreateDeviceId();
@@ -85,6 +98,7 @@ export default function SettingsPage() {
           </SettingsCard>
           <DeviceStartViewSettings onProfileChange={setDeviceProfileState} />
           <AdultAccessRequestCard hasAdultAccess={hasAdultAccess} householdId={householdId} isWallDevice={deviceProfile === "wall"} language={language} />
+          {householdId ? <ThisDeviceSettings /> : null}
           <SettingsCard status={notificationsCopy.status} title={notificationsCopy.title}>
             <div className="flex items-center justify-between gap-2 rounded-2xl border border-stone-200/70 bg-stone-50/90 px-3 py-2">
               <p className="text-xs font-bold uppercase tracking-[0.08em] text-stone-500">{notificationsCopy.status}</p>
@@ -133,7 +147,7 @@ export default function SettingsPage() {
             <SettingsCard status={homeSetupCopy.status} title={language === "sv" ? "Hem" : "Home"}>
               <div className="space-y-3">
                 <p className="text-sm font-semibold leading-6 text-stone-700">{homeSetupCopy.body}</p>
-                <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => router.push("/setup/adult")} type="button">{homeSetupCopy.action}</button>
+                {!householdId ? <button className="pressable min-h-11 rounded-2xl bg-stone-950 px-4 py-2 text-sm font-black text-white" onClick={() => router.push("/setup/adult")} type="button">{homeSetupCopy.action}</button> : null}
               </div>
             </SettingsCard>
           </SettingsSection>
