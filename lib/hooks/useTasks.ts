@@ -18,7 +18,6 @@ function mergeTaskInstances(current: TaskInstance[], next: TaskInstance[]) {
 
 const TASK_REALTIME_TABLES = [
   "tasks",
-  "task_schedules",
   "task_instances",
   "household_task_day_status",
   "household_streaks",
