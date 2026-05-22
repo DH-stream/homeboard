@@ -138,13 +138,7 @@ export function createStreakRepository() {
           return ((data ?? [])[0] ?? null) as HouseholdStreakRow | null;
         }
 
-        const { data, error } = await supabase
-          .from("household_streaks")
-          .select("household_id, current_streak, longest_streak, last_completed_date, updated_at")
-          .eq("household_id", householdId)
-          .maybeSingle();
-        if (error) throw error;
-        return (data ?? null) as HouseholdStreakRow | null;
+        return null;
       }
 
       return null;
