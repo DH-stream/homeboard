@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getDeviceAccessPayload } from "@/lib/devices/deviceAccess";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { SettingsCard } from "@/components/settings/SettingsCard";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { signOutParentLocally } from "@/lib/auth/parentAuth";
@@ -28,6 +30,9 @@ const copy: Record<Language, Record<string, string>> = {
     forget: "Forget cloud home on this device",
     confirm: "This only forgets the selected cloud home on this device. The home is not deleted in cloud sync.",
     members: "Members",
+    thisDeviceName: "Device name",
+    thisDeviceRenameError: "Could not update this device name.",
+    notPaired: "Not paired",
   },
   sv: {
     active: "Molnsynk aktiv",
@@ -44,8 +49,13 @@ const copy: Record<Language, Record<string, string>> = {
     forget: "Glöm molnhem på den här enheten",
     confirm: "Detta glömmer bara valt molnhem på den här enheten. Hemmet raderas inte i molnsynk.",
     members: "Medlemmar",
+    thisDeviceName: "Enhetsnamn",
+    thisDeviceRenameError: "Kunde inte uppdatera enhetsnamnet.",
+    notPaired: "Inte parkopplad",
   },
 };
+
+const supabase = createBrowserSupabaseClient();
 
 export function HouseholdSettings() {
   const { household, householdId, refresh, refreshHouseholdId, selectedHouseholdId } = useActiveHousehold();
@@ -53,12 +63,23 @@ export function HouseholdSettings() {
   const { language } = useLanguage();
   const labels = copy[language];
   const hasCloudHousehold = Boolean(householdId);
+  const deviceAccess = getDeviceAccessPayload();
+  const cloudDeviceId = deviceAccess?.cloudDeviceId ?? null;
+  const localDeviceId = deviceAccess?.localDeviceId ?? null;
+  const deviceAccessToken = deviceAccess?.accessToken ?? null;
 
   const [isEditingName, setEditingName] = useState(false);
   const [homeNameDraft, setHomeNameDraft] = useState("");
   const [isSavingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
+  const [isEditingDeviceName, setEditingDeviceName] = useState(false);
+  const [deviceNameDraft, setDeviceNameDraft] = useState("");
+  const [isSavingDeviceName, setSavingDeviceName] = useState(false);
+  const [deviceNameError, setDeviceNameError] = useState<string | null>(null);
+  const [deviceSaveState, setDeviceSaveState] = useState<"idle" | "saved">("idle");
+  const [isLoadingDeviceName, setLoadingDeviceName] = useState(false);
+  const [deviceNameLoaded, setDeviceNameLoaded] = useState("");
   const [isCloudOpen, setCloudOpen] = useState(false);
   const [isConfirming, setConfirming] = useState(false);
   const [requests, setRequests] = useState<AdultAccessRequestRecord[]>([]);
@@ -68,6 +89,46 @@ export function HouseholdSettings() {
   const [busyRequestId, setBusyRequestId] = useState<string | null>(null);
 
   useEffect(() => setHomeNameDraft(household?.name ?? ""), [household?.name]);
+  useEffect(() => {
+    if (!householdId || !cloudDeviceId || !localDeviceId || !deviceAccessToken || !supabase) {
+      setDeviceNameDraft("");
+      setDeviceNameLoaded("");
+      return;
+    }
+
+    let mounted = true;
+    setLoadingDeviceName(true);
+    setDeviceNameError(null);
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase.rpc("device_get_own_device", {
+          p_household_id: householdId,
+          p_cloud_device_id: cloudDeviceId,
+          p_local_device_id: localDeviceId,
+          p_device_access_token: deviceAccessToken,
+        });
+        if (!mounted) return;
+        if (error) throw error;
+        const row = Array.isArray(data) ? data[0] : data;
+        const nextName = typeof row?.name === "string" ? row.name : "";
+        setDeviceNameDraft(nextName);
+        setDeviceNameLoaded(nextName);
+      } catch {
+        if (!mounted) return;
+        setDeviceNameDraft("");
+        setDeviceNameLoaded("");
+        setDeviceNameError(labels.thisDeviceRenameError);
+      } finally {
+        if (!mounted) return;
+        setLoadingDeviceName(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [householdId, cloudDeviceId, localDeviceId, deviceAccessToken, labels.thisDeviceRenameError]);
   useEffect(() => {
     if (!householdId) {
       setRequests([]);
@@ -137,6 +198,42 @@ export function HouseholdSettings() {
     }
   }
 
+  async function saveThisDeviceName() {
+    if (!householdId || !deviceAccess || !supabase) return;
+    const trimmed = deviceNameDraft.trim();
+    if (!trimmed || trimmed.length > 40) {
+      setDeviceNameError(labels.thisDeviceRenameError);
+      return;
+    }
+
+    setSavingDeviceName(true);
+    setDeviceNameError(null);
+    try {
+      const { data, error } = await supabase.rpc("device_update_own_name", {
+        p_household_id: householdId,
+        p_cloud_device_id: deviceAccess.cloudDeviceId,
+        p_local_device_id: deviceAccess.localDeviceId,
+        p_device_access_token: deviceAccess.accessToken,
+        p_name: trimmed,
+      });
+
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      const nextName = typeof row?.name === "string" ? row.name : trimmed;
+      setDeviceNameDraft(nextName);
+      setDeviceNameLoaded(nextName);
+      setDeviceSaveState("saved");
+      window.setTimeout(() => {
+        setDeviceSaveState("idle");
+        setEditingDeviceName(false);
+      }, 1150);
+    } catch {
+      setDeviceNameError(labels.thisDeviceRenameError);
+    } finally {
+      setSavingDeviceName(false);
+    }
+  }
+
   function forgetOnDevice() {
     if (getDeviceProfile() === "wall") void signOutParentLocally();
     forgetSelectedCloudHouseholdOnThisDevice();
@@ -191,6 +288,26 @@ export function HouseholdSettings() {
         {selectedHouseholdId ? (
           <div className="rounded-2xl border border-amber-200/70 bg-amber-50/70 p-3">
             <p className="text-[0.7rem] font-black uppercase tracking-[0.14em] text-amber-700">{labels.deviceArea}</p>
+            <div className="mt-2 rounded-xl border border-amber-200/70 bg-white/70 p-2.5">
+              <p className="text-[0.68rem] font-black uppercase tracking-[0.12em] text-amber-800">{labels.thisDeviceName}</p>
+              {!deviceAccess ? (
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <p className="text-sm font-black text-stone-700">{labels.notPaired}</p>
+                </div>
+              ) : !isEditingDeviceName ? (
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <p className="text-sm font-black text-stone-900">{isLoadingDeviceName ? "—" : (deviceNameDraft.trim() || "—")}</p>
+                  <button className="pressable min-h-8 rounded-lg border border-amber-200 bg-white px-2.5 text-xs font-black text-amber-900" onClick={() => setEditingDeviceName(true)} type="button">{labels.edit}</button>
+                </div>
+              ) : (
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <input className="min-h-9 flex-1 rounded-xl border border-stone-200 bg-white px-3 text-sm font-semibold text-stone-900" maxLength={40} onChange={(event) => { setDeviceNameDraft(event.target.value); setDeviceSaveState("idle"); }} value={deviceNameDraft} />
+                  <button className={`pressable min-h-9 rounded-xl px-3 text-xs font-black text-white transition-all duration-250 ${deviceSaveState === "saved" ? "bg-emerald-600" : "bg-stone-950"} disabled:opacity-40`} disabled={isSavingDeviceName || !deviceNameDraft.trim()} onClick={() => void saveThisDeviceName()} type="button">{deviceSaveState === "saved" ? labels.saved : labels.save}</button>
+                  <button className="pressable min-h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-black text-stone-700" onClick={() => { setEditingDeviceName(false); setDeviceNameError(null); setDeviceSaveState("idle"); setDeviceNameDraft(deviceNameLoaded); }} type="button">{labels.cancel}</button>
+                </div>
+              )}
+              {deviceNameError ? <p className="mt-1.5 text-xs font-semibold text-rose-700">{deviceNameError}</p> : null}
+            </div>
             {isConfirming ? (
               <div className="mt-2 space-y-2">
                 <p className="text-xs font-semibold text-amber-900">{labels.confirm}</p>
