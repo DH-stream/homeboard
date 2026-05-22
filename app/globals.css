@@ -276,7 +276,7 @@ button:disabled {
 }
 
 .calendar-source-card__visual {
-  position: absolute;
+  position: fixed;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
@@ -704,10 +704,10 @@ button:disabled {
 }
 
 .wall-complete-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 6;
+  z-index: 90;
   overflow: hidden;
 }
 
@@ -785,21 +785,6 @@ button:disabled {
     radial-gradient(circle at 72% 67%, rgba(59, 130, 246, 0.8) 0 0.3rem, transparent 0.33rem),
     radial-gradient(circle at 42% 38%, rgba(253, 224, 71, 0.82) 0 0.28rem, transparent 0.31rem);
   animation: wall-complete-confetti 1350ms var(--ease-out) both;
-}
-
-.wall-complete-overlay--calm .wall-complete-overlay__glow {
-  opacity: 0.72;
-}
-
-.wall-complete-overlay--calm .wall-complete-overlay__title {
-  opacity: 0.6;
-  transform: translateY(-0.15rem);
-}
-
-.wall-complete-overlay--calm .wall-complete-overlay__body,
-.wall-complete-overlay--calm .wall-complete-overlay__note {
-  opacity: 0.56;
-  transform: translateY(-0.12rem);
 }
 
 .wall-progress-card--celebrate {
