@@ -127,7 +127,11 @@ export default function WallPage() {
     getWallStreakPreviewOverride(),
   );
   const [debugCloudEnabled] = useState(() => shouldEnableCloudDebug());
+  const [completionCelebrationPhase, setCompletionCelebrationPhase] = useState<
+    "idle" | "intro" | "calm"
+  >("idle");
   const quickCreatorTimerRef = useRef<number | null>(null);
+  const completionIntroTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const syncLocalOnlyMode = () => setUseLocalWall(isLocalOnlyModeEnabled());
@@ -304,6 +308,45 @@ export default function WallPage() {
       ? "Klara uppgifter finns kvar i mobilvyn under Klart."
       : "Completed tasks remain available in the mobile Done view.";
   const todayTitle = language === "sv" ? "Idag" : "Today";
+  const celebrationTitle = language === "sv" ? "Dagen är klar" : "Day complete";
+  const celebrationBody =
+    language === "sv"
+      ? "Allt är gjort. Njut av lugnet."
+      : "Everything is done. Enjoy the calm.";
+  const celebrationNote =
+    language === "sv" ? "Bra jobbat idag." : "Nice work today.";
+
+  useEffect(() => {
+    if (!allVisibleTasksDone) {
+      setCompletionCelebrationPhase("idle");
+      if (completionIntroTimerRef.current) {
+        window.clearTimeout(completionIntroTimerRef.current);
+        completionIntroTimerRef.current = null;
+      }
+      return;
+    }
+
+    const dateKey = getLocalDateKey(now);
+    const householdKey = householdId ?? "local";
+    const storageKey = `homeboard.wall.dayCompleteCelebrationSeen.v1:${householdKey}:${dateKey}`;
+    const hasSeenIntro = window.localStorage.getItem(storageKey) === "1";
+    if (hasSeenIntro) {
+      setCompletionCelebrationPhase("calm");
+      return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.localStorage.setItem(storageKey, "1");
+      setCompletionCelebrationPhase("calm");
+      return;
+    }
+
+    setCompletionCelebrationPhase("intro");
+    window.localStorage.setItem(storageKey, "1");
+    completionIntroTimerRef.current = window.setTimeout(() => {
+      setCompletionCelebrationPhase("calm");
+      completionIntroTimerRef.current = null;
+    }, 3200);
+  }, [allVisibleTasksDone, householdId, now]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
@@ -372,6 +415,8 @@ export default function WallPage() {
     return () => {
       if (quickCreatorTimerRef.current)
         window.clearTimeout(quickCreatorTimerRef.current);
+      if (completionIntroTimerRef.current)
+        window.clearTimeout(completionIntroTimerRef.current);
     };
   }, []);
 
@@ -465,6 +510,27 @@ export default function WallPage() {
   return (
     <WallShell revealActive={isFirstRunRevealActive}>
       <div className="relative flex flex-1 flex-col">
+        {completionCelebrationPhase !== "idle" ? (
+          <div
+            aria-hidden
+            className={`wall-complete-overlay ${completionCelebrationPhase === "intro" ? "wall-complete-overlay--intro" : "wall-complete-overlay--calm"}`}
+          >
+            <div className="wall-complete-overlay__glow" />
+            {completionCelebrationPhase === "intro" ? (
+              <>
+                <div className="wall-complete-overlay__burst" />
+                <div className="wall-complete-overlay__confetti" />
+              </>
+            ) : null}
+            <div className="wall-complete-overlay__title-wrap">
+              <div className="wall-complete-overlay__copy">
+                <p className="wall-complete-overlay__title">{celebrationTitle}</p>
+                <p className="wall-complete-overlay__body">{celebrationBody}</p>
+                <p className="wall-complete-overlay__note">{celebrationNote}</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <StreakBalloons householdId={householdId} streak={displayStreak} />
         <div className="relative z-10 flex flex-1 flex-col">
           <header
@@ -485,7 +551,7 @@ export default function WallPage() {
               </p>
             </div>
             <div
-              className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""} ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-4" : ""}`}
+              className={`min-w-0 rounded-[2rem] bg-stone-950 p-5 text-white shadow-[0_20px_70px_rgba(28,25,23,0.24)] transition-[box-shadow,transform] duration-200 ease-[var(--ease-out)] lg:min-w-80 ${completionFeedback ? "shadow-emerald-500/20" : ""} ${completionCelebrationPhase === "intro" ? "wall-progress-card--celebrate" : ""} ${completionCelebrationPhase === "calm" ? "wall-progress-card--calm" : ""} ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-4" : ""}`}
             >
               <p className="min-h-5 text-sm font-bold uppercase tracking-[0.18em] text-amber-200 flex items-center justify-between gap-2">
                 <span className="truncate">
