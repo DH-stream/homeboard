@@ -209,7 +209,7 @@ export default function WallPage() {
   }, [todayTasks]);
 
   const completedDayActive =
-    todayTasks.length > 0 && filteredTodayTasks.length === 0;
+    todayTasks.length > 0 && sequentialRemainingTodayTasks.length === 0;
   const localDateKey = useMemo(() => getLocalDateKey(now), [now]);
   const [streak, setStreak] = useState(0);
   const displayStreak = streakPreviewOverride ?? streak;
