@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { DebugCelebrationControls } from "@/components/mascot/DebugCelebrationControls";
 import { LanguageProvider } from "@/lib/i18n";
 import "./globals.css";
 
@@ -34,7 +35,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          {children}
+          <DebugCelebrationControls />
+        </LanguageProvider>
       </body>
     </html>
   );
