@@ -1,0 +1,13 @@
+.portalRing {
+  border: 0;
+  background: conic-gradient(from 18deg, transparent, rgba(251, 191, 36, 0.82), rgba(52, 211, 153, 0.42), transparent, rgba(255, 251, 235, 0.72), rgba(251, 191, 36, 0.68), transparent);
+  box-shadow: none;
+  filter: blur(0.42rem) saturate(1.15) drop-shadow(0 0 2.8rem rgba(251, 191, 36, 0.34));
+  -webkit-mask-image: radial-gradient(circle, transparent 48%, black 56%, black 66%, transparent 76%);
+  mask-image: radial-gradient(circle, transparent 48%, black 56%, black 66%, transparent 76%);
+}
+
+.portalCore {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.72), rgba(255, 251, 235, 0.4) 34%, rgba(251, 191, 36, 0.12) 56%, transparent 76%);
+  filter: blur(0.1rem);
+}
