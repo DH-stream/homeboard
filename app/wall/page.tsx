@@ -57,6 +57,7 @@ import type { TaskInstance } from "@/types";
 const QUICK_CREATOR_CLOSE_MS = 240;
 const QUICK_CREATOR_REDUCED_MOTION_CLOSE_MS = 20;
 const MAX_WALL_STREAK_PREVIEW = 24;
+const WALL_COMPLETE_INTRO_MS = 3900;
 
 function getFirstCreatedTaskId(created: unknown) {
   if (!Array.isArray(created)) return null;
@@ -130,6 +131,7 @@ export default function WallPage() {
   const [completionCelebrationPhase, setCompletionCelebrationPhase] = useState<
     "idle" | "intro" | "calm"
   >("idle");
+  const [showTasksInCompletedMode, setShowTasksInCompletedMode] = useState(false);
   const quickCreatorTimerRef = useRef<number | null>(null);
   const completionIntroTimerRef = useRef<number | null>(null);
 
@@ -206,8 +208,9 @@ export default function WallPage() {
     };
   }, [todayTasks]);
 
-  const allVisibleTasksDone =
-    todayTasks.length > 0 && filteredTodayTasks.length === 0;
+  const completedDayActive =
+    todayTasks.length > 0 && sequentialRemainingTodayTasks.length === 0;
+  const localDateKey = useMemo(() => getLocalDateKey(now), [now]);
   const [streak, setStreak] = useState(0);
   const displayStreak = streakPreviewOverride ?? streak;
   const [showStreakIntro, setShowStreakIntro] = useState(false);
@@ -317,8 +320,9 @@ export default function WallPage() {
     language === "sv" ? "Bra jobbat idag." : "Nice work today.";
 
   useEffect(() => {
-    if (!allVisibleTasksDone) {
+    if (!completedDayActive) {
       setCompletionCelebrationPhase("idle");
+      setShowTasksInCompletedMode(false);
       if (completionIntroTimerRef.current) {
         window.clearTimeout(completionIntroTimerRef.current);
         completionIntroTimerRef.current = null;
@@ -326,7 +330,8 @@ export default function WallPage() {
       return;
     }
 
-    const dateKey = getLocalDateKey(now);
+    setShowTasksInCompletedMode(false);
+    const dateKey = localDateKey;
     const householdKey = householdId ?? "local";
     const storageKey = `homeboard.wall.dayCompleteCelebrationSeen.v1:${householdKey}:${dateKey}`;
     const hasSeenIntro = window.localStorage.getItem(storageKey) === "1";
@@ -345,8 +350,12 @@ export default function WallPage() {
     completionIntroTimerRef.current = window.setTimeout(() => {
       setCompletionCelebrationPhase("calm");
       completionIntroTimerRef.current = null;
-    }, 3200);
-  }, [allVisibleTasksDone, householdId, now]);
+    }, WALL_COMPLETE_INTRO_MS);
+  }, [completedDayActive, householdId, localDateKey]);
+
+  useEffect(() => {
+    setShowTasksInCompletedMode(false);
+  }, [localDateKey]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000 * 30);
@@ -587,9 +596,11 @@ export default function WallPage() {
             ))}
           </div>
 
-          <div className="mt-6 grid flex-1 min-h-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
+          <div
+            className={`mt-6 grid min-h-0 flex-1 gap-5 ${completedDayActive && !showTasksInCompletedMode ? "lg:grid-cols-[minmax(0,0.76fr)_minmax(0,1.24fr)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]"}`}
+          >
             <section
-              className={`flex min-h-0 flex-col rounded-[2.25rem] bg-white/82 p-5 shadow-[0_24px_80px_rgba(120,93,58,0.18)] backdrop-blur ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-6" : ""}`}
+              className={`flex min-h-0 flex-col rounded-[2.25rem] bg-white/82 p-5 shadow-[0_24px_80px_rgba(120,93,58,0.18)] backdrop-blur transition-[transform,box-shadow,background] duration-500 ease-[var(--ease-out)] ${completedDayActive && !showTasksInCompletedMode ? "bg-white/68 shadow-[0_24px_90px_rgba(34,197,94,0.18)]" : ""} ${isFirstRunRevealActive ? "reveal-item reveal-item--card reveal-stagger-6" : ""}`}
             >
               <div className="flex items-center justify-between gap-4">
                 <SectionHeader eyebrow={t("tasks")} title={todayTitle} />
@@ -618,7 +629,22 @@ export default function WallPage() {
                 />
               ) : null}
               <div className="smooth-scroll-surface mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
-                {allVisibleTasksDone ? (
+                {completedDayActive && !showTasksInCompletedMode ? (
+                  <div className="wall-complete-calm-card">
+                    <p className="wall-complete-calm-card__title">{celebrationTitle}</p>
+                    <p className="wall-complete-calm-card__body">{celebrationBody}</p>
+                    <p className="wall-complete-calm-card__note">{celebrationNote}</p>
+                    <button
+                      className="wall-complete-calm-card__button"
+                      onClick={() => setShowTasksInCompletedMode(true)}
+                      type="button"
+                    >
+                      {language === "sv"
+                        ? "Visa dagens uppgifter"
+                        : "Show today's tasks"}
+                    </button>
+                  </div>
+                ) : completedDayActive ? (
                   <EmptyState title={allDoneTitle}>{allDoneBody}</EmptyState>
                 ) : (
                   <TaskList
@@ -634,7 +660,9 @@ export default function WallPage() {
               </div>
             </section>
 
-            <aside className="grid min-h-0 gap-5 lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+            <aside
+              className={`grid min-h-0 gap-5 ${completedDayActive && !showTasksInCompletedMode ? "lg:grid-rows-[minmax(0,1.1fr)_minmax(0,1fr)]" : "lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]"}`}
+            >
               <TodayAgenda events={todayEvents} />
               <WeekPreview events={events} variant="wall" />
             </aside>
