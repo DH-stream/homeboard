@@ -8,6 +8,19 @@ import {
 
 const DEBUG_CELEBRATION_MS = 3900;
 
+function isWallPath(pathname: string) {
+  return pathname === "/wall" || pathname === "/wall/";
+}
+
+function hasDebugCelebrationFlag() {
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.get("debugCelebration") === "1" ||
+    params.get("debugMascot") === "1" ||
+    window.localStorage.getItem("homeboard.debugCelebration") === "1"
+  );
+}
+
 export function DebugCelebrationControls() {
   const [isEnabled, setIsEnabled] = useState(false);
   const [activeMoment, setActiveMoment] =
@@ -17,19 +30,17 @@ export function DebugCelebrationControls() {
 
   useEffect(() => {
     const syncEnabled = () => {
-      const params = new URLSearchParams(window.location.search);
-      setIsEnabled(
-        window.location.pathname === "/wall" &&
-          params.get("debugCelebration") === "1",
-      );
+      setIsEnabled(isWallPath(window.location.pathname) && hasDebugCelebrationFlag());
     };
 
     syncEnabled();
     window.addEventListener("popstate", syncEnabled);
     window.addEventListener("hashchange", syncEnabled);
+    window.addEventListener("storage", syncEnabled);
     return () => {
       window.removeEventListener("popstate", syncEnabled);
       window.removeEventListener("hashchange", syncEnabled);
+      window.removeEventListener("storage", syncEnabled);
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
   }, []);
@@ -56,20 +67,23 @@ export function DebugCelebrationControls() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-[120] flex max-w-[calc(100vw-2rem)] flex-wrap justify-end gap-2 rounded-[1.25rem] border border-white/70 bg-white/86 p-2 shadow-[0_18px_55px_rgba(84,59,34,0.24)] backdrop-blur">
+      <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 z-[120] flex max-w-[calc(100vw-1.5rem)] flex-wrap justify-end gap-2 rounded-[1.25rem] border border-white/70 bg-white/90 p-2 shadow-[0_18px_55px_rgba(84,59,34,0.24)] backdrop-blur lg:right-4">
+        <div className="basis-full px-2 text-right text-[0.65rem] font-black uppercase tracking-[0.16em] text-amber-700">
+          Debug celebration
+        </div>
         <button
           className="rounded-full bg-stone-950 px-4 py-2 text-sm font-black text-white shadow-[0_10px_24px_rgba(28,25,23,0.18)] active:scale-95"
           onClick={() => play("thumbsUp")}
           type="button"
         >
-          Testa tumme upp
+          Tumme upp
         </button>
         <button
           className="rounded-full bg-amber-400 px-4 py-2 text-sm font-black text-stone-950 shadow-[0_10px_24px_rgba(245,158,11,0.22)] active:scale-95"
           onClick={() => play("proudClap")}
           type="button"
         >
-          Testa klapp
+          Klapp
         </button>
       </div>
 
