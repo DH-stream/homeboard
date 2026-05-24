@@ -1,4 +1,5 @@
 import styles from "./HomeBoardMascotMoment.module.css";
+import softPortalStyles from "./HomeBoardMascotSoftPortal.module.css";
 
 export type HomeBoardMascotMomentType = "thumbsUp" | "proudClap";
 
@@ -26,9 +27,9 @@ export function HomeBoardMascotMoment({
       className={cx(styles.moment, styles[moment], className)}
       role={label ? "img" : undefined}
     >
-      <div className={styles.portal}>
-        <div className={styles.portalRing} />
-        <div className={styles.portalCore} />
+      <div className={cx(styles.portal, softPortalStyles.portal)}>
+        <div className={cx(styles.portalRing, softPortalStyles.portalRing)} />
+        <div className={cx(styles.portalCore, softPortalStyles.portalCore)} />
         <div className={styles.portalStarOne} />
         <div className={styles.portalStarTwo} />
         <div className={styles.portalStarThree} />
