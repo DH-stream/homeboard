@@ -1,0 +1,594 @@
+.moment {
+  --mascot-blue: #315f8e;
+  --mascot-blue-dark: #244a73;
+  --mascot-fur: #c9c9c2;
+  --mascot-fur-soft: #e6e3dc;
+  --mascot-cream: #fff8ea;
+  --mascot-tan: #ddb77d;
+  --mascot-star: #fbbf24;
+  --mascot-green: #34d399;
+  position: relative;
+  width: min(34rem, 72vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.portal,
+.koalaWrap {
+  grid-area: 1 / 1;
+}
+
+.portal {
+  position: relative;
+  width: 82%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  transform: translateZ(0);
+}
+
+.portalRing,
+.portalCore {
+  grid-area: 1 / 1;
+  border-radius: 999px;
+}
+
+.portalRing {
+  width: 82%;
+  height: 82%;
+  border: clamp(0.35rem, 1vw, 0.7rem) solid rgba(251, 191, 36, 0.72);
+  box-shadow:
+    0 0 0 1rem rgba(255, 251, 235, 0.42),
+    0 0 5rem rgba(251, 191, 36, 0.5),
+    inset 0 0 4.4rem rgba(52, 211, 153, 0.16);
+  opacity: 0;
+  transform: scale(0.58) rotate(-10deg);
+  animation: mascotPortalRing 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.portalCore {
+  width: 54%;
+  height: 54%;
+  background:
+    radial-gradient(circle, rgba(255, 251, 235, 0.94), rgba(251, 191, 36, 0.2) 46%, transparent 70%);
+  opacity: 0;
+  transform: scale(0.55);
+  animation: mascotPortalCore 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.portalStarOne,
+.portalStarTwo,
+.portalStarThree,
+.clapSpark {
+  position: absolute;
+  width: clamp(1rem, 3vw, 2.2rem);
+  aspect-ratio: 1;
+  background: var(--mascot-star);
+  clip-path: polygon(50% 0%, 62% 35%, 100% 38%, 70% 59%, 79% 100%, 50% 76%, 21% 100%, 30% 59%, 0% 38%, 38% 35%);
+  filter: drop-shadow(0 0 1.2rem rgba(251, 191, 36, 0.56));
+  opacity: 0;
+}
+
+.portalStarOne {
+  top: 18%;
+  right: 18%;
+  animation: mascotStarDriftOne 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.portalStarTwo {
+  left: 16%;
+  top: 42%;
+  width: clamp(0.75rem, 2vw, 1.55rem);
+  background: var(--mascot-green);
+  animation: mascotStarDriftTwo 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.portalStarThree {
+  right: 24%;
+  bottom: 18%;
+  width: clamp(0.65rem, 1.8vw, 1.35rem);
+  animation: mascotStarDriftThree 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.koalaWrap {
+  position: relative;
+  width: 46%;
+  min-width: 12rem;
+  aspect-ratio: 0.72;
+  transform-origin: 50% 72%;
+  opacity: 0;
+  transform: translateY(2.1rem) scale(0.74) rotate(-2deg);
+  animation: mascotEnter 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+  z-index: 2;
+}
+
+.proudClap .koalaWrap {
+  animation-name: mascotEnterClap;
+}
+
+.shadow {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 2%;
+  height: 5%;
+  border-radius: 999px;
+  background: rgba(92, 64, 39, 0.18);
+  filter: blur(0.3rem);
+  animation: mascotShadow 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.koala {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 72%;
+}
+
+.thumbsUp .koala {
+  animation: mascotTinyBounce 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.proudClap .koala {
+  animation: mascotProudSettle 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.ear,
+.head,
+.body,
+.jacket,
+.thumbsArms,
+.clapArms,
+.legs,
+.cap,
+.facePatch,
+.eye,
+.nose,
+.mouth,
+.blush,
+.leg,
+.shoe,
+.relaxedArm,
+.relaxedPaw,
+.thumbsArm,
+.thumbsPaw,
+.thumb,
+.clapArm,
+.clapPaw,
+.shirt,
+.heartPatch {
+  position: absolute;
+}
+
+.ear {
+  top: 8%;
+  width: 31%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: var(--mascot-fur);
+  box-shadow: inset 0 0.6rem 1.2rem rgba(255, 255, 255, 0.42);
+}
+
+.ear span {
+  position: absolute;
+  inset: 24%;
+  border-radius: inherit;
+  background: #f1cfc5;
+  opacity: 0.72;
+}
+
+.earLeft { left: 4%; }
+.earRight { right: 4%; }
+
+.head {
+  left: 20%;
+  top: 9%;
+  width: 60%;
+  aspect-ratio: 1.06;
+  border-radius: 48% 48% 44% 44%;
+  background: var(--mascot-fur);
+  box-shadow: inset 0 0.8rem 1.4rem rgba(255, 255, 255, 0.38);
+  z-index: 3;
+}
+
+.cap {
+  left: 18%;
+  top: -6%;
+  width: 64%;
+  height: 25%;
+  border-radius: 999px 999px 55% 55%;
+  background: var(--mascot-blue);
+  box-shadow: inset 0 0.35rem 0.8rem rgba(255, 255, 255, 0.16);
+  z-index: 3;
+}
+
+.capBrim {
+  position: absolute;
+  right: -17%;
+  bottom: -18%;
+  width: 48%;
+  height: 43%;
+  border-radius: 999px;
+  background: var(--mascot-tan);
+  transform: rotate(7deg);
+}
+
+.capMark {
+  position: absolute;
+  left: 38%;
+  top: 32%;
+  width: 22%;
+  height: 36%;
+  border-radius: 0.18rem;
+  background: rgba(255, 255, 255, 0.9);
+  clip-path: polygon(50% 0%, 100% 40%, 100% 100%, 0% 100%, 0% 40%);
+}
+
+.facePatch {
+  left: 19%;
+  top: 35%;
+  width: 62%;
+  height: 44%;
+  border-radius: 999px;
+  background: var(--mascot-cream);
+}
+
+.eye {
+  top: 42%;
+  width: 11%;
+  height: 15%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 35% 28%, white 0 18%, transparent 19%),
+    #4b3621;
+}
+.eyeLeft { left: 32%; }
+.eyeRight { right: 32%; }
+
+.nose {
+  left: 43%;
+  top: 55%;
+  width: 15%;
+  height: 12%;
+  border-radius: 52% 52% 60% 60%;
+  background: #26221e;
+}
+
+.mouth {
+  left: 47%;
+  top: 70%;
+  width: 10%;
+  height: 5%;
+  border-bottom: 0.16rem solid rgba(38, 34, 30, 0.82);
+  border-radius: 999px;
+}
+
+.blush {
+  top: 64%;
+  width: 12%;
+  height: 5%;
+  border-radius: 999px;
+  background: rgba(244, 114, 114, 0.34);
+}
+.blushLeft { left: 21%; }
+.blushRight { right: 21%; }
+
+.body {
+  left: 24%;
+  top: 47%;
+  width: 52%;
+  height: 32%;
+  z-index: 2;
+}
+
+.jacket {
+  inset: 0;
+  border-radius: 32% 32% 26% 26%;
+  background: var(--mascot-blue);
+  box-shadow: inset 0 0.7rem 1.1rem rgba(255, 255, 255, 0.12);
+}
+
+.shirt {
+  left: 28%;
+  top: 15%;
+  width: 44%;
+  height: 62%;
+  border-radius: 25%;
+  background: var(--mascot-cream);
+}
+
+.shirt span {
+  position: absolute;
+  left: 34%;
+  top: 22%;
+  width: 32%;
+  height: 24%;
+  border-radius: 0.12rem;
+  background: var(--mascot-blue);
+  clip-path: polygon(50% 0%, 100% 42%, 100% 100%, 0% 100%, 0% 42%);
+}
+
+.heartPatch {
+  right: 9%;
+  top: 30%;
+  width: 16%;
+  aspect-ratio: 1;
+  background: #f2c16b;
+  transform: rotate(45deg);
+  border-radius: 35% 35% 15% 35%;
+}
+
+.relaxedArm,
+.thumbsArm,
+.clapArm {
+  background: var(--mascot-blue-dark);
+  border-radius: 999px;
+  z-index: 1;
+}
+
+.relaxedArmLeft {
+  left: 14%;
+  top: 51%;
+  width: 13%;
+  height: 27%;
+  transform: rotate(11deg);
+}
+
+.relaxedPawLeft {
+  left: 14%;
+  top: 74%;
+  width: 14%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: var(--mascot-fur);
+  z-index: 4;
+}
+
+.thumbsArm {
+  right: 13%;
+  top: 43%;
+  width: 13%;
+  height: 34%;
+  transform: rotate(-21deg);
+  transform-origin: 50% 100%;
+  animation: mascotThumbArm 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.thumbsPaw {
+  right: 6%;
+  top: 34%;
+  width: 17%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: var(--mascot-fur);
+  z-index: 5;
+  animation: mascotThumbPaw 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.thumb {
+  right: 3.5%;
+  top: 29%;
+  width: 7%;
+  height: 14%;
+  border-radius: 999px;
+  background: var(--mascot-fur);
+  transform: rotate(12deg);
+  z-index: 5;
+  animation: mascotThumbPaw 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.clapArmLeft {
+  left: 16%;
+  top: 52%;
+  width: 29%;
+  height: 11%;
+  transform-origin: 100% 50%;
+  animation: mascotClapArmLeft 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.clapArmRight {
+  right: 16%;
+  top: 52%;
+  width: 29%;
+  height: 11%;
+  transform-origin: 0% 50%;
+  animation: mascotClapArmRight 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.clapPaw {
+  top: 48%;
+  width: 15%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: var(--mascot-fur);
+  z-index: 5;
+}
+
+.clapPawLeft {
+  left: 43%;
+  animation: mascotClapPawLeft 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.clapPawRight {
+  right: 38%;
+  animation: mascotClapPawRight 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.clapSpark {
+  left: 48%;
+  top: 43%;
+  width: 12%;
+  animation: mascotClapSpark 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+  z-index: 6;
+}
+
+.leg {
+  top: 76%;
+  width: 14%;
+  height: 19%;
+  border-radius: 999px;
+  background: var(--mascot-tan);
+  z-index: 1;
+}
+.legLeft { left: 32%; }
+.legRight { right: 32%; }
+
+.shoe {
+  top: 92%;
+  width: 24%;
+  height: 8%;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, var(--mascot-blue), var(--mascot-blue-dark));
+  box-shadow: inset 0 -0.18rem 0 white;
+  z-index: 2;
+}
+.shoeLeft { left: 22%; }
+.shoeRight { right: 22%; }
+
+@keyframes mascotPortalRing {
+  0% { opacity: 0; transform: scale(0.55) rotate(-10deg); }
+  14% { opacity: 0.95; transform: scale(0.94) rotate(0deg); }
+  36% { opacity: 1; transform: scale(1.03) rotate(5deg); }
+  72% { opacity: 0.82; transform: scale(1.02) rotate(10deg); }
+  100% { opacity: 0; transform: scale(1.18) rotate(18deg); }
+}
+
+@keyframes mascotPortalCore {
+  0% { opacity: 0; transform: scale(0.55); }
+  16% { opacity: 0.9; transform: scale(1); }
+  64% { opacity: 0.65; transform: scale(1.08); }
+  100% { opacity: 0; transform: scale(1.16); }
+}
+
+@keyframes mascotEnter {
+  0%, 11% { opacity: 0; transform: translateY(2.1rem) scale(0.74) rotate(-2deg); }
+  24% { opacity: 1; transform: translateY(-0.35rem) scale(1.04) rotate(1deg); }
+  35% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  78% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(-0.65rem) scale(0.98) rotate(1deg); }
+}
+
+@keyframes mascotEnterClap {
+  0%, 13% { opacity: 0; transform: translateY(1.8rem) scale(0.78) rotate(1deg); }
+  27% { opacity: 1; transform: translateY(-0.2rem) scale(1.02) rotate(-1deg); }
+  38% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  80% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(-0.5rem) scale(0.98) rotate(-1deg); }
+}
+
+@keyframes mascotTinyBounce {
+  0%, 24% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-0.35rem) scale(1.025); }
+  39% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes mascotProudSettle {
+  0%, 28% { transform: scale(1); }
+  44% { transform: scale(1.018) rotate(-0.8deg); }
+  57% { transform: scale(1) rotate(0.8deg); }
+  70%, 100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes mascotShadow {
+  0%, 11% { opacity: 0; transform: scale(0.65); }
+  26% { opacity: 1; transform: scale(1.08); }
+  78% { opacity: 0.95; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.88); }
+}
+
+@keyframes mascotThumbArm {
+  0%, 22% { transform: rotate(-8deg) translateY(0.6rem); }
+  32% { transform: rotate(-26deg) translateY(-0.2rem); }
+  42%, 100% { transform: rotate(-21deg) translateY(0); }
+}
+
+@keyframes mascotThumbPaw {
+  0%, 24% { transform: scale(0.9) rotate(-6deg); }
+  35% { transform: scale(1.14) rotate(5deg); }
+  47%, 100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes mascotClapArmLeft {
+  0%, 26% { transform: rotate(18deg) translateX(-0.35rem); }
+  34% { transform: rotate(0deg) translateX(0.18rem); }
+  42% { transform: rotate(18deg) translateX(-0.25rem); }
+  50% { transform: rotate(0deg) translateX(0.12rem); }
+  58% { transform: rotate(15deg) translateX(-0.16rem); }
+  70%, 100% { transform: rotate(10deg) translateX(0); }
+}
+
+@keyframes mascotClapArmRight {
+  0%, 26% { transform: rotate(-18deg) translateX(0.35rem); }
+  34% { transform: rotate(0deg) translateX(-0.18rem); }
+  42% { transform: rotate(-18deg) translateX(0.25rem); }
+  50% { transform: rotate(0deg) translateX(-0.12rem); }
+  58% { transform: rotate(-15deg) translateX(0.16rem); }
+  70%, 100% { transform: rotate(-10deg) translateX(0); }
+}
+
+@keyframes mascotClapPawLeft {
+  0%, 26% { transform: translateX(-0.4rem) rotate(-8deg); }
+  34% { transform: translateX(0.35rem) rotate(4deg); }
+  42% { transform: translateX(-0.3rem) rotate(-6deg); }
+  50% { transform: translateX(0.26rem) rotate(3deg); }
+  58% { transform: translateX(-0.18rem) rotate(-3deg); }
+  70%, 100% { transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes mascotClapPawRight {
+  0%, 26% { transform: translateX(0.4rem) rotate(8deg); }
+  34% { transform: translateX(-0.35rem) rotate(-4deg); }
+  42% { transform: translateX(0.3rem) rotate(6deg); }
+  50% { transform: translateX(-0.26rem) rotate(-3deg); }
+  58% { transform: translateX(0.18rem) rotate(3deg); }
+  70%, 100% { transform: translateX(0) rotate(0deg); }
+}
+
+@keyframes mascotClapSpark {
+  0%, 29% { opacity: 0; transform: scale(0.45) rotate(-16deg); }
+  34% { opacity: 1; transform: scale(1.15) rotate(0deg); }
+  39% { opacity: 0; transform: scale(0.75) rotate(12deg); }
+  48% { opacity: 1; transform: scale(1.1) rotate(-7deg); }
+  55% { opacity: 0; transform: scale(0.75) rotate(10deg); }
+  63% { opacity: 0.72; transform: scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: scale(0.75) rotate(18deg); }
+}
+
+@keyframes mascotStarDriftOne {
+  0%, 12% { opacity: 0; transform: translateY(0.8rem) scale(0.5) rotate(-20deg); }
+  28% { opacity: 1; transform: translateY(0) scale(1) rotate(5deg); }
+  100% { opacity: 0; transform: translate(1.2rem, -1.4rem) scale(0.85) rotate(42deg); }
+}
+
+@keyframes mascotStarDriftTwo {
+  0%, 18% { opacity: 0; transform: translateX(0.8rem) scale(0.55) rotate(20deg); }
+  38% { opacity: 0.9; transform: translateX(0) scale(1) rotate(-5deg); }
+  100% { opacity: 0; transform: translate(-1.3rem, 0.4rem) scale(0.8) rotate(-38deg); }
+}
+
+@keyframes mascotStarDriftThree {
+  0%, 20% { opacity: 0; transform: translateY(-0.4rem) scale(0.55) rotate(-12deg); }
+  42% { opacity: 0.85; transform: translateY(0) scale(1) rotate(8deg); }
+  100% { opacity: 0; transform: translate(0.8rem, 1.4rem) scale(0.75) rotate(34deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moment *,
+  .moment *::before,
+  .moment *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .portalRing,
+  .portalCore,
+  .portalStarOne,
+  .portalStarTwo,
+  .portalStarThree,
+  .koalaWrap {
+    opacity: 1;
+    transform: none;
+  }
+}
