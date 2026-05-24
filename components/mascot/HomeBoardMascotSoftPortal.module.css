@@ -1,13 +1,132 @@
+.portal {
+  filter:
+    drop-shadow(0 0 2rem rgba(251, 191, 36, 0.22))
+    drop-shadow(0 0 4.4rem rgba(20, 184, 166, 0.16));
+}
+
 .portalRing {
   border: 0;
-  background: conic-gradient(from 18deg, transparent, rgba(251, 191, 36, 0.82), rgba(52, 211, 153, 0.42), transparent, rgba(255, 251, 235, 0.72), rgba(251, 191, 36, 0.68), transparent);
+  background:
+    conic-gradient(
+      from 18deg,
+      transparent 0deg,
+      rgba(255, 255, 255, 0.26) 16deg,
+      rgba(251, 191, 36, 0.95) 38deg,
+      rgba(249, 115, 22, 0.82) 66deg,
+      rgba(52, 211, 153, 0.72) 96deg,
+      transparent 124deg,
+      rgba(255, 251, 235, 0.84) 162deg,
+      rgba(251, 191, 36, 0.92) 203deg,
+      rgba(244, 114, 182, 0.38) 230deg,
+      transparent 258deg,
+      rgba(45, 212, 191, 0.66) 304deg,
+      rgba(255, 255, 255, 0.18) 332deg,
+      transparent 360deg
+    );
   box-shadow: none;
-  filter: blur(0.42rem) saturate(1.15) drop-shadow(0 0 2.8rem rgba(251, 191, 36, 0.34));
-  -webkit-mask-image: radial-gradient(circle, transparent 48%, black 56%, black 66%, transparent 76%);
-  mask-image: radial-gradient(circle, transparent 48%, black 56%, black 66%, transparent 76%);
+  filter:
+    blur(0.42rem)
+    saturate(1.38)
+    drop-shadow(0 0 2.2rem rgba(251, 191, 36, 0.46))
+    drop-shadow(0 0 4.6rem rgba(20, 184, 166, 0.22));
+  -webkit-mask-image: radial-gradient(circle, transparent 45%, black 53%, black 68%, transparent 79%);
+  mask-image: radial-gradient(circle, transparent 45%, black 53%, black 68%, transparent 79%);
+}
+
+.portalRing::before,
+.portalRing::after {
+  position: absolute;
+  content: "";
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.portalRing::before {
+  inset: -15%;
+  background:
+    conic-gradient(
+      from 138deg,
+      transparent 0deg,
+      rgba(255, 251, 235, 0.86) 24deg,
+      rgba(251, 191, 36, 0.92) 58deg,
+      transparent 104deg,
+      rgba(52, 211, 153, 0.64) 152deg,
+      rgba(59, 130, 246, 0.32) 178deg,
+      transparent 222deg,
+      rgba(255, 255, 255, 0.72) 288deg,
+      transparent 360deg
+    );
+  filter: blur(0.78rem) saturate(1.28);
+  opacity: 0;
+  -webkit-mask-image: radial-gradient(circle, transparent 48%, black 56%, black 65%, transparent 76%);
+  mask-image: radial-gradient(circle, transparent 48%, black 56%, black 65%, transparent 76%);
+  animation: softPortalInnerRibbon 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
+}
+
+.portalRing::after {
+  inset: -24%;
+  background:
+    radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.95) 0 0.22rem, transparent 0.28rem),
+    radial-gradient(circle at 31% 16%, rgba(251, 191, 36, 0.95) 0 0.3rem, transparent 0.38rem),
+    radial-gradient(circle at 52% 8%, rgba(45, 212, 191, 0.78) 0 0.24rem, transparent 0.32rem),
+    radial-gradient(circle at 75% 22%, rgba(255, 255, 255, 0.9) 0 0.2rem, transparent 0.28rem),
+    radial-gradient(circle at 86% 47%, rgba(249, 115, 22, 0.8) 0 0.3rem, transparent 0.4rem),
+    radial-gradient(circle at 72% 76%, rgba(52, 211, 153, 0.76) 0 0.25rem, transparent 0.35rem),
+    radial-gradient(circle at 48% 90%, rgba(255, 251, 235, 0.92) 0 0.22rem, transparent 0.32rem),
+    radial-gradient(circle at 19% 72%, rgba(251, 191, 36, 0.86) 0 0.28rem, transparent 0.38rem),
+    radial-gradient(circle at 8% 51%, rgba(244, 114, 182, 0.48) 0 0.2rem, transparent 0.3rem);
+  filter: blur(0.02rem) drop-shadow(0 0 1.15rem rgba(251, 191, 36, 0.58));
+  opacity: 0;
+  animation: softPortalParticleOrbit 3900ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both;
 }
 
 .portalCore {
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.72), rgba(255, 251, 235, 0.4) 34%, rgba(251, 191, 36, 0.12) 56%, transparent 76%);
-  filter: blur(0.1rem);
+  background:
+    radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.88), rgba(255, 251, 235, 0.54) 30%, rgba(251, 191, 36, 0.2) 48%, rgba(45, 212, 191, 0.12) 62%, transparent 78%);
+  filter:
+    blur(0.12rem)
+    saturate(1.22)
+    drop-shadow(0 0 2.6rem rgba(255, 251, 235, 0.52));
+}
+
+@keyframes softPortalInnerRibbon {
+  0%, 10% {
+    opacity: 0;
+    transform: scale(0.66) rotate(-58deg);
+  }
+  24% {
+    opacity: 0.78;
+    transform: scale(0.96) rotate(8deg);
+  }
+  48% {
+    opacity: 0.96;
+    transform: scale(1.04) rotate(104deg);
+  }
+  78% {
+    opacity: 0.62;
+    transform: scale(1.1) rotate(188deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.22) rotate(260deg);
+  }
+}
+
+@keyframes softPortalParticleOrbit {
+  0%, 12% {
+    opacity: 0;
+    transform: scale(0.72) rotate(-20deg);
+  }
+  30% {
+    opacity: 0.95;
+    transform: scale(1) rotate(20deg);
+  }
+  68% {
+    opacity: 0.8;
+    transform: scale(1.1) rotate(112deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.24) rotate(168deg);
+  }
 }
