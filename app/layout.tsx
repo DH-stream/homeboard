@@ -1,3 +1,4 @@
+import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n";
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <LanguageProvider>{children}</LanguageProvider>
+        <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />
       </body>
     </html>
   );
